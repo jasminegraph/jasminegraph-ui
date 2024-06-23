@@ -32,7 +32,7 @@ export default function Home() {
             borderRadius: borderRadiusLG,
           }}
         >
-          Content
+          Clusters
         </Content>
       </Layout>
     </PageWrapper>
