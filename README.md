@@ -24,7 +24,7 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/jasminegraph-ui.git
+git clone https://github.com/jasminegraph/jasminegraph-ui.git
 cd jasminegraph-ui
 ```
 
