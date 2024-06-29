@@ -9,3 +9,17 @@ export const SIDE_MENU_ROUTES = {
   settings: "/settings",
   about: "/about",
 };
+
+export const CLUSTER_PAGE_ROUTES = {
+  clusterDetails: "/",
+  accessManagement: "/access-management",
+  instance: "/instance",
+  deployment: "/deployment",
+  logs: "/logs",
+};
+
+export const GRAPH_PANEL_ROUTES = {
+  upload: "/",
+  graph: "/graph",
+  distribution: "/distribution",
+};

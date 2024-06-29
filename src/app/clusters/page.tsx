@@ -1,28 +1,32 @@
 "use client";
-import React, { useEffect } from "react";
-import { notifySuccess } from "@/utils/toast";
-import { Layout, theme } from "antd";
+import React from "react";
+import { Layout, theme, Typography } from "antd";
 import PageWrapper from "@/layouts/page-wrapper";
+import { Input } from "antd";
+import type { SearchProps } from "antd/es/input/Search";
+import { Card, Col, Row } from "antd";
+import { ClusterData } from "@/data/cluster-data";
+import { useRouter } from "next/navigation";
 
+const { Search } = Input;
 const { Content } = Layout;
-
-export default function Home() {
+const { Title, Text } = Typography;
+export default function Clusters() {
+  const router = useRouter();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  useEffect(() => {
-    notifySuccess("toasts working");
-  }, []);
+  const onSearch: SearchProps["onSearch"] = (value, _e, info) =>
+    console.log(info?.source, value);
+
+  const handleOnClusterClick = (clusterID: string) => {
+    router.push(`/clusters/${clusterID}`)
+  }
 
   return (
     <PageWrapper>
       <Layout style={{ padding: "24px 24px", height: "92vh" }}>
-        {/* <Breadcrumb style={{ margin: "16px 0" }}>
-        <Breadcrumb.Item>Home</Breadcrumb.Item>
-        <Breadcrumb.Item>List</Breadcrumb.Item>
-        <Breadcrumb.Item>App</Breadcrumb.Item>
-      </Breadcrumb> */}
         <Content
           style={{
             padding: 24,
@@ -32,7 +36,38 @@ export default function Home() {
             borderRadius: borderRadiusLG,
           }}
         >
-          Clusters
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
+            <Typography>
+              <Title level={2}>My Clusters</Title>
+            </Typography>
+            <Search
+              placeholder="search..."
+              allowClear
+              size="large"
+              onSearch={onSearch}
+              style={{ width: 300 }}
+            />
+          </div>
+          <Col>
+          {ClusterData.map((cluster, index) => (
+            <Row key={index}>
+              <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
+              onClick={() => handleOnClusterClick(cluster.clusterId)}
+              >
+                <Typography>
+                  <Title level={3}>{cluster.name}</Title>
+                  <div style={{display: "flex", justifyContent: "space-between"}}>
+                    <Text>Version: {cluster.version}</Text>
+                    <Text>Cration Date: {cluster.creationDate}</Text> 
+                    <Text>
+                      Cluster ID: {cluster.clusterId}
+                    </Text>
+                  </div>
+                </Typography>
+              </Card>
+            </Row>
+            ))}
+          </Col>
         </Content>
       </Layout>
     </PageWrapper>

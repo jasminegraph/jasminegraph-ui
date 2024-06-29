@@ -22,7 +22,11 @@
       "@/assets/*": ["./public/assets/*"],
       "@/components/*": ["./src/components/*"],
       "@/animation/*": ["./public/animation/*"],
-      "@/types/*": ["./src/types/*"]
+      "@/types/*": ["./src/types/*"],
+      "@/routes/*": ["./src/routes/*"],
+      "@/services/*": ["./src/services/*"],
+      "@/layouts/*": ["./src/layouts/*"],
+      "@/data/*": ["./src/data/*"]
     }
   },
   "include": [

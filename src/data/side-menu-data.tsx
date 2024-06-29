@@ -11,7 +11,7 @@ import {
   SettingOutlined,
 } from "@ant-design/icons";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import * as Routes from "../routes/page-routes";
+import * as Routes from "@/routes/page-routes";
 
 export type SideMenuItem = Required<MenuProps>["items"][number];
 
@@ -20,7 +20,7 @@ export const getSideMenuData = (router: AppRouterInstance) => {
     router.push(key);
   };
 
-  const sideMenuData: SideMenuItem[] = [
+  return [
     {
       key: Routes.SIDE_MENU_ROUTES.home,
       icon: <ContainerOutlined />,
@@ -93,36 +93,5 @@ export const getSideMenuData = (router: AppRouterInstance) => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.about);
       },
     },
-    // {
-    //   key: '3',
-    //   icon: <SettingOutlined />,
-    //   label: 'Navigation Three',
-    //   children: [
-    //     { key: '31', label: 'Option 1' },
-    //   ],
-    // },
-    // {
-    //   key: '2',
-    //   icon: <AppstoreOutlined />,
-    //   label: 'Clusters',
-    //   children: [
-    //     { key: '21', label: 'Option 1' },
-    //     {
-    //       key: '23',
-    //       label: 'Submenu',
-    //       children: [
-    //         { key: '231', label: 'Option 1' },
-    //       ],
-    //     },
-    //     {
-    //       key: '24',
-    //       label: 'Submenu 2',
-    //       children: [
-    //         { key: '241', label: 'Option 1' },
-    //       ],
-    //     },
-    //   ],
-    // },
   ];
-  return sideMenuData;
 };
