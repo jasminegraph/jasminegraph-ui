@@ -6,6 +6,16 @@ Frontend/.pnp
 Frontend/.pnp.js
 Frontend/.yarn/install-state.gz
 
+# dependencies
+Backend/node_modules
+Backend/.pnp
+Backend/.pnp.js
+Backend/.yarn/install-state.gz
+
+# env
+Backend/.env
+Frontend/.env
+
 # testing
 /coverage
 
