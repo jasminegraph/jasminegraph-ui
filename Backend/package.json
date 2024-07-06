@@ -4,7 +4,8 @@
   "description": "JasmineGrapg UI backend",
   "main": "./src/index.ts",
   "scripts": {
-    "start": "nodemon --watch \"*.ts\" --exec \"ts-node\" ./src/index.ts",
+    "nodemon": "nodemon --watch \"*.ts\" --exec \"ts-node\" ./src/index.ts",
+    "start": "ts-node ./src/index.ts",
     "eslint:fix": "eslint --fix"
   },
   "author": "Somesh Chandimal",
