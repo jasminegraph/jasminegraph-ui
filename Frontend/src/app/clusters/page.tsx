@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Layout, theme, Typography } from "antd";
 import PageWrapper from "@/layouts/page-wrapper";
 import { Input } from "antd";
@@ -7,6 +7,7 @@ import type { SearchProps } from "antd/es/input/Search";
 import { Card, Col, Row } from "antd";
 import { ClusterData } from "@/data/cluster-data";
 import { useRouter } from "next/navigation";
+import { IClusterDetails } from "@/types/cluster-types";
 
 const { Search } = Input;
 const { Content } = Layout;
@@ -17,8 +18,14 @@ export default function Clusters() {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
 
-  const onSearch: SearchProps["onSearch"] = (value, _e, info) =>
-    console.log(info?.source, value);
+  const [clusters, setClusters] = useState<IClusterDetails[]>(ClusterData);
+
+  const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
+    const filteredClusters = ClusterData.filter((cluster) => {
+      return cluster.name.toLowerCase().includes(value.toLowerCase());
+    });
+    setClusters(filteredClusters);
+  }
 
   const handleOnClusterClick = (clusterID: string) => {
     router.push(`/clusters/${clusterID}`)
@@ -49,7 +56,8 @@ export default function Clusters() {
             />
           </div>
           <Col>
-          {ClusterData.map((cluster, index) => (
+          {clusters.length > 0 ? 
+          clusters.map((cluster, index) => (
             <Row key={index}>
               <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
               onClick={() => handleOnClusterClick(cluster.clusterId)}
@@ -66,7 +74,11 @@ export default function Clusters() {
                 </Typography>
               </Card>
             </Row>
-            ))}
+            )):(
+            <div className="flex justify-center items-center h-full">
+            No Clusters Found
+            </div>
+          )}
           </Col>
         </Content>
       </Layout>
