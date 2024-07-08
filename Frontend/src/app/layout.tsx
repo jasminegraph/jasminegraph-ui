@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Open_Sans } from "next/font/google";
 import "./globals.scss";
 import { ToastContainer } from "react-toastify";
+import { Providers } from "@/redux/provider";
 
 const opensans = localFont({
   src: [
@@ -42,8 +43,10 @@ export default function RootLayout({
         suppressHydrationWarning={true}
         className={`${open.variable} ${opensans.variable}`}
       >
+        <Providers>
         {children}
         <ToastContainer />
+        </Providers>
       </body>
     </html>
   );

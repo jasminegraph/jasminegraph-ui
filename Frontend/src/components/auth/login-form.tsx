@@ -1,22 +1,36 @@
 'use client';
 import React from 'react';
 import type { FormProps } from 'antd';
-import { Button, Checkbox, Form, Input } from 'antd';
+import { Button, Form, Input, message } from 'antd';
+import { useDispatch } from 'react-redux';
+import { userLogin } from '@/services/auth-service';
+import { set_Is_User_Authenticated } from '@/redux/features/authData';
+import { useRouter } from 'next/navigation';
 
 type FieldType = {
   username?: string;
   password?: string;
-  remember?: string;
 };
 
-const onFinish: FormProps<FieldType>['onFinish'] = (values) => {
-  console.log('Success:', values);
-};
-
-const onFinishFailed: FormProps<FieldType>['onFinishFailed'] = (errorInfo) => {
-  console.log('Failed:', errorInfo);
-};
 const LoginForm = () => {
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
+    const {username, password} = values;
+    try{
+      if(username && password){
+        const response = await userLogin(username, password);
+        if('data' in response){
+          dispatch(set_Is_User_Authenticated(true));
+        }
+        router.push('/clusters')
+      }
+    }catch(err: any){
+      message.warning(err?.data?.message)
+    }
+  }
+
   return (
     <Form
     name="basic"
@@ -25,7 +39,6 @@ const LoginForm = () => {
     style={{ maxWidth: 600 }}
     initialValues={{ remember: true }}
     onFinish={onFinish}
-    onFinishFailed={onFinishFailed}
     autoComplete="off"
   >
     <Form.Item<FieldType>
@@ -42,14 +55,6 @@ const LoginForm = () => {
       rules={[{ required: true, message: 'Please input your password!' }]}
     >
       <Input.Password />
-    </Form.Item>
-
-    <Form.Item<FieldType>
-      name="remember"
-      valuePropName="checked"
-      wrapperCol={{ offset: 8, span: 16 }}
-    >
-      <Checkbox>Remember me</Checkbox>
     </Form.Item>
 
     <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
