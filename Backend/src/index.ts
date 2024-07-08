@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 
 import { connectToDatabase } from './databaseConnection';
 import { userRoute } from './routes/user.routes';
+import { authRoute } from './routes/auth.routes';
 
 dotenv.config();
 
@@ -14,7 +15,10 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use('/', userRoute());
+app.use('/auth', authRoute());
+app.use('/users', userRoute());
+
+
 
 app.get('/', (req, res) => {
   return res.json({ message: 'Hello World!' });

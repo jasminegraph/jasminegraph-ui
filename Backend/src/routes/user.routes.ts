@@ -4,15 +4,15 @@ import { createUser, deleteUser, getAllUsers, getUser, updateUser } from '../con
 const userRoute = () => {
   const router = Router();
 
-  router.post('/users', createUser);
+  router.post('/', createUser);
 
-  router.get('/users', getAllUsers);
+  router.get('/', getAllUsers);
 
-  router.get('/users/:id', getUser);
+  router.get('/:id', getUser);
 
-  router.patch('/users/:id', updateUser);
+  router.patch('/:id', updateUser);
 
-  router.delete('/users/:id', deleteUser);
+  router.delete('/:id', deleteUser);
 
   return router;
 };
