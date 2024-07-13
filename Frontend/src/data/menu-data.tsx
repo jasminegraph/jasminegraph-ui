@@ -49,3 +49,16 @@ export const GraphPanelMenu: MenuItem[] = [
     icon: <DeploymentUnitOutlined />,
   },
 ];
+
+export const QueryInterfaceMenu: MenuItem[] = [
+  {
+    label: 'Query',
+    key: Routes.QUERY_PANEL_ROUTES.query,
+    icon: <ContainerOutlined />,
+  },
+  {
+    label: 'Console',
+    key: Routes.QUERY_PANEL_ROUTES.console,
+    icon: <CodeSandboxOutlined />,
+  },
+];

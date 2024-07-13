@@ -8,6 +8,8 @@ import { Card, Col, Row } from "antd";
 import { ClusterData } from "@/data/cluster-data";
 import { useRouter } from "next/navigation";
 import { IClusterDetails } from "@/types/cluster-types";
+import { useDispatch } from "react-redux";
+import { set_Selected_Cluster } from "@/redux/features/clusterData";
 
 const { Search } = Input;
 const { Content } = Layout;
@@ -17,7 +19,7 @@ export default function Clusters() {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-
+  const dispatch = useDispatch();
   const [clusters, setClusters] = useState<IClusterDetails[]>(ClusterData);
 
   const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
@@ -27,8 +29,9 @@ export default function Clusters() {
     setClusters(filteredClusters);
   }
 
-  const handleOnClusterClick = (clusterID: string) => {
-    router.push(`/clusters/${clusterID}`)
+  const handleOnClusterClick = (cluster: IClusterDetails) => {
+    dispatch(set_Selected_Cluster(cluster))
+    router.push(`/clusters/${cluster.clusterId}`)
   }
 
   return (
@@ -60,7 +63,7 @@ export default function Clusters() {
           clusters.map((cluster, index) => (
             <Row key={index}>
               <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
-              onClick={() => handleOnClusterClick(cluster.clusterId)}
+              onClick={() => handleOnClusterClick(cluster)}
               >
                 <Typography>
                   <Title level={3}>{cluster.name}</Title>

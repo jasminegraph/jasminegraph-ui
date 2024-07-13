@@ -3,12 +3,12 @@ import React, { useState } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 import { Layout, Menu, theme } from "antd";
 import type { MenuProps } from "antd";
-import { ClusterTopMenu } from "@/data/menu-data";
+import { QueryInterfaceMenu } from "@/data/menu-data";
 import * as Routes from "@/routes/page-routes";
 import { useRouter } from "next/navigation";
 
 const { Content } = Layout;
-export default function ClusterLayout({
+export default function GraphPanelLayout({
   children,
   params,
 }: Readonly<{
@@ -18,15 +18,13 @@ export default function ClusterLayout({
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const [current, setCurrent] = useState(
-    Routes.CLUSTER_PAGE_ROUTES.clusterDetails
-  );
+  const [current, setCurrent] = useState(Routes.QUERY_PANEL_ROUTES.query);
   const router = useRouter();
 
   const onClick: MenuProps["onClick"] = (e) => {
     console.log("click ", e);
     setCurrent(e.key);
-    router.push(Routes.SIDE_MENU_ROUTES.clusterPage + "/" + params.id + e.key);
+    router.push(Routes.SIDE_MENU_ROUTES.queryInterface + e.key);
   };
 
   return (
@@ -44,14 +42,13 @@ export default function ClusterLayout({
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
-            overflow: "auto",
           }}
         >
           <Menu
             onClick={onClick}
             selectedKeys={[current]}
             mode="horizontal"
-            items={ClusterTopMenu}
+            items={QueryInterfaceMenu}
           />
           {children}
         </Content>
