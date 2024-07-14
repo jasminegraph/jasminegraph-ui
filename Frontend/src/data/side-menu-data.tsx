@@ -9,6 +9,7 @@ import {
   InfoCircleOutlined,
   BookOutlined,
   SettingOutlined,
+  CodeOutlined 
 } from "@ant-design/icons";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import * as Routes from "@/routes/page-routes";
@@ -67,6 +68,14 @@ export const getSideMenuData = (router: AppRouterInstance) => {
       label: "Query Submission",
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.querySubmission);
+      },
+    },
+    {
+      key: Routes.SIDE_MENU_ROUTES.notebook,
+      icon: <CodeOutlined />,
+      label: "Notebook",
+      onClick: () => {
+        onMenuClick(Routes.SIDE_MENU_ROUTES.notebook);
       },
     },
     {

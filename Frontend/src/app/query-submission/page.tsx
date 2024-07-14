@@ -4,7 +4,7 @@ import PageWrapper from "@/layouts/page-wrapper";
 import { Layout, theme } from "antd";
 
 const { Content } = Layout;
-export default function Notebook() {
+export default function QuerySubmission() {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -27,7 +27,7 @@ export default function Notebook() {
           }}
         >
           <div className="flex justify-center items-center h-full">
-            Notebook
+            Query Submission
           </div>
         </Content>
       </Layout>
