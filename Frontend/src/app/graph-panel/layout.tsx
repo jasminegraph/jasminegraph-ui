@@ -42,6 +42,7 @@ export default function GraphPanelLayout({
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
+            overflow: "auto"
           }}
         >
           <Menu
