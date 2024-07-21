@@ -1,10 +1,12 @@
 import { Router } from 'express';
-import { authentcation } from '../controllers/auth.controller';
+import { login, register, refreshToken } from '../controllers/auth.controller';
 
 const authRoute = () => {
   const router = Router();
 
-  router.post('/login', authentcation);
+  router.post('/login', login);
+  router.post('/register', register);
+  router.post('/refresh-token', refreshToken);
 
   return router;
 };

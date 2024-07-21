@@ -4,7 +4,7 @@ type UserDocument = Document & {
   fullName: string;
   email: string;
   password: string;
-  enabled: string;
+  enabled: boolean;
 };
 
 type UserInput = {
@@ -39,6 +39,8 @@ const usersSchema = new Schema(
     timestamps: true,
   },
 );
+
+usersSchema.index({ email: 1 }, { unique: true });
 
 const User: Model<UserDocument> = mongoose.model<UserDocument>('User', usersSchema);
 
