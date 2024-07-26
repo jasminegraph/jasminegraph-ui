@@ -1,32 +1,33 @@
 import { Request, Response } from 'express';
-import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 import { User, UserInput } from '../models/user.model';
 
-const hashPassword = (password: string) => {
-  const salt = crypto.randomBytes(16).toString('hex');
-
-  // Hashing salt and password with 100 iterations, 64 length and sha512 digest
-  return crypto.pbkdf2Sync(password, salt, 100, 64, `sha512`).toString(`hex`);
-};
-
-const createUser = async (req: Request, res: Response) => {
-  const { email, enabled, fullName, password } = req.body;
-
+const registerAdminUser = async (req: Request, res: Response) => {
+  const { email, password, fullName } = req.body;
   if (!email || !fullName || !password) {
-    return res.status(422).json({ message: 'The fields email, fullName, password and role are required' });
+    return res.status(422).json({ message: 'The fields email, fullNamea and password are required' });
   }
 
-  const userInput: UserInput = {
-    fullName,
-    email,
-    password: hashPassword(password),
-    enabled,
-  };
+  try {
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).send('User already exist');
+    }
 
-  const userCreated = await User.create(userInput);
-
-  return res.status(201).json({ data: userCreated });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser: UserInput = {
+      email,
+      password: hashedPassword,
+      enabled: true,
+      fullName,
+      role: 'admin',
+    };
+    const userCreated = await User.create(newUser);
+    res.status(201).json({ name: userCreated.fullName, email: userCreated.email, _id: userCreated.id });
+  } catch (err) {
+    res.status(500).send('Server error');
+  }
 };
 
 const getAllUsers = async (req: Request, res: Response) => {
@@ -76,4 +77,4 @@ const deleteUser = async (req: Request, res: Response) => {
   return res.status(200).json({ message: 'User deleted successfully.' });
 };
 
-export { createUser, deleteUser, getAllUsers, getUser, updateUser };
+export { registerAdminUser, deleteUser, getAllUsers, getUser, updateUser };

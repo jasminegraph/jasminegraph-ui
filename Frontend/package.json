@@ -12,6 +12,7 @@
     "@reduxjs/toolkit": "^2.2.5",
     "antd": "^5.18.3",
     "axios": "^1.7.2",
+    "google-auth-library": "^9.11.0",
     "next": "14.2.4",
     "react": "^18",
     "react-dom": "^18",

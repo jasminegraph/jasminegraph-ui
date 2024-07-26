@@ -26,6 +26,7 @@ const register = async (req: Request, res: Response) => {
       password: hashedPassword,
       enabled: true,
       fullName,
+      role: 'user',
     };
     const userCreated = await User.create(newUser);
     res.status(201).json({ name: userCreated.fullName, email: userCreated.email, _id: userCreated.id });
@@ -39,11 +40,11 @@ const login = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).send('Invalid credentials');
+      return res.status(400).send('Invalid Email credentials');
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).send('Invalid credentials');
+      return res.status(400).send('Invalid Password credentials');
     }
 
     // delete other tokens that belogs to this user

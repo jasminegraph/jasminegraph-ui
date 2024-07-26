@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { createUser, deleteUser, getAllUsers, getUser, updateUser } from '../controllers/user.controller';
+import { registerAdminUser, deleteUser, getAllUsers, getUser, updateUser } from '../controllers/user.controller';
 
 const userRoute = () => {
   const router = Router();
 
-  router.post('/', createUser);
-
   router.get('/', getAllUsers);
+  
+  router.post('/admin', registerAdminUser);
 
   router.get('/:id', getUser);
 

@@ -7,7 +7,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
         return res.status(401).send('Access denied');
     }
     try {
-        const decoded = jwt.verify(token, 'your_jwt_secret');
+        const decoded = jwt.verify(token, 'access_token_secret');
         req.body = { ...req.body, ...decoded };
         next();
     } catch (err) {

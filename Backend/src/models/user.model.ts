@@ -5,6 +5,7 @@ type UserDocument = Document & {
   email: string;
   password: string;
   enabled: boolean;
+  role: string;
 };
 
 type UserInput = {
@@ -12,6 +13,7 @@ type UserInput = {
   email: UserDocument['email'];
   password: UserDocument['password'];
   enabled: UserDocument['enabled'];
+  role: UserDocument['role'];
 };
 
 const usersSchema = new Schema(
@@ -32,6 +34,10 @@ const usersSchema = new Schema(
     enabled: {
       type: Schema.Types.Boolean,
       default: true,
+    },
+    role: {
+      type: Schema.Types.String,
+      required: true,
     },
   },
   {
