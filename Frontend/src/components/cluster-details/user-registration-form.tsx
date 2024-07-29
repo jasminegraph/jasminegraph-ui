@@ -4,8 +4,11 @@ import {
   Button,
   Form,
   Input,
+  message,
   Select,
 } from 'antd';
+import { USER_ROLES } from '@/data/user-data';
+import { registerUser } from '@/services/auth-service';
 
 const { Option } = Select;
 
@@ -39,14 +42,28 @@ const tailFormItemLayout = {
   },
 };
 
-const UserRegistrationForm = () => {
-  const [form] = Form.useForm();
+type props = {
+  onSuccess: () => void;
+}
 
-  const onFinish = (values: any) => {
+const UserRegistrationForm = ({onSuccess}: props) => {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const onFinish = async (values: any) => {
+    setLoading(true);
+    try{
+      const res = await registerUser(values.username, values.email, values.password, values.role);
+      console.log('Received values of form: ', res);
+      message.loading("Creating profile", 2);
+      onSuccess();
+    }catch(err){
+      message.error("Failed to create profile");
+      console.log(err);
+    }
+    setLoading(false);
     console.log('Received values of form: ', values);
   };
-
-  const [autoCompleteResult, setAutoCompleteResult] = useState<string[]>([]);
 
   return (
     <Form
@@ -88,7 +105,9 @@ const UserRegistrationForm = () => {
         label="Select"
       >
         <Select>
-          <Select.Option value="Admin">Admin</Select.Option>
+          {USER_ROLES.map((role, index) => (
+            <Select.Option key={index} value={role.value}>{role.label}</Select.Option>
+          ))}
         </Select>
       </Form.Item>
 

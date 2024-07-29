@@ -6,8 +6,11 @@ import {
   Input,
   message,
 } from 'antd';
-import { registerAdmin, userLogin } from '@/services/auth-service';
+import { getUserDataByToken, registerAdmin, userLogin } from '@/services/auth-service';
 import useAccessToken from '@/hooks/useAccessToken';
+import { useDispatch } from 'react-redux';
+import { IUserAccessData } from '@/types/user-types';
+import { set_User_Data } from '@/redux/features/authData';
 
 const tailFormItemLayout = {
   wrapperCol: {
@@ -27,6 +30,7 @@ type props = {
 }
 
 const AdminProfile = ({onSuccess}:props) => {
+  const dispatch = useDispatch();
   const { setSrvAccessToken, setSrvRefreshToken} = useAccessToken();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
@@ -42,6 +46,7 @@ const AdminProfile = ({onSuccess}:props) => {
         setSrvAccessToken(tokenRes.accessToken);
         setSrvRefreshToken(tokenRes.refreshToken);
       }
+      saveUserData(tokenRes.accessToken);
       onSuccess();
     }catch(err){
       message.error("Failed to create profile");
@@ -49,6 +54,22 @@ const AdminProfile = ({onSuccess}:props) => {
     }
     setLoading(false);
   };
+
+  const saveUserData = async (token: string) => {
+    try{
+      const res = await getUserDataByToken(token).then((res) => res.data);
+      const userData: IUserAccessData = {
+        email: res.data.email,
+        fullName: res.data.fullName,
+        role: res.data.role,
+        enabled: res.data.enabled,
+        _id: res.data._id,
+      }
+      dispatch(set_User_Data(userData));
+    }catch(err){
+      console.log(err);
+    }
+  }
   
   return (
     <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%", flexDirection: "column"}}>

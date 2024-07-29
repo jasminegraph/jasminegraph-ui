@@ -3,6 +3,7 @@ import { Layout, Menu, theme } from "antd";
 import { getSideMenuData } from "@/data/side-menu-data";
 import { usePathname, useRouter } from "next/navigation";
 import * as Routes from "@/routes/page-routes";
+import { useAppSelector } from "@/redux/hook";
 
 const { Sider } = Layout;
 
@@ -11,7 +12,8 @@ const SideMenu = () => {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const pathname = usePathname();
-  const sideMenuData = getSideMenuData(useRouter());
+  const { userData } = useAppSelector(state => state.authData);
+  const sideMenuData = getSideMenuData(useRouter(), userData.role);
   
   const findActiveMenu = () => {
     const path = pathname.split("/")[1];

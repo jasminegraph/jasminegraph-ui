@@ -6,6 +6,7 @@ import {
   Input,
 } from 'antd';
 import { addNewCluster } from '@/services/cluster-service';
+import useAccessToken from '@/hooks/useAccessToken';
 
 const tailFormItemLayout = {
   wrapperCol: {
@@ -27,11 +28,11 @@ type props = {
 const ClusterSetup = ({onSuccess}:props) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
-  
+  const { getSrvAccessToken } = useAccessToken();
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
-      const res = await addNewCluster(values.name, values.description, values.host, values.port);
+      const res = await addNewCluster(values.name, values.description, values.host, values.port, getSrvAccessToken());
       console.log('Received values of form: ', res);
       onSuccess();
     }catch(err){

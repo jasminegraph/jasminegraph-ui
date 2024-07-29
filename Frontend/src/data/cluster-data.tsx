@@ -1,6 +1,6 @@
-import { IClusterDetails, INodeDetails } from "@/types/cluster-types";
+import { IClusterDetails } from "@/types/cluster-types";
 
-const sampleNodeData: INodeDetails[] = [
+const sampleNodeData = [
   {
     nodeID: "master-123",
     IPaddress: "192.168.2.34",
@@ -31,7 +31,7 @@ const sampleNodeData: INodeDetails[] = [
   }
 ];
 
-export const ClusterData: IClusterDetails[] = [
+export const ClusterData = [
   {
     name: "Default Cluster",
     version: "2.3.52",

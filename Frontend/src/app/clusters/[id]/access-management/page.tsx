@@ -1,11 +1,15 @@
 'use client';
 import React, { useEffect, useState } from "react";
-import { Table, Tag, Button, Modal } from 'antd';
-import type { TableProps, PaginationProps } from 'antd';
 import { IClusterDetails } from "@/types/cluster-types";
-import { ClusterData } from "@/data/cluster-data";
-import { userData } from "@/data/user-data";
-import UserRegistrationForm from "@/components/cluster-details/user-registration-form";
+import { Table, Tag, Button, AutoComplete, Input, Space } from 'antd';
+import type { TableProps, PaginationProps, AutoCompleteProps } from 'antd';
+import { useDispatch } from "react-redux";
+import { useAppSelector } from "@/redux/hook";
+import { IUserAccessData } from "@/types/user-types";
+import { addUserToCluster, getCluster, removeUserFromCluster } from "@/services/cluster-service";
+import { set_Selected_Cluster } from "@/redux/features/clusterData";
+import { getAllUsers } from "@/services/user-service";
+import { set_Users_Cache } from "@/redux/features/cacheSlice";
 
 interface DataType {
   key: string;
@@ -16,46 +20,6 @@ interface DataType {
   Status: boolean;
 }
 
-const columns: TableProps<DataType>['columns'] = [
-  {
-    title: 'UserID',
-    dataIndex: 'userID',
-    key: 'ID',
-  },
-  {
-    title: 'Name',
-    dataIndex: 'Name',
-    key: 'name',
-  },
-  {
-    title: 'Email',
-    dataIndex: 'Email',
-    key: 'email',
-  },
-  {
-    title: 'Role',
-    dataIndex: 'Role',
-    key: 'role',
-  },
-  {
-    title: 'Status',
-    dataIndex: 'Status',
-    key: 'status',
-    render: (_, { Status }) => (
-      <>
-        {Status ? (
-          <Tag color={'green'}>
-            {"Active"}
-          </Tag>) : (
-          <Tag color={"volcano"}>
-            {"Inactive"}
-          </Tag>
-        )}
-      </>
-    ),
-  }
-];
-
 const PaginationProps = {
   pageSize: 5,
   defaultPageSize: 5,
@@ -64,61 +28,195 @@ const PaginationProps = {
 } as PaginationProps;
 
 export default function AccessManagement({ params }: { params: { id: string } }) {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-  const [clusterDetails, setClusterDetails] = useState<IClusterDetails>();
-  const [openModal, setOpenModal] = useState<boolean>(false);
+  const { userData: user } = useAppSelector(state => state.authData)
+  const { selectedCluster } = useAppSelector(state => state.clusterData)
+  const { users } = useAppSelector(state => state.cacheData)
+  const [clusterDetails, setClusterDetails] = useState<IClusterDetails | null>(selectedCluster);
+  const [userData, setUserData] = useState<IUserAccessData[]>(users);
+  const [clusterUsers, setClusterUsers] = useState<IUserAccessData[]>([]);
 
-  const showModal = () => {
-    setOpenModal(true);
-  };
+  const columns: TableProps<DataType>['columns'] = [
+    {
+      title: 'Name',
+      dataIndex: 'Name',
+      key: 'name',
+    },
+    {
+      title: 'Email',
+      dataIndex: 'Email',
+      key: 'email',
+    },
+    {
+      title: 'Role',
+      dataIndex: 'Role',
+      key: 'role',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'Status',
+      key: 'status',
+      render: (_, { Status }) => (
+        <>
+          {Status ? (
+            <Tag color={'green'}>
+              {"Active"}
+            </Tag>) : (
+            <Tag color={"volcano"}>
+              {"Inactive"}
+            </Tag>
+          )}
+        </>
+      ),
+    }
+  ];
 
-  const handleOk = (e: React.MouseEvent<HTMLElement>) => {
-    console.log(e);
-    setOpenModal(false);
-  };
-
-  const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
-    console.log(e);
-    setOpenModal(false);
-  };
+  const adminsAccessColumns: TableProps<DataType>['columns'] = [...columns,
+    {
+      title: 'Action',
+      key: 'action',
+      render: (_, record) => (
+        <Space size="middle">
+          <Button type="primary" danger size="small" onClick={() => handleUserRemove(record.userID)}>Remove</Button> 
+        </Space>
+      ),
+    }
+  ];
 
   const getTableData = () => {
-    return userData.map((data) => {
+    return clusterUsers.map((data) => {
       return {
-        key: data.userID,
-        userID: data.userID,
-        Name: data.Name,
-        Email: data.Email,
-        Role: data.Role,
-        Status: data.Status,
+        key: data._id,
+        userID: data._id,
+        Name: data.fullName,
+        Email: data.email,
+        Role: data.role,
+        Status: data.enabled,
       };
     });
   }
 
+  const handleUserAdd = async (userID: string) => {
+    const user = userData.find((user) => user._id == userID)
+    setClusterUsers([...clusterUsers, user!])
+    try{
+      const res = await addUserToCluster(userID, clusterDetails!._id);
+      if(res.data){
+        console.log("User added successfully")
+      }
+    }catch(err){
+      console.log("failed to user add")
+    }
+  }
+
+  const handleUserRemove = async (userID: string) => {
+    setClusterUsers(clusterUsers.filter((user) => user._id !== userID))
+    try{
+      const res = await removeUserFromCluster(userID, clusterDetails!._id);
+      if(res.data){
+        console.log("User removed successfully")
+      }
+    }catch(err){
+      console.log("failed to user add")
+    }
+  }
+
+  const renderItem = (title: string, userID: string) => ({
+    value: title,
+    label: (
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+        }}
+      >
+        {title}
+        <span>
+           <Button size="small" type="primary" onClick={()=> handleUserAdd(userID)}>Add</Button>
+        </span>
+      </div>
+    ),
+  });
+
+  const [options, setOptions] = React.useState<AutoCompleteProps['options']>([]);
+
+  const handleSearch = (value: string) => {
+    setOptions(() => {
+      const filteredUsers = userData.filter((user) => 
+                        user.fullName.toLowerCase().includes(value.toLowerCase()) || 
+                        user.email.toLowerCase().includes(value.toLowerCase()));
+      return filteredUsers.map((user) => (renderItem(user.email, user._id)));
+    });
+  };
+
+  const fetchClusterDetails = async () => {
+    try{
+      const res = await getCluster(params.id);
+      if(res.data){
+        setClusterDetails(res.data)
+      }
+      dispatch(set_Selected_Cluster(res.data))
+    }catch(err){
+      console.log("Failed to fetch cluster")
+    }
+  }
+
+  const fetchUserData = async () => {
+    try{
+      const res = await getAllUsers();
+      if(res.data){
+        setUserData(res.data)
+        dispatch(set_Users_Cache(res.data))
+      }
+    }catch(err){
+      console.log("Failed to fetch cluster")
+    }
+  }
+  
+  useEffect(()=> {
+    if (clusterDetails == null || selectedCluster == null){
+      fetchClusterDetails()
+    }
+    fetchUserData();
+  }, [params])
+
   useEffect(()=>{
-    const info = ClusterData.find((cluster) => cluster.clusterId === params.id);
-    setClusterDetails(info);
-    setLoading(false);
-  },[params.id])
+    if(clusterDetails){
+      const clusterOwner = userData.find((user) => user._id === clusterDetails.clusterOwner);
+      let users: IUserAccessData[] = [];
+      if(clusterOwner){
+        users.push(clusterOwner);
+      }
+      userData.forEach((user) => {
+        if(clusterDetails.userIDs.includes(user._id)){
+          users.push(user);
+        }
+      })
+      setClusterUsers(users)
+    }
+  },[clusterDetails, userData])
+
 
   return (
     <div className="">
-      <Modal
-        title="Add New User"
-        open={openModal}
-        footer={<></>}
-        onCancel={() => setOpenModal(false)}
-      >
-        <UserRegistrationForm />
-      </Modal>
-      <div style={{margin: "20px 0px"}}>
-        <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>User Management</h1>
-        <p>Manage users, add new users and change user roles. This page provides role-based access control</p>
+      <div style={{ display: "flex", justifyContent: "space-between", margin: "20px 0px" }}>
+        <div style={{marginBottom: "20px"}}>
+          <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>User Management</h1>
+          <p>This page provides role-based access control to this cluster.</p>
+        </div>
+        {user.role === "admin" && (
+          <AutoComplete
+            style={{ width: 400 }}
+            onSearch={handleSearch}
+            placeholder="search..."
+            options={options}
+          >
+            <Input.Search size="large"/>
+          </AutoComplete>
+        )}
       </div>
-      <Table columns={columns} dataSource={getTableData()} pagination={PaginationProps}/>
-      <div className="flex w-full justify-end items-center">
-        <Button size="large" onClick={showModal}>Add New User</Button>
-      </div>
+      <Table columns={user.role == "admin" ? adminsAccessColumns : columns} dataSource={getTableData()} pagination={PaginationProps}/>
     </div>
   );
 }

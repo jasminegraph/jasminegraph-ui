@@ -5,6 +5,8 @@ type ClusterDocument = Document & {
   description: string;
   host: string;
   port: number;
+  userIDs: string[];
+  clusterOwner: string;
 };
 
 type ClusterInput = {
@@ -12,6 +14,8 @@ type ClusterInput = {
   description: ClusterDocument['description'];
   host: ClusterDocument['host'];
   port: ClusterDocument['port'];
+  userIDs: ClusterDocument['userIDs'];
+  clusterOwner: ClusterDocument['clusterOwner'];
 };
 
 const clusterSchema = new Schema(
@@ -31,6 +35,14 @@ const clusterSchema = new Schema(
     port: {
       type: Number,
       required: true,
+    },
+    userIDs: {
+      type: [String],
+      ref: 'User',
+    },
+    clusterOwner: {
+      type: String,
+      ref: 'User',
     },
   },
   {

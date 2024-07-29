@@ -6,6 +6,7 @@ export const SIDE_MENU_ROUTES = {
   queryExecution: "/query-execution",
   querySubmission: "/query-submission",
   notebook: "/notebook",
+  userManagemnt: "/user-management",
   guides: "/guides",
   settings: "/settings",
   about: "/about",

@@ -1,5 +1,6 @@
-import { ACCESS_TOKEN, REFRESH_TOKEN } from "@/hooks/useAccessToken";
+'use client';
 import axios from "axios";
+import { ACCESS_TOKEN, REFRESH_TOKEN } from "@/hooks/useAccessToken";
 
 export const authApi = axios.create({
   headers: {

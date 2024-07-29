@@ -5,7 +5,10 @@ import type { DescriptionsProps } from 'antd';
 import { Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
 import { IClusterDetails } from "@/types/cluster-types";
-import { ClusterData } from "@/data/cluster-data";
+import { useAppSelector } from "@/redux/hook";
+import { useDispatch } from "react-redux";
+import { set_Selected_Cluster } from "@/redux/features/clusterData";
+import { getCluster } from "@/services/cluster-service";
 
 interface DataType {
   key: string;
@@ -58,40 +61,51 @@ const columns: TableProps<DataType>['columns'] = [
 ];
 
 const { TextArea } = Input;
-const items: DescriptionsProps['items'] = [
-  {
-    key: '1',
-    label: 'Cluster ID',
-    children: '6dc2ea20-9ea3-47cd-a5a9-25ac4b24c79e',
-  },
-  {
-    key: '2',
-    label: 'JasmineGraph Version',
-    children: '1.21.101',
-  },
-  {
-    key: '3',
-    label: 'Platform',
-    children: '-',
-  },
-];
 
 export default function ClusterDetails({ params }: { params: { id: string } }) {
+  const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
-  const [clusterDetails, setClusterDetails] = useState<IClusterDetails>();
+  const { selectedCluster } = useAppSelector(state => state.clusterData)
+  const [clusterDetails, setClusterDetails] = useState<IClusterDetails | null>(selectedCluster);
+
+  const items: DescriptionsProps['items'] = [
+    {
+      key: '1',
+      label: 'Cluster ID',
+      children: clusterDetails?._id || "",
+    },
+    {
+      key: '2',
+      label: 'JasmineGraph Version',
+      children: '1.21.101',
+    },
+    {
+      key: '3',
+      label: 'Platform',
+      children: '-',
+    },
+  ];
+
+  const fetchClusterDetails = async () => {
+    try{
+      const res = await getCluster(params.id);
+      if(res.data){
+        setClusterDetails(res.data)
+      }
+      dispatch(set_Selected_Cluster(res.data))
+    }catch(err){
+      console.log("Failed to fetch cluster")
+    }
+  }
+
+  useEffect(()=> {
+    if (clusterDetails == null || selectedCluster == null){
+      fetchClusterDetails()
+    }
+  }, [params])
 
   const getNodeData = () => {
-    const nodeData: DataType[] | undefined = clusterDetails?.nodes.map((worker) => {
-      return {
-        key: worker.nodeID,
-        nodeID: worker.nodeID,
-        Status: worker.status,
-        IPaddress: worker.IPaddress,
-        Role: worker.role,
-        UpTime: worker.upTime,
-      }
-    });
-    return nodeData;
+    return undefined;
   }
 
   const filterMasterNodeData = (nodes: DataType[] | undefined) => {
@@ -102,18 +116,12 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
     return nodes?.filter((node) => node.Role === "Worker");
   }
 
-  useEffect(()=>{
-    const info = ClusterData.find((cluster) => cluster.clusterId === params.id);
-    setClusterDetails(info);
-    setLoading(false);
-  },[params.id])
-
   return (
     <div className="">
       <Row style={{justifyContent: "space-between", marginTop: "20px"}}>
         <Col span={10}>
         <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5", marginBottom: "20px"}}>Default Cluster</h1>
-        <TextArea rows={4} placeholder="cluster description" maxLength={6} />
+        <TextArea rows={4} placeholder="cluster description" maxLength={6} value={clusterDetails?.description} />
         </Col>
         <Col span={12}>
           <Descriptions title="Cluster Information" items={items} column={1} />

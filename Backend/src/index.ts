@@ -25,6 +25,11 @@ app.get('/', (req, res) => {
   return res.json({ message: 'Hello World!' });
 });
 
+// write a endpoint to check backend is running or not
+app.get('/ping', (req, res) => {
+  return res.json({ message: 'pong' });
+});
+
 app.listen(PORT, async () => {
   await connectToDatabase();
 

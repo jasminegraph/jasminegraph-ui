@@ -1,20 +1,24 @@
 'use client';
 import React from 'react';
-import { Layout, Avatar, Dropdown, Space } from 'antd';
-import { UserOutlined, DownOutlined, SmileOutlined } from '@ant-design/icons';
+import { Layout, Avatar, Dropdown, Space, Typography } from 'antd';
+import { UserOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { set_Is_User_Authenticated } from '@/redux/features/authData';
+import { set_Is_User_Authenticated, set_Clear_User_Data } from '@/redux/features/authData';
+import { useAppSelector } from '@/redux/hook';
 
 const { Header } = Layout;
 
 const MainHeader = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const { userData } = useAppSelector(state => state.authData)
 
   const logout = () => {
     dispatch(set_Is_User_Authenticated(false));
+    dispatch(set_Clear_User_Data());
+    localStorage.clear();
     router.push("/auth");
   }
 
@@ -33,11 +37,10 @@ const MainHeader = () => {
         JasmineGraph
       </div>
       <Dropdown menu={{ items }}>
-        {/* <a onClick={(e) => e.preventDefault()}> */}
           <Space>
+          <p style={{color: "white"}}>{userData.email}</p>
           <Avatar size="large" icon={<UserOutlined />} />
           </Space>
-        {/* </a> */}
       </Dropdown>
       
     </Header>

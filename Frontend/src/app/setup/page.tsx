@@ -22,7 +22,7 @@ const Setup = () => {
 const steps = [
   {
     title: 'Welcome',
-    content: <WelcomeScreen />,
+    content: <WelcomeScreen onSuccess={next}/>,
   },
   {
     title: 'Admin Profile',
@@ -54,7 +54,7 @@ const steps = [
     <div style={{margin: "30px"}}>
       <Steps current={current} items={items} />
       <div style={contentStyle}>{steps[current].content}</div>
-      <div style={{ marginTop: 24 }}>
+      {/* <div style={{ marginTop: 24 }}>
         {current < steps.length - 1 && (
           <Button type="primary" onClick={() => next()}>
             Next
@@ -70,7 +70,7 @@ const steps = [
             Previous
           </Button>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };

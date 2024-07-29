@@ -11,11 +11,11 @@ const initialData: IAuthenticationData = {
   isUserAuthenticated: false,
   isUserDataFetched: false,
   userData: {
-    userID: "",
-    Name: "",
-    Email: "",
-    Role: "",
-    Status: false,
+    _id: "",
+    fullName: "",
+    email: "",
+    role: "",
+    enabled: false,
   },
 };
 
@@ -30,12 +30,17 @@ export const authDataSlice = createSlice({
       state.userData = action.payload;
       state.isUserDataFetched = true;
     },
+    set_Clear_User_Data: (state) => {
+      state.userData = initialData.userData;
+      state.isUserDataFetched = false;
+    }
   },
 });
 
 export const {
   set_Is_User_Authenticated,
   set_User_Data,
+  set_Clear_User_Data
 } = authDataSlice.actions;
 
 export default authDataSlice.reducer;

@@ -81,23 +81,23 @@ export default function Instance({ params }: { params: { id: string } }) {
   const [clusterDetails, setClusterDetails] = useState<IClusterDetails>();
 
   const getNodeData = () => {
-    const nodeData: DataType[] | undefined = clusterDetails?.nodes.map((worker) => {
-      return {
-        key: worker.nodeID,
-        nodeID: worker.nodeID,
-        Status: worker.status,
-        IPaddress: worker.IPaddress,
-        Role: worker.role,
-        UpTime: worker.upTime,
-      }
-    });
-    return nodeData;
+    // const nodeData: DataType[] | undefined = clusterDetails?.nodes.map((worker) => {
+    //   return {
+    //     key: worker.nodeID,
+    //     nodeID: worker.nodeID,
+    //     Status: worker.status,
+    //     IPaddress: worker.IPaddress,
+    //     Role: worker.role,
+    //     UpTime: worker.upTime,
+    //   }
+    // });
+    return [];
   }
 
   useEffect(()=>{
-    const info = ClusterData.find((cluster) => cluster.clusterId === params.id);
-    setClusterDetails(info);
-    setLoading(false);
+    // const info = ClusterData.find((cluster) => cluster.clusterId === params.id);
+    // setClusterDetails(info);
+    // setLoading(false);
   },[params.id])
 
   return (

@@ -1,15 +1,16 @@
 "use client";
-import React, { useState } from "react";
-import { Layout, theme, Typography } from "antd";
+import React, { useState, useEffect } from "react";
+import { Layout, message, theme, Typography } from "antd";
 import PageWrapper from "@/layouts/page-wrapper";
 import { Input } from "antd";
 import type { SearchProps } from "antd/es/input/Search";
 import { Card, Col, Row } from "antd";
-import { ClusterData } from "@/data/cluster-data";
 import { useRouter } from "next/navigation";
 import { IClusterDetails } from "@/types/cluster-types";
 import { useDispatch } from "react-redux";
 import { set_Selected_Cluster } from "@/redux/features/clusterData";
+import { getAllClusters } from "@/services/cluster-service";
+import { useAppSelector } from "@/redux/hook";
 
 const { Search } = Input;
 const { Content } = Layout;
@@ -20,18 +21,37 @@ export default function Clusters() {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
   const dispatch = useDispatch();
-  const [clusters, setClusters] = useState<IClusterDetails[]>(ClusterData);
+  const { userData } = useAppSelector((state) => state.authData);
+  const [clusters, setClusters] = useState<IClusterDetails[]>([]);
+  const [filteredClusters, setFilteredClusters] = useState<IClusterDetails[]>([]);
+
+  const getAllCluster = async () => {
+    try{
+    const res = await getAllClusters(userData._id);
+    if(res.data){
+      setClusters(res.data)
+    }
+    }catch(err){
+      message.error("Failed to fetch clusters");
+    }
+  }
+
+  useEffect(() => {
+    if(userData._id){
+      getAllCluster();
+    }
+  }, [])
 
   const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
-    const filteredClusters = ClusterData.filter((cluster) => {
+    const filteredClusters = clusters.filter((cluster) => {
       return cluster.name.toLowerCase().includes(value.toLowerCase());
     });
-    setClusters(filteredClusters);
+    setFilteredClusters(filteredClusters);
   }
 
   const handleOnClusterClick = (cluster: IClusterDetails) => {
     dispatch(set_Selected_Cluster(cluster))
-    router.push(`/clusters/${cluster.clusterId}`)
+    router.push(`/clusters/${cluster._id}`)
   }
 
   return (
@@ -68,11 +88,11 @@ export default function Clusters() {
                 <Typography>
                   <Title level={3}>{cluster.name}</Title>
                   <div style={{display: "flex", justifyContent: "space-between"}}>
-                    <Text>Version: {cluster.version}</Text>
-                    <Text>Cration Date: {cluster.creationDate}</Text> 
                     <Text>
-                      Cluster ID: {cluster.clusterId}
+                      Cluster ID: {cluster._id}
                     </Text>
+                    {/* <Text>Owner: {cluster.clusterOwner}</Text> */}
+                    <Text>Cration Date: {cluster.createdAt}</Text> 
                   </div>
                 </Typography>
               </Card>

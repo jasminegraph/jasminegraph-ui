@@ -1,14 +1,14 @@
 import mongoose, { Schema, Model, Document } from 'mongoose';
 
 type TokenDocument = Document & {
-  userID: string;
+  userId: string;
   accessToken: string;
   refreshToken: string;
   expiryDate: Date;
 };
 
 type TokenInput = {
-  userID: TokenDocument['userID'];
+  userId: TokenDocument['userId'];
   accessToken: TokenDocument['accessToken'];
   refreshToken: TokenDocument['refreshToken'];
   expiryDate: TokenDocument['expiryDate'];

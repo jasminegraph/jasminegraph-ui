@@ -9,7 +9,7 @@ const generateToken = (userId: string, secret: string, expiresIn: string) => {
 };
 
 const register = async (req: Request, res: Response) => {
-  const { email, password, fullName } = req.body;
+  const { email, password, fullName, role } = req.body;
   if (!email || !fullName || !password) {
     return res.status(422).json({ message: 'The fields email, fullNamea and password are required' });
   }
@@ -26,7 +26,7 @@ const register = async (req: Request, res: Response) => {
       password: hashedPassword,
       enabled: true,
       fullName,
-      role: 'user',
+      role: role,
     };
     const userCreated = await User.create(newUser);
     res.status(201).json({ name: userCreated.fullName, email: userCreated.email, _id: userCreated.id });
@@ -50,7 +50,7 @@ const login = async (req: Request, res: Response) => {
     // delete other tokens that belogs to this user
     await Token.deleteMany({ userId: user._id });
 
-    const accessToken = generateToken(user.id, 'access_token_secret', '15m');
+    const accessToken = generateToken(user.id, 'access_token_secret', '1d');
     const refreshToken = generateToken(user.id, 'refresh_token_secret', '7d');
 
     const tokenDoc = new Token({

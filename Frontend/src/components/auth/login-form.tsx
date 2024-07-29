@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { userLogin } from '@/services/auth-service';
 import { set_Is_User_Authenticated } from '@/redux/features/authData';
+import useAccessToken from '@/hooks/useAccessToken';
 
 type FieldType = {
   username?: string;
@@ -15,6 +16,7 @@ type FieldType = {
 const LoginForm = () => {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { setSrvAccessToken, setSrvRefreshToken } = useAccessToken();
 
   const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
     const {username, password} = values;
@@ -24,6 +26,8 @@ const LoginForm = () => {
         if('data' in response){
           dispatch(set_Is_User_Authenticated(true));
         }
+        setSrvAccessToken(response.accessToken);
+        setSrvRefreshToken(response.refreshToken);
         router.push('/clusters')
       }
     }catch(err: any){

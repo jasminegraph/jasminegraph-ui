@@ -1,15 +1,11 @@
 export interface IClusterDetails {
+  _id: string;
   name: string;
-  version: string;
-  creationDate: string;
-  clusterId: string;
-  nodes: INodeDetails[];
-}
-
-export interface INodeDetails {
-  nodeID: string;
-  IPaddress: string;
-  status: boolean;
-  role: string;
-  upTime: number;
+  description: string;
+  host: string;
+  port: number;
+  userIDs: string[];
+  clusterOwner: string;
+  createdAt: string;
+  updatedAt: string;
 }

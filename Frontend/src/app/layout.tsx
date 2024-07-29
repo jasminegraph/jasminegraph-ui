@@ -4,6 +4,7 @@ import { Open_Sans } from "next/font/google";
 import "./globals.scss";
 import { ToastContainer } from "react-toastify";
 import { Providers } from "@/redux/provider";
+import UserProvider from "@/utils/user-provider";
 
 const opensans = localFont({
   src: [
@@ -44,7 +45,9 @@ export default function RootLayout({
         className={`${open.variable} ${opensans.variable}`}
       >
         <Providers>
-        {children}
+        <UserProvider>
+          {children}
+        </UserProvider>
         <ToastContainer />
         </Providers>
       </body>
