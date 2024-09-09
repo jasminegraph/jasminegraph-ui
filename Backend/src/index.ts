@@ -5,6 +5,7 @@ import { connectToDatabase } from './databaseConnection';
 import { userRoute } from './routes/user.routes';
 import { authRoute } from './routes/auth.routes';
 import { clusterRoute } from './routes/cluster.routes';
+import { graphRoute } from './routes/graph.routes';
 import authMiddleware from './middleware/auth.middleware';
 import { exec } from 'child_process';
 import fs from 'fs';
@@ -23,6 +24,7 @@ app.use(express.json());
 app.use('/auth', authRoute());
 app.use('/users', userRoute());
 app.use('/clusters', authMiddleware,  clusterRoute());
+app.use('/graph', graphRoute());
 
 app.get('/', (req, res) => {
   return res.json({ message: 'Hello World!' });
