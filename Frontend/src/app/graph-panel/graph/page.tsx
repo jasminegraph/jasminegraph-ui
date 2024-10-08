@@ -4,13 +4,13 @@ import { Space, Table, Tag, Button, Popconfirm, message } from "antd";
 import type { TableProps } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { getGraphList } from "@/services/graph-service";
-interface DataType {
+export interface DataType {
   key: string;
   name: string;
   type: string;
   vertexCount: number;
   edgeCount: number;
-  status: boolean;
+  status: string;
 }
 
 const columns: TableProps<DataType>['columns'] = [
@@ -74,8 +74,8 @@ export default function GraphDetails() {
     const res = await getGraphList();
     console.log("::res::", res)
     if(res.data){
-      const filteredData = res.data.map((graph: any) => {
-        const data: DataType = {
+      const filteredData: DataType[] = res.data.map((graph: any) => {
+        return {
           key: graph.idgraph,
           name: graph.name,
           type: graph.type,
@@ -83,10 +83,10 @@ export default function GraphDetails() {
           edgeCount: graph.edgecount,
           status: graph.status,
         }
-        setGraphs((prev) => [...prev, data]);
       })
+      setGraphs(filteredData);
+      console.log(filteredData)
     }
-    console.log(filteredData)
     }catch(err){
       message.error("Failed to fetch graphs");
     }

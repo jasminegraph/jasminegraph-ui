@@ -19,7 +19,7 @@ const HadoopUploadModal = ({open, setOpen}:Props) => {
   return (
     <>
       <Modal title="Hadoop HDFS" open={open} onOk={handleOk} onCancel={handleCancel}>
-        <p>form</p>
+        <p>Not Implemented</p>
       </Modal>
     </>
   );

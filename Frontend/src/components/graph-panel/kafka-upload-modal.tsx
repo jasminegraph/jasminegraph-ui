@@ -19,7 +19,7 @@ const KafkaUploadModal = ({open, setOpen}:Props) => {
   return (
     <>
       <Modal title="Apache Kafka" open={open} onOk={handleOk} onCancel={handleCancel}>
-        <p>form</p>
+        <p>Not Implemented</p>
       </Modal>
     </>
   );

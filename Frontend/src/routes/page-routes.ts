@@ -3,6 +3,7 @@ export const SIDE_MENU_ROUTES = {
   clusterPage: "/clusters",
   graphPanel: "/graph-panel",
   queryInterface: "/query-interface",
+  performance: "/performance",
   queryExecution: "/query-execution",
   querySubmission: "/query-submission",
   notebook: "/notebook",
@@ -28,5 +29,6 @@ export const GRAPH_PANEL_ROUTES = {
 
 export const QUERY_PANEL_ROUTES = {
   query: "/",
+  properties: "/properties",
   console: "/console"
 }

@@ -18,6 +18,8 @@ const PORT = parseInt(process.env.PORT || '8080');
 
 const app = express();
 
+app.use('/public', express.static('public'));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 

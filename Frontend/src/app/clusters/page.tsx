@@ -92,7 +92,7 @@ export default function Clusters() {
                       Cluster ID: {cluster._id}
                     </Text>
                     {/* <Text>Owner: {cluster.clusterOwner}</Text> */}
-                    <Text>Cration Date: {cluster.createdAt}</Text> 
+                    <Text>Creation Date: {cluster.createdAt}</Text> 
                   </div>
                 </Typography>
               </Card>

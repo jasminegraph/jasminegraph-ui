@@ -1,5 +1,5 @@
 import type { MenuProps } from 'antd';
-import { ContainerOutlined, CodeSandboxOutlined,SecurityScanOutlined, AlignLeftOutlined, DeploymentUnitOutlined } from '@ant-design/icons';
+import { ContainerOutlined, CodeSandboxOutlined,SecurityScanOutlined, AlignLeftOutlined, DeploymentUnitOutlined, AreaChartOutlined } from '@ant-design/icons';
 import * as Routes from "@/routes/page-routes";
 
 type MenuItem = Required<MenuProps>['items'][number];
@@ -52,9 +52,14 @@ export const GraphPanelMenu: MenuItem[] = [
 
 export const QueryInterfaceMenu: MenuItem[] = [
   {
-    label: 'Query',
+    label: 'Cypher',
     key: Routes.QUERY_PANEL_ROUTES.query,
     icon: <ContainerOutlined />,
+  },
+  {
+    label: 'Graph Properties',
+    key: Routes.QUERY_PANEL_ROUTES.properties,
+    icon: <AreaChartOutlined />,
   },
   {
     label: 'Console',
@@ -62,3 +67,6 @@ export const QueryInterfaceMenu: MenuItem[] = [
     icon: <CodeSandboxOutlined />,
   },
 ];
+
+
+

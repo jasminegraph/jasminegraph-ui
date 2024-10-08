@@ -1,8 +1,10 @@
 "use client";
 import React, { useEffect } from "react";
-import { notifySuccess } from "@/utils/toast";
-import { Layout, theme } from "antd";
+import { Layout, Spin, theme } from "antd";
 import PageWrapper from "@/layouts/page-wrapper";
+import { LoadingOutlined } from '@ant-design/icons';
+import { useRouter } from "next/navigation";
+import * as Routes from "@/routes/page-routes";
 
 const { Content } = Layout;
 
@@ -10,9 +12,10 @@ export default function Home() {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const router = useRouter();
 
   useEffect(() => {
-    notifySuccess("toasts working");
+    router.push(Routes.SIDE_MENU_ROUTES.clusterPage);
   }, []);
 
   return (
@@ -31,8 +34,9 @@ export default function Home() {
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
           }}
+          className="flex items-center justify-center"
         >
-          Content
+          <Spin indicator={<LoadingOutlined spin />} size="large" />
         </Content>
       </Layout>
     </PageWrapper>
