@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { Space, Table, Tag, Button, Popconfirm, message } from "antd";
 import type { TableProps } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
-import { getGraphList } from "@/services/graph-service";
+import { getGraphList, deleteGraph } from "@/services/graph-service";
 export interface DataType {
   key: string;
   name: string;
@@ -12,59 +12,6 @@ export interface DataType {
   edgeCount: number;
   status: string;
 }
-
-const columns: TableProps<DataType>['columns'] = [
-  {
-    title: 'Name',
-    dataIndex: 'name',
-    key: 'name',
-  },
-  {
-    title: 'Graph Type',
-    dataIndex: 'type',
-    key: 'type',
-  },
-  {
-    title: 'Vertex Count',
-    dataIndex: 'vertexCount',
-    key: 'vertexCount',
-  },
-  {
-    title: 'Edge Count',
-    dataIndex: 'edgeCount',
-    key: 'edgeCount',
-  },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
-    render: (_, { status }) => (
-      <>
-        {status == 'op' ? (
-          <Tag color={'green'}>
-            {"Active"}
-          </Tag>) : (
-          <Tag color={"volcano"}>
-            {"Inactive"}
-          </Tag>
-        )}
-      </>
-    ),
-  },
-  {
-    title: 'Delete',
-    key: 'delete',
-    render: (_: any, record: DataType) => (
-      <Popconfirm
-        title="Delete Graph"
-        description="Are you sure want to delete this graph?"
-        icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
-      >
-        <Button danger>Delete</Button>
-      </Popconfirm>
-    ),
-  }
-];
 
 export default function GraphDetails() {
   const [graphs, setGraphs] = React.useState<any[]>([]);
@@ -95,6 +42,69 @@ export default function GraphDetails() {
   useEffect(() => {
     getGraphsData();
   }, [])
+
+  const columns: TableProps<DataType>['columns'] = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: 'Graph Type',
+      dataIndex: 'type',
+      key: 'type',
+    },
+    {
+      title: 'Vertex Count',
+      dataIndex: 'vertexCount',
+      key: 'vertexCount',
+    },
+    {
+      title: 'Edge Count',
+      dataIndex: 'edgeCount',
+      key: 'edgeCount',
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (_, { status }) => (
+        <>
+          {status == 'op' ? (
+            <Tag color={'green'}>
+              {"Active"}
+            </Tag>) : (
+            <Tag color={"volcano"}>
+              {"Inactive"}
+            </Tag>
+          )}
+        </>
+      ),
+    },
+    {
+      title: 'Delete',
+      key: 'delete',
+      render: (_: any, record: DataType) => (
+        <Popconfirm
+          title="Delete Graph"
+          description="Are you sure want to delete this graph?"
+          icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
+        >
+          <Button danger 
+            onClick={() => {
+              try {
+                deleteGraph(record.key);
+                message.success("Graph deleted successfully");
+                getGraphsData();
+              } catch (err) {
+                message.error("Failed to delete graph");
+              }
+            }
+          }>Delete</Button>
+        </Popconfirm>
+      ),
+    }
+  ];
 
   return (
     <div style={{marginTop: "20px"}}>

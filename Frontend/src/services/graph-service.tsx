@@ -14,3 +14,17 @@ export async function getGraphList() {
     return Promise.reject();
   }
 }
+
+export async function deleteGraph(id: string) {
+  try {
+    const result = await authApi({
+      method: "delete",
+      url: `/backend/graph/${id}`,
+    }).then((res) => res.data);
+    return {
+      data: result,
+    };
+  } catch (err) {
+    return Promise.reject();
+  }
+}
