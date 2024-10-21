@@ -1,7 +1,7 @@
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
-import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND } from './../constants/frontend.server.constants';
+import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 
 let socket;
@@ -111,7 +111,7 @@ const removeGraph = async (req: Request, res: Response) => {
       });
 
       // Write the command to the Telnet server
-      tSocket.write(GRAPH_REMOVE_COMMAND + req.params.id + '\n', 'utf8', () => {
+      tSocket.write(GRAPH_REMOVE_COMMAND + '|' + req.params.id + '\n', 'utf8', () => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - REMOVE ' + req.params.id + ' - ' + commandOutput);
@@ -127,4 +127,33 @@ const removeGraph = async (req: Request, res: Response) => {
   }
 };
 
-export { getGraphList, uploadGraph, removeGraph };
+const triangleCount = async (req: Request, res: Response) => {
+  const { priority, graph_id } = req.body;
+  try {
+    connectToTelnet(() => {
+      let commandOutput = '';
+
+      tSocket.on('data', (buffer) => {
+        commandOutput += buffer.toString('utf8');
+      });
+
+      console.log(TRIANGLE_COUNT_COMMAND + '|' + graph_id + '|' + priority + '\n');
+
+      // Write the command to the Telnet server
+      tSocket.write(TRIANGLE_COUNT_COMMAND + '|' + graph_id + '|' + priority + '\n', 'utf8', () => {
+        setTimeout(() => {
+          if (commandOutput) {
+            console.log(new Date().toLocaleString() + ' - TRIANGLECOUNT - ' + commandOutput);
+            res.status(200).send(commandOutput);
+          } else {
+            res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+          }
+        }, 500); // Adjust timeout to wait for the server response if needed
+      });
+    });
+  } catch (err) {
+    return res.status(200).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
+};
+
+export { getGraphList, uploadGraph, removeGraph, triangleCount };

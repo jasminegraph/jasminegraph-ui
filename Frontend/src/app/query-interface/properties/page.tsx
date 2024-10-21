@@ -95,7 +95,7 @@ export default function QueryPropoerties() {
   };
   
   type FieldType = {
-    graph?: string;
+    graph_id?: string;
     method?: string;
   };
 
@@ -136,7 +136,7 @@ export default function QueryPropoerties() {
         onChange={(e) => console.log(e)}
         onValuesChange={onValueChange}
       >
-        <Form.Item<FieldType> label="Graph" name="graph" rules={[{ required: true, message: 'Please select graph' }]}>
+        <Form.Item<FieldType> label="Graph" name="graph_id" rules={[{ required: true, message: 'Please select graph' }]}>
           <Select>
             {graphs.map((option, index) => (
               <Select.Option key={index} value={option.value}>

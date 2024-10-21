@@ -79,19 +79,22 @@ export const triangleCountAnalyzer: GraphAnalyzer = {
   name: "Triangle Count",
   description: "Calculates the number of triangles in the graph.",
   inputParameters: {
-      graphId: {
-        type: InputTypes.INPUT,
-        label: "GraphID",
-      },
-      threshold: {
-        type:  InputTypes.INPUTNUMBER,
-        label: "Threshold",
+      priority: {
+        type:  InputTypes.SELECT,
+        label: "Priority",
+        options: [
+          {value: "", label: "default"},
+          { value: "1", label: "1" },
+          { value: "2", label: "2" },
+          { value: "3", label: "3" },
+
+        ],
       },
   }
 };
 
 export const Analyzers: GraphAnalyzer[] = [
   // exampleAnalyzer,
-  triangleCountAnalyzer,
+  triangleCountAnalyzer
   // Add more analyzers as needed
 ];

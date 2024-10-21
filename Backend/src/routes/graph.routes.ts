@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getGraphList, uploadGraph, removeGraph } from '../controllers/graph.controller';
+import { getGraphList, uploadGraph, removeGraph, triangleCount } from '../controllers/graph.controller';
 import multer from 'multer';
 import path from 'path';
 
@@ -21,6 +21,7 @@ const graphRoute = () => {
   router.get('/list', getGraphList);
   router.post('/upload', upload.single("file"), uploadGraph);
   router.delete('/:id', removeGraph);
+  router.post('/analyze/trianglecount', triangleCount)
 
   return router;
 };

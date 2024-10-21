@@ -89,18 +89,18 @@ export default function GraphDetails() {
           title="Delete Graph"
           description="Are you sure want to delete this graph?"
           icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
-        >
-          <Button danger 
-            onClick={() => {
-              try {
-                deleteGraph(record.key);
-                message.success("Graph deleted successfully");
-                getGraphsData();
-              } catch (err) {
-                message.error("Failed to delete graph");
-              }
+          onConfirm={async () => {
+            try {
+              await deleteGraph(record.key);
+              message.success("Graph deleted successfully");
+              getGraphsData();
+            } catch (err) {
+              message.error("Failed to delete graph");
             }
-          }>Delete</Button>
+          }
+        }
+        >
+          <Button danger>Delete</Button>
         </Popconfirm>
       ),
     }
