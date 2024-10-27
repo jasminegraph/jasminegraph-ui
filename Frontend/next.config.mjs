@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: "/backend/:path*",
-        destination: `${process.env.BACKEND}/:path*`,
+        destination: `http://backend:8080/:path*`,
       },
     ];
   },

@@ -2,11 +2,18 @@
 import axios from "axios";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "@/hooks/useAccessToken";
 
+const getAccessToken = () => {
+    if (typeof window === "undefined") {
+        return null;
+    }
+    return localStorage.getItem(ACCESS_TOKEN);
+}
+
 export const authApi = axios.create({
   headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
-      "Authorization": "Bearer " + localStorage.getItem(ACCESS_TOKEN),
+      "Authorization": "Bearer " + getAccessToken(),
   }
 })
 
@@ -64,7 +71,10 @@ api.interceptors.response.use(
             ) {
                 try {
                     originalRequest._retry = true;
-                    const tokenStr = localStorage.getItem(REFRESH_TOKEN);
+                    var tokenStr;
+                    if (typeof window !== "undefined") {
+                        tokenStr = localStorage.getItem(REFRESH_TOKEN);
+                    }
                     if (tokenStr) {
                             const url = "/backend/auth/refresh";
                             return axios

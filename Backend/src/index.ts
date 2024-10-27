@@ -16,6 +16,8 @@ dotenv.config();
 const HOST = process.env.HOST || 'http://localhost';
 const PORT = parseInt(process.env.PORT || '8080');
 
+console.log('MONGO:', process.env.MONGO_URL);
+
 const app = express();
 
 app.use('/public', express.static('public'));

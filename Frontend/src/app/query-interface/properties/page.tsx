@@ -170,7 +170,7 @@ export default function QueryPropoerties() {
       {isAnalysing && (
       <Box sx={{ width: '100%', display: "flex", flexDirection: "column"}}>
         <LinearProgress />
-        <Button color="danger" variant="filled">
+        <Button color="danger" type="primary">
           Cancel
         </Button>
       </Box>
