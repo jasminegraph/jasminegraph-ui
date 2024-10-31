@@ -115,7 +115,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
     try{
       const res = await removeUserFromCluster(userID, clusterDetails!._id);
       if(res.data){
-        console.log("User removed successfully")
+        console.log("User removed successfully (id: ", userID, ")")
       }
     }catch(err){
       console.log("failed to add user id: ", userID)
