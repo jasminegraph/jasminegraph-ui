@@ -1,5 +1,4 @@
 function neighbourhoodHighlight(params) {
-  // console.log("in nieghbourhoodhighlight");
   allNodes = nodes.get({ returnType: "Object" });
   // originalNodes = JSON.parse(JSON.stringify(allNodes));
   // if something is selected:

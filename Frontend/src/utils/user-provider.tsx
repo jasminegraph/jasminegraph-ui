@@ -24,7 +24,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       const token = getSrvAccessToken();
       const res = await getUserDataByToken(token!).then((res) => res.data);
-      console.log(res.data)
       const userData: IUserAccessData = {
         email: res.data.email,
         fullName: res.data.fullName,
@@ -50,7 +49,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log(pathName);
     if(pathName == "/auth" || pathName == "/setup") return setIsLoading(false);
     if(isUserDataFetched){
       setIsLoading(false);
