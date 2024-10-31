@@ -8,10 +8,6 @@ const { TextArea } = Input;
 export default function Query() {
   const [value, setValue] = useState<string>('');
 
-  useEffect(()=> {
-    console.log(value);
-  }, [value]);
-
   return (
     <div className="">
       <div style={{display: "flex", justifyContent: "space-between", width: "100%", border: "1px solid #d9d9d9", borderRadius: "8px", padding: "10px", marginTop: "15px"}}>

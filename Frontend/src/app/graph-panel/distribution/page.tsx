@@ -4,7 +4,7 @@ import type { CollapseProps } from 'antd';
 import { Collapse } from 'antd';
 
 const text = `
-  Graphs details (size, last_modified, nodes, edges)
+  Graphs' details (size, last_modified, nodes, edges)
 `;
 
 const items: CollapseProps['items'] = [
@@ -26,21 +26,17 @@ const items: CollapseProps['items'] = [
 ];
 
 export default function GraphDistribution() {
-  const onChange = (key: string | string[]) => {
-    console.log(key);
-  };
-
   return (
     <div className="">
       <div style={{margin: "20px 0px", width: "80%"}}>
         <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>Graph Database Distribution</h1>
-        <p>This section provides an overview of the distribution of graph databases across different workers. 
-          Click on each worker to view the specific graph databases stored on their respective nodes. 
-          This information helps in managing and monitoring the graph database deployment effectively.
+        <p>This section provides an overview of the distribution of graph datasets across different workers. 
+          Click on each worker to view the specific graph datasets stored on their respective nodes. 
+          This information helps in managing and monitoring the graph dataset deployment effectively.
         </p>
       </div>
       <div style={{width: "80%"}}>
-        <Collapse items={items} defaultActiveKey={['1']} onChange={onChange} />
+        <Collapse items={items} defaultActiveKey={['1']} />
       </div>
     </div>
   );

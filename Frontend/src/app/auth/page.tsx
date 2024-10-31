@@ -20,6 +20,9 @@ const Auth = () => {
     }
   }
 
+  console.log("process.env.BACKEND", process.env.BACKEND);
+  console.log("process.env.NEXT", process.env.NEXT_PUBLIC_API_URL);
+
   useEffect(()=> {
     getUsers();
   },[])

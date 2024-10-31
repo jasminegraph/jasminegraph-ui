@@ -66,10 +66,10 @@ export default function GraphUpload() {
         }
       })
       .then(response => {
-        console.log('File uploaded successfully', response.data);
+        message.success("File uploaded successfully");
       })
       .catch(error => {
-        console.error('Error uploading file', error);
+        message.error("Failed to upload file");
       });
 
       setModalOpen(false);
@@ -90,10 +90,6 @@ export default function GraphUpload() {
         </p>
         <p className="ant-upload-text">
           Click or drag file to this area to upload
-        </p>
-        <p className="ant-upload-hint">
-          Support for a single or bulk upload. Strictly prohibited from
-          uploading company data or other banned files.
         </p>
       </Dragger>
       <Modal

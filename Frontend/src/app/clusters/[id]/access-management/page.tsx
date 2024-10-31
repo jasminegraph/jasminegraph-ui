@@ -106,7 +106,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
         console.log("User added successfully")
       }
     }catch(err){
-      console.log("failed to user add")
+      console.log("failed to add user id: ", userID)
     }
   }
 
@@ -118,7 +118,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
         console.log("User removed successfully")
       }
     }catch(err){
-      console.log("failed to user add")
+      console.log("failed to add user id: ", userID)
     }
   }
 
@@ -158,7 +158,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
       }
       dispatch(set_Selected_Cluster(res.data))
     }catch(err){
-      console.log("Failed to fetch cluster")
+      console.log("Failed to fetch cluster (clusterID: ", params.id, ")")
     }
   }
 
@@ -170,7 +170,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
         dispatch(set_Users_Cache(res.data))
       }
     }catch(err){
-      console.log("Failed to fetch cluster")
+      console.log("Failed to fetch cluster (clusterID: ", params.id, ")")
     }
   }
   

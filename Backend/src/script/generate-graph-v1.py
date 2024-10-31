@@ -10,7 +10,7 @@ def generate_graph():
     net.add_edge(3, 1)
 
     # Read graph data from a file
-    with open('./src/script/powergrid.dl', 'r') as file:
+    with open('./src/script/sample/powergrid.dl', 'r') as file:
         lines = file.readlines()
         print("Lines: ", lines)
         for line in lines:

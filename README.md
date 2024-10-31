@@ -1,6 +1,6 @@
 # jasminegraph-ui
 
-Web based User Interface for JasmineGraph Distributed Graph Database Server
+Web based User Interface for [JasmineGraph](https://github.com/miyurud/jasminegraph) Distributed Graph Database Server
 
 ## Overview
 

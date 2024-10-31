@@ -19,7 +19,6 @@ export default function GraphDetails() {
   const getGraphsData = async () => {
     try{
     const res = await getGraphList();
-    console.log("::res::", res)
     if(res.data){
       const filteredData: DataType[] = res.data.map((graph: any) => {
         return {
@@ -32,7 +31,6 @@ export default function GraphDetails() {
         }
       })
       setGraphs(filteredData);
-      console.log(filteredData)
     }
     }catch(err){
       message.error("Failed to fetch graphs");
@@ -87,7 +85,7 @@ export default function GraphDetails() {
       render: (_: any, record: DataType) => (
         <Popconfirm
           title="Delete Graph"
-          description="Are you sure want to delete this graph?"
+          description={`Are you sure want to delete this graph: ${record.key} ?`}
           icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
           onConfirm={async () => {
             try {
