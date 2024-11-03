@@ -102,7 +102,7 @@ export default function QueryPropoerties() {
     if (result.data) {
       message.success("Analysis completed successfully");
     } else {
-      message.error(result.message);
+      message.error("Error in graph analysis: " + result.message);
     }
     setIsAnalysing(false);
   }
@@ -111,7 +111,6 @@ export default function QueryPropoerties() {
     if (param && param.method) {
       const tool = Analyzers.find((tool) => tool.name == param.method || tool.id == param.method)
       setSelectedTool(tool);
-      console.log(param)
     }
   }
 
@@ -129,10 +128,9 @@ export default function QueryPropoerties() {
         onFinish={onFinish}
         size={"large"}
         style={{ maxWidth: 600, marginTop: "20px" }}
-        onChange={(e) => console.log(e)}
         onValuesChange={onValueChange}
       >
-        <Form.Item<FieldType> label="Graph" name="graph_id" rules={[{ required: true, message: 'Please select graph' }]}>
+        <Form.Item<FieldType> label="Graph" name="graph_id" rules={[{ required: true, message: 'Please select a graph' }]}>
           <Select>
             {graphs.map((option, index) => (
               <Select.Option key={index} value={option.value}>
@@ -142,7 +140,7 @@ export default function QueryPropoerties() {
           </Select>
         </Form.Item>
         <Form.Item<FieldType> label="Analysis" name="method"
-          rules={[{ required: true, message: 'Please select analysing method!' }]}>
+          rules={[{ required: true, message: 'Please select type of analysis' }]}>
           <Select>
             {Analyzers.map((option, index) => (
               <Select.Option key={index} value={option.id}>
