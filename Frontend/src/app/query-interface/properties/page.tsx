@@ -76,7 +76,7 @@ export default function QueryPropoerties() {
       setGraphs(filteredData);
     }
     }catch(err){
-      message.error("Failed to fetch graphs");
+      message.error("Failed to fetch the list of graphs");
     }
   }
 
