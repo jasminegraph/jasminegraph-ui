@@ -66,7 +66,6 @@ export default function QueryPropoerties() {
   const getGraphsData = async () => {
     try{
     const res = await getGraphList();
-    console.log("::res::", res)
     if(res.data){
       const filteredData: ISelectProp[] = res.data.map((graph: any) => {
          return {
@@ -75,7 +74,6 @@ export default function QueryPropoerties() {
         }
       })
       setGraphs(filteredData);
-      console.log(filteredData)
     }
     }catch(err){
       message.error("Failed to fetch graphs");
@@ -100,7 +98,6 @@ export default function QueryPropoerties() {
   };
 
   const runAnalysis = async (values: any) => {
-    console.log("::values::", values)
     const result = await analyzeGraph(values);
     if (result.data) {
       message.success("Analysis completed successfully");
@@ -121,7 +118,6 @@ export default function QueryPropoerties() {
   const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
     setIsAnalysing(true);
     await runAnalysis(values);
-    console.log('Success:', values);
   };
 
   return (

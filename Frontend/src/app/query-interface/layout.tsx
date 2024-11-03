@@ -29,11 +29,6 @@ export default function GraphPanelLayout({
   return (
     <PageWrapper>
       <Layout style={{ padding: "24px 24px", height: "92vh" }}>
-        {/* <Breadcrumb style={{ margin: "16px 0" }}>
-        <Breadcrumb.Item>Home</Breadcrumb.Item>
-        <Breadcrumb.Item>List</Breadcrumb.Item>
-        <Breadcrumb.Item>App</Breadcrumb.Item>
-      </Breadcrumb> */}
         <Content
           style={{
             padding: 24,

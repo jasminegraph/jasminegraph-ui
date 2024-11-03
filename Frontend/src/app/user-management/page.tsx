@@ -5,7 +5,7 @@ import { useDispatch } from "react-redux";
 import { ClusterData } from "@/data/cluster-data";
 import { IClusterDetails } from "@/types/cluster-types";
 import Highlighter from 'react-highlight-words';
-import { Tag, Button, Modal, Input, Space, Table, Layout, theme, Typography } from 'antd';
+import { Tag, Button, Modal, Input, Space, Table, Layout, theme, Typography, message } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import type { SearchProps } from "antd/es/input/Search";
 import type { TableProps, PaginationProps } from 'antd';
@@ -64,12 +64,10 @@ export default function Clusters() {
   };
 
   const handleOk = (e: React.MouseEvent<HTMLElement>) => {
-    console.log(e);
     setOpenModal(false);
   };
 
   const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
-    console.log(e);
     setOpenModal(false);
   };
 
@@ -228,7 +226,7 @@ export default function Clusters() {
         dispatch(set_Users_Cache(res.data))
       }
     }catch(err){
-      console.log("Failed to fetch cluster")
+      message.error("Failed to fetch user data")
     }
   }
 

@@ -54,15 +54,12 @@ const UserRegistrationForm = ({onSuccess}: props) => {
     setLoading(true);
     try{
       const res = await registerUser(values.username, values.email, values.password, values.role);
-      console.log('Received values of form: ', res);
       message.loading("Creating profile", 2);
       onSuccess();
     }catch(err){
       message.error("Failed to create profile");
-      console.log(err);
     }
     setLoading(false);
-    console.log('Received values of form: ', values);
   };
 
   return (

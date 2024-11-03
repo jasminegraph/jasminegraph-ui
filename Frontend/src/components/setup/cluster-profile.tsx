@@ -33,7 +33,6 @@ const ClusterSetup = ({onSuccess}:props) => {
     setLoading(true);
     try{
       const res = await addNewCluster(values.name, values.description, values.host, values.port, getSrvAccessToken());
-      console.log('Received values of form: ', res);
       onSuccess();
     }catch(err){
       console.log(err);

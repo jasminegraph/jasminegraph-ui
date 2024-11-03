@@ -22,7 +22,6 @@ export default function GraphPanelLayout({
   const router = useRouter();
 
   const onClick: MenuProps["onClick"] = (e) => {
-    console.log("click ", e);
     setCurrent(e.key);
     router.push(Routes.SIDE_MENU_ROUTES.graphPanel + e.key);
   };

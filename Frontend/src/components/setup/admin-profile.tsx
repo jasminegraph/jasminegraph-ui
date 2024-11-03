@@ -39,7 +39,6 @@ const AdminProfile = ({onSuccess}:props) => {
     setLoading(true);
     try{
       const res = await registerAdmin(values.name, values.email, values.password);
-      console.log('Received values of form: ', res);
       message.loading("Creating profile", 2);
       const tokenRes = await userLogin(values.email, values.password);
       if(tokenRes.accessToken && tokenRes.refreshToken){
