@@ -91,7 +91,7 @@ const uploadGraph = async (req: Request, res: Response) => {
             console.log(new Date().toLocaleString() + " - UPLOAD " + req.body.graphName + " - " + commandOutput);
             res.status(200).send(commandOutput);
           } else {
-            res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+            res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: ErrorMsg.NoResponseFromServer });
           }
         }, 500); // Adjust timeout to wait for the server response if needed
       });

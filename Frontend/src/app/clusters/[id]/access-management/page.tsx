@@ -118,7 +118,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
         console.log("User removed successfully (id: ", userID, ")")
       }
     }catch(err){
-      console.log("failed to add user id: ", userID)
+      console.log("Failed to add user id: ", userID)
     }
   }
 

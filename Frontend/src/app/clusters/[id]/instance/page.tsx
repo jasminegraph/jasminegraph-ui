@@ -9,10 +9,10 @@ import { IClusterDetails } from "@/types/cluster-types";
 interface DataType {
   key: string;
   nodeID: string;
-  IPaddress: string;
-  Status: boolean;
-  Role: string;
-  UpTime: number;
+  ipAddress: string;
+  status: boolean;
+  role: string;
+  upTime: number;
 }
 
 const columns: TableProps<DataType>['columns'] = [
@@ -23,16 +23,16 @@ const columns: TableProps<DataType>['columns'] = [
   },
   {
     title: 'IP Address',
-    dataIndex: 'IPaddress',
+    dataIndex: 'ipAddress',
     key: 'ip',
   },
   {
     title: 'Status',
-    dataIndex: 'Status',
+    dataIndex: 'status',
     key: 'status',
-    render: (_, { Status }) => (
+    render: (_, { status }) => (
       <>
-        {Status ? (
+        {status ? (
           <Tag color={'green'}>
             {"Active"}
           </Tag>) : (
@@ -45,12 +45,12 @@ const columns: TableProps<DataType>['columns'] = [
   },
   {
     title: 'Role',
-    dataIndex: 'Role',
+    dataIndex: 'role',
     key: 'role',
   },
   {
     title: 'Uptime',
-    dataIndex: 'UpTime',
+    dataIndex: 'upTime',
     key: 'uptime',
     render: (text) => <p>{text} days</p>
   }

@@ -33,7 +33,7 @@ export default function GraphDetails() {
       setGraphs(filteredData);
     }
     }catch(err){
-      message.error("Failed to fetch graphs");
+      message.error("Failed to fetch graphs: " + err);
     }
   }
 
@@ -85,7 +85,7 @@ export default function GraphDetails() {
       render: (_: any, record: DataType) => (
         <Popconfirm
           title="Delete Graph"
-          description={`Are you sure want to delete this graph: ${record.key} ?`}
+          description={`Are you sure you want to delete this graph: ${record.key} ?`}
           icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
           onConfirm={async () => {
             try {

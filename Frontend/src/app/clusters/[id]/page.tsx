@@ -13,28 +13,28 @@ import { getCluster } from "@/services/cluster-service";
 interface DataType {
   key: string;
   nodeID: string;
-  IPaddress: string;
-  Status: boolean;
-  Role: string;
-  UpTime: number;
+  ipAddress: string;
+  status: boolean;
+  role: string;
+  upTime: number;
 }
 
 const columns: TableProps<DataType>['columns'] = [
   {
-    title: 'NodeID',
+    title: 'Node ID',
     dataIndex: 'nodeID',
     key: 'nodeID',
   },
   {
     title: 'IP Address',
-    dataIndex: 'IPaddress',
+    dataIndex: 'ipAddress',
     key: 'ip',
   },
   {
     title: 'Status',
-    dataIndex: 'Status',
+    dataIndex: 'status',
     key: 'status',
-    render: (_, { Status }) => (
+    render: (_, { status: Status }) => (
       <>
         {Status ? (
           <Tag color={'green'}>
@@ -49,12 +49,12 @@ const columns: TableProps<DataType>['columns'] = [
   },
   {
     title: 'Role',
-    dataIndex: 'Role',
+    dataIndex: 'role',
     key: 'role',
   },
   {
     title: 'Uptime',
-    dataIndex: 'UpTime',
+    dataIndex: 'upTime',
     key: 'uptime',
     render: (text) => <p>{text} days</p>
   }
@@ -109,11 +109,11 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
   }
 
   const filterMasterNodeData = (nodes: DataType[] | undefined) => {
-    return nodes?.filter((node) => node.Role === "Master");
+    return nodes?.filter((node) => node.role === "Master");
   }
 
   const filterWorkerNodeData = (nodes: DataType[] | undefined) => {
-    return nodes?.filter((node) => node.Role === "Worker");
+    return nodes?.filter((node) => node.role === "Worker");
   }
 
   return (

@@ -36,7 +36,9 @@ api.interceptors.request.use(
                     ] = `Bearer ${token?.access_token}`;
                 }
             }
-        } catch (e) {}
+        } catch (e) {
+            console.log(e);
+        }
         return config;
     },
     (error) => {

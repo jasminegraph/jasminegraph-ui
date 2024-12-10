@@ -30,7 +30,7 @@ const addNewCluster = async (req: Request, res: Response) => {
     
     return res.status(201).json({ data: clusterCreated });
   } catch (err) {
-    return res.status(500).send('Server error');
+    return res.status(200).send('Server error');
   }
 
 }
@@ -53,7 +53,7 @@ const getCluster = async (req: Request, res: Response) => {
 
     return res.status(200).json({ data: cluster });
   } catch (err) {
-    return res.status(500).send('Server error');
+    return res.status(200).send('Server error');
   }
 };
 
@@ -73,7 +73,7 @@ const addUserToCluster = async (req: Request, res: Response) => {
 
     return res.status(200).json({ data: cluster });
   } catch (err) {
-    return res.status(500).send('Server error');
+    return res.status(200).send('Server error');
   }
 };
 
@@ -93,7 +93,7 @@ const removeUserFromCluster = async (req: Request, res: Response) => {
 
     return res.status(200).json({ data: cluster });
   } catch (err) {
-    return res.status(500).send('Server error');
+    return res.status(200).send('Server error');
   }
 };
 
@@ -106,7 +106,7 @@ const getMyClusters = async (req: Request, res: Response) => {
 
     return res.status(200).json({ data: clusters });
   } catch (err) {
-    return res.status(500).send('Server error');
+    return res.status(200).send('Server error');
   }
 };
 
