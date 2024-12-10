@@ -32,12 +32,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
         _id: res.data._id,
       }
       dispatch(set_User_Data(userData));
-
-
-      // dispatch(set_User_Data(userData.role));
-      // if (userData.role == "not_assigned") {
-      //   router.push(`/onboarding`);
-      // }
     } catch (error) {
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");

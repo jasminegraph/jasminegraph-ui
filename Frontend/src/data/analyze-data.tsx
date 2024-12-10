@@ -2,7 +2,6 @@ import { ISelectProp } from "@/types/user-types";
 import { ISelectNumProp } from './../types/user-types';
 
 export enum AnalyzeOptions {
-  EXAMPLE = "example",
   TRIANGLECOUNT = "trian",
   // Add more options as needed
 }
@@ -42,37 +41,37 @@ export interface GraphAnalyzer {
 }
 
 // Example of defining a specific analyzer
-const exampleAnalyzer: GraphAnalyzer = {
-  id: AnalyzeOptions.EXAMPLE,
-  name: "Example Analyzer",
-  description: "This is an example analyzer.",
-  inputParameters: {
-    // input
-    input: {
-      type: InputTypes.INPUT,
-      label: "Input",
-    },
-    // input number
-    inputNumber: {
-      type: InputTypes.INPUTNUMBER,
-      label: "Input Number",
-    },
-    // switch
-    switch: {
-      type: InputTypes.SWITCH,
-      label: "Switch",
-    },
-    // select
-    select: {
-      type: InputTypes.SELECT,
-      label: "Select",
-      options: [
-        { value: "option1", label: "Option 1" },
-        { value: "option2", label: "Option 2" },
-      ],
-    },
-  },
-}
+// const exampleAnalyzer: GraphAnalyzer = {
+//   id: AnalyzeOptions.EXAMPLE,
+//   name: "Example Analyzer",
+//   description: "This is an example analyzer.",
+//   inputParameters: {
+//     // input
+//     input: {
+//       type: InputTypes.INPUT,
+//       label: "Input",
+//     },
+//     // input number
+//     inputNumber: {
+//       type: InputTypes.INPUTNUMBER,
+//       label: "Input Number",
+//     },
+//     // switch
+//     switch: {
+//       type: InputTypes.SWITCH,
+//       label: "Switch",
+//     },
+//     // select
+//     select: {
+//       type: InputTypes.SELECT,
+//       label: "Select",
+//       options: [
+//         { value: "option1", label: "Option 1" },
+//         { value: "option2", label: "Option 2" },
+//       ],
+//     },
+//   },
+// }
 
 export const triangleCountAnalyzer: GraphAnalyzer = {
   id: AnalyzeOptions.TRIANGLECOUNT,

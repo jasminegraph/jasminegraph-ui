@@ -36,7 +36,7 @@ export async function addNewCluster(name: string, description: string, host: str
         message: err.response.data.message,
       };
     } else {
-      return Promise.reject();
+      return Promise.reject(err);
     }
   }
 }
@@ -51,7 +51,7 @@ export async function getAllClusters(userID: string) {
       data: result.data,
     };
   } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }
 
@@ -65,7 +65,7 @@ export async function getCluster(clusterID: string) {
       data: result.data,
     };
   } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }
 
@@ -83,7 +83,7 @@ export async function addUserToCluster(userID: string, clusterID: string){
       data: result.data,
     };
   } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }
 
@@ -101,6 +101,6 @@ export async function removeUserFromCluster(userID: string, clusterID: string){
       data: result.data,
     };
   } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }

@@ -5,7 +5,6 @@ import type { DescriptionsProps } from 'antd';
 import { Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
 import { IClusterDetails } from "@/types/cluster-types";
-import { ClusterData } from "@/data/cluster-data";
 
 interface DataType {
   key: string;

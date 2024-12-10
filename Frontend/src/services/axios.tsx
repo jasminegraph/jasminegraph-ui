@@ -71,16 +71,16 @@ api.interceptors.response.use(
             ) {
                 try {
                     originalRequest._retry = true;
-                    var tokenStr;
+                    var tokenString;
                     if (typeof window !== "undefined") {
-                        tokenStr = localStorage.getItem(REFRESH_TOKEN);
+                        tokenString = localStorage.getItem(REFRESH_TOKEN);
                     }
-                    if (tokenStr) {
+                    if (tokenString) {
                             const url = "/backend/auth/refresh";
                             return axios
                                 .post(
                                     url,
-                                    { token: tokenStr },
+                                    { token: tokenString },
                                 )
                                 .then((res) => {
                                     const newAuth = res.data;

@@ -94,7 +94,7 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
       }
       dispatch(set_Selected_Cluster(res.data))
     }catch(err){
-      console.log("Failed to fetch cluster")
+      console.log("Failed to fetch cluster: ", err)
     }
   }
 

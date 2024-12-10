@@ -8,9 +8,6 @@ export async function analyzeGraph(values: any) {
     case AnalyzeOptions.TRIANGLECOUNT:
       endpoint += `trianglecount`;
       break;
-    // case AnalyzeOptions.PAGERANK:
-    //   endpoint += `pagerank`;
-    //   break;
   }
 
   try {

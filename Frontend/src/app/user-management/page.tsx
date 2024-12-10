@@ -2,12 +2,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { ClusterData } from "@/data/cluster-data";
-import { IClusterDetails } from "@/types/cluster-types";
 import Highlighter from 'react-highlight-words';
 import { Tag, Button, Modal, Input, Space, Table, Layout, theme, Typography, message } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import type { SearchProps } from "antd/es/input/Search";
 import type { TableProps, PaginationProps } from 'antd';
 import type { InputRef, TableColumnType } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
@@ -51,13 +48,6 @@ export default function Clusters() {
   const [searchText, setSearchText] = useState('');
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef<InputRef>(null);
-
-  // const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
-  //   const filteredClusters = ClusterData.filter((cluster) => {
-  //     return cluster.name.toLowerCase().includes(value.toLowerCase());
-  //   });
-  //   setClusters(filteredClusters);
-  // }
 
   const showModal = () => {
     setOpenModal(true);
