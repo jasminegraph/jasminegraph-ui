@@ -20,10 +20,10 @@ const { Content } = Layout;
 interface DataType {
   key: string;
   userID: string;
-  Name: string;
-  Email: string;
-  Role: string;
-  Status: boolean;
+  name: string;
+  email: string;
+  role: string;
+  status: boolean;
   [key: string]: string | boolean;
 }
 
@@ -66,10 +66,10 @@ export default function Clusters() {
       return {
         key: data._id,
         userID: data._id,
-        Name: data.fullName,
-        Email: data.email,
-        Role: data.role,
-        Status: data.enabled,
+        name: data.fullName,
+        email: data.email,
+        role: data.role,
+        status: data.enabled,
       };
     });
   }
@@ -193,7 +193,7 @@ export default function Clusters() {
       title: 'Status',
       dataIndex: 'Status',
       key: 'status',
-      render: (_, { Status }) => (
+      render: (_, { status: Status }) => (
         <>
           {Status ? (
             <Tag color={'green'}>

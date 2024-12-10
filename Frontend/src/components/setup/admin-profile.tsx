@@ -66,7 +66,7 @@ const AdminProfile = ({onSuccess}:props) => {
       }
       dispatch(set_User_Data(userData));
     }catch(err){
-      console.log(err);
+      console.log("Failed to save user data");
     }
   }
   

@@ -74,7 +74,7 @@ const UserRegistrationForm = ({onSuccess}: props) => {
       <Form.Item
         name="username"
         label="Username"
-        tooltip="What do you want others to call you?"
+        tooltip="Enter your username. Keep it simple and recognizable."
         rules={[{ required: true, message: 'Please input your username!', whitespace: true }]}
       >
         <Input />
