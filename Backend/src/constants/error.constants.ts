@@ -4,6 +4,6 @@ export const ErrorCode = {
 };
 
 export const ErrorMsg = {
-  NoResponseFromServer: 'No response from server',
+  NoResponseFromServer: 'Trying to connect to server on IP on this port, No response from server',
   ServerError: 'Server error',
 };

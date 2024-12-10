@@ -7,13 +7,13 @@ import { Token } from '../models/token.model';
 const registerAdminUser = async (req: Request, res: Response) => {
   const { email, password, fullName } = req.body;
   if (!email || !fullName || !password) {
-    return res.status(422).json({ message: 'The fields email, fullNamea and password are required' });
+    return res.status(422).json({ message: 'The fields email, full name and password are required' });
   }
 
   try {
     const user = await User.findOne({ email });
     if (user) {
-      return res.status(400).send('User already exist');
+      return res.status(400).send('User already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -60,7 +60,7 @@ const updateUser = async (req: Request, res: Response) => {
   }
 
   if (!fullName || !role) {
-    return res.status(422).json({ message: 'The fields fullName and role are required' });
+    return res.status(422).json({ message: 'The fields full name and role are required' });
   }
 
   await User.updateOne({ _id: id }, { enabled, fullName, role });

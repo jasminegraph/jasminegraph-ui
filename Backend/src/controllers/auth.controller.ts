@@ -11,7 +11,7 @@ const generateToken = (userId: string, secret: string, expiresIn: string) => {
 const register = async (req: Request, res: Response) => {
   const { email, password, fullName, role } = req.body;
   if (!email || !fullName || !password) {
-    return res.status(422).json({ message: 'The fields email, fullNamea and password are required' });
+    return res.status(422).json({ message: 'The fields email, full name and password are required' });
   }
 
   try {
@@ -31,6 +31,7 @@ const register = async (req: Request, res: Response) => {
     const userCreated = await User.create(newUser);
     res.status(201).json({ name: userCreated.fullName, email: userCreated.email, _id: userCreated.id });
   } catch (err) {
+    console.log(err);
     res.status(500).send('Server error');
   }
 };
@@ -63,6 +64,7 @@ const login = async (req: Request, res: Response) => {
 
     res.json({ accessToken, refreshToken });
   } catch (err) {
+    console.log(err);
     res.status(500).send('Server error');
   }
 };
@@ -95,6 +97,7 @@ const refreshToken = async (req: Request, res: Response) => {
 
     res.json({ accessToken, refreshToken: newRefreshToken });
   } catch (err) {
+    console.log(err);
     res.status(500).send('Server error');
   }
 };
