@@ -25,9 +25,7 @@ services:
     depends_on:
       - mongoCont  # Ensure MongoDB starts before backend
     environment:
-      - MONGO_URL=mongodb://mongoCont:27017/jasmine # MongoDB connection string pointing to the mongo service
-      - SERVER_PORT=7776
-      - SERVER_HOST=10.8.100.245
+      - MONGO_URL=mongodb://mongoCont:27017/jasminegraph # MongoDB connection string pointing to the mongo service
 
   # MongoDB Service
   mongoCont:
