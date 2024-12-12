@@ -11,7 +11,7 @@ const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
         req.body = { ...req.body, ...decoded };
         next();
     } catch (err) {
-        res.status(400).send('Invalid token');
+        res.status(400).send('Authentication Failed');
     }
 };
 
