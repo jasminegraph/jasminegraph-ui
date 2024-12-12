@@ -4,6 +4,7 @@ import { Request, Response } from 'express';
 import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
+import { HTTP } from 'src/constants/constants';
 
 let socket;
 let tSocket;
@@ -79,15 +80,15 @@ const getGraphList = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
-            res.status(200).send(commandOutput);
+            res.status(HTTP[200]).send(commandOutput);
           } else {
-            res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
         }, 500); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
-    return res.status(200).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
   }
 };
 
@@ -115,15 +116,15 @@ const uploadGraph = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + " - UPLOAD " + req.body.graphName + " - " + commandOutput);
-            res.status(200).send(commandOutput);
+            res.status(HTTP[200]).send(commandOutput);
           } else {
-            res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: ErrorMsg.NoResponseFromServer });
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: ErrorMsg.NoResponseFromServer });
           }
         }, 500); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
-    return res.status(200).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
   }
 };
 
@@ -145,22 +146,22 @@ const removeGraph = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - REMOVE ' + req.params.id + ' - ' + commandOutput);
-            return res.status(200).send(commandOutput);
+            return res.status(HTTP[200]).send(commandOutput);
           } else {
-            return res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+            return res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
         }, 5000); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
-    return res.status(200).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
   }
 };
 
 const triangleCount = async (req: Request, res: Response) => {
   const connection = await getClusterDetails(req);
   if (!(connection.host || connection.port)) {
-    return res.status(404).send(connection);
+    return res.status(HTTP[404]).send(connection);
   }
   const { priority, graph_id } = req.body;
   try {
@@ -178,15 +179,15 @@ const triangleCount = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - TRIANGLECOUNT - ' + commandOutput);
-            res.status(200).send(commandOutput);
+            res.status(HTTP[200]).send(commandOutput);
           } else {
-            res.status(400).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
         }, 500); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
-    return res.status(200).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
   }
 };
 
