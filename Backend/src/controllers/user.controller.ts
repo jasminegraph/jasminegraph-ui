@@ -16,7 +16,7 @@ import bcrypt from 'bcryptjs';
 
 import { User, UserInput } from '../models/user.model';
 import { Token } from '../models/token.model';
-import { HTTP } from 'src/constants/constants';
+import { HTTP } from '../constants/constants';
 
 const registerAdminUser = async (req: Request, res: Response) => {
   const { email, password, fullName } = req.body;

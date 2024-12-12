@@ -17,7 +17,7 @@ import { Request, Response } from 'express';
 import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
-import { HTTP } from 'src/constants/constants';
+import { HTTP } from '../constants/constants';
 
 let socket;
 let tSocket;

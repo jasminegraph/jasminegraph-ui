@@ -16,7 +16,7 @@ import { Request, Response } from 'express';
 import { Cluster, ClusterInput } from '../models/cluster.model';
 import { Token } from '../models/token.model';
 import { User } from '../models/user.model';
-import { HTTP } from 'src/constants/constants';
+import { HTTP } from '../constants/constants';
 
 const addNewCluster = async (req: Request, res: Response) => {
   const { name, description, host, port, ownerID } = req.body;

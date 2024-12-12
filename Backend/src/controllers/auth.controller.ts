@@ -16,7 +16,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, UserInput } from '../models/user.model';
 import { Token } from '../models/token.model';
-import { HTTP } from 'src/constants/constants';
+import { HTTP } from '../constants/constants';
 
 const generateToken = (userId: string, secret: string, expiresIn: string) => {
   return jwt.sign({ id: userId }, secret, { expiresIn });

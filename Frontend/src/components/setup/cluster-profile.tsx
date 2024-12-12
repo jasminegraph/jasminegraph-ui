@@ -45,7 +45,7 @@ const ClusterSetup = ({onSuccess}:props) => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
-      const res = await addNewCluster(values.name, values.description, values.host, values.port, getSrvAccessToken());
+      const res = await addNewCluster(values.name, values.description, values.host, values.port);
       onSuccess();
     }catch(err){
       console.log(err);
