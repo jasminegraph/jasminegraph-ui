@@ -7,6 +7,7 @@ import { authRoute } from './routes/auth.routes';
 import { clusterRoute } from './routes/cluster.routes';
 import { graphRoute } from './routes/graph.routes';
 import authMiddleware from './middleware/auth.middleware';
+import clusterMiddleware from './middleware/cluster.middleware';
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -28,7 +29,7 @@ app.use(express.json());
 app.use('/auth', authRoute());
 app.use('/users', userRoute());
 app.use('/clusters', authMiddleware,  clusterRoute());
-app.use('/graph', graphRoute());
+app.use('/graph', clusterMiddleware, graphRoute());
 
 // write an endpoint to check backend is running or not
 app.get('/ping', (req, res) => {

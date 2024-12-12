@@ -3,18 +3,36 @@ const net = require('net');
 import { Request, Response } from 'express';
 import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
+import { Cluster } from '../models/cluster.model';
 
 let socket;
 let tSocket;
 
-const HOST = process.env.SERVER_HOST || '127.0.0.1';
-const PORT = parseInt(process.env.SERVER_PORT || '7776');
+type IConnection = {
+  host: string;
+  port: number;
+}
+
 const DEV_MODE = process.env.DEV_MODE === 'true';
 
-const connectToTelnet = (callback) => {
+const getClusterDetails = async (req: Request) => {
+  const clusterID = req.header('Cluster-ID');
+  const cluster = await Cluster.findOne({ _id: clusterID });
+  if (!cluster) {
+    return { code: ErrorCode.ClusterNotFound, message: ErrorMsg.ClusterNotFound, errorDetails: '' };
+  }else{
+    console.log("Cluster Connection Details: ", cluster);
+    return {
+      port: cluster.port,
+      host: cluster.host
+    }
+  }
+}
+
+const telnetConnection = (connection: IConnection) => (callback: any) => {
   // If the global connection is undefined or closed, create a new connection
   if (!socket || socket.destroyed) {
-    socket = net.createConnection(PORT, HOST, () => {
+    socket = net.createConnection(connection.port, connection.host, () => {
       tSocket = new TelnetSocket(socket);
 
       tSocket.on('do', (option) => {
@@ -44,8 +62,12 @@ const connectToTelnet = (callback) => {
 };
 
 const getGraphList = async (req: Request, res: Response) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
   try {
-    connectToTelnet(() => {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
       let commandOutput = '';
 
       tSocket.on('data', (buffer) => {
@@ -70,6 +92,10 @@ const getGraphList = async (req: Request, res: Response) => {
 };
 
 const uploadGraph = async (req: Request, res: Response) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
   const { graphName } = req.body;
   const fileName = req.file?.filename;
   const filePath = DEV_MODE ? "http://host.docker.internal:8080/public/" + fileName : fileName; // Get the file path
@@ -77,7 +103,7 @@ const uploadGraph = async (req: Request, res: Response) => {
   console.log(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n');
 
   try {
-    connectToTelnet(() => {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
       let commandOutput = "";
 
       tSocket.on("data", (buffer) => {
@@ -102,8 +128,12 @@ const uploadGraph = async (req: Request, res: Response) => {
 };
 
 const removeGraph = async (req: Request, res: Response) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
   try {
-    connectToTelnet(() => {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
       let commandOutput = '';
 
       tSocket.on('data', (buffer) => {
@@ -128,9 +158,13 @@ const removeGraph = async (req: Request, res: Response) => {
 };
 
 const triangleCount = async (req: Request, res: Response) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
   const { priority, graph_id } = req.body;
   try {
-    connectToTelnet(() => {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
       let commandOutput = '';
 
       tSocket.on('data', (buffer) => {

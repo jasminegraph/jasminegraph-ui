@@ -10,14 +10,13 @@ interface ApiErrorResponse {
   message: string;
 }
 
-export async function addNewCluster(name: string, description: string, host: string, port: string, token: string | null): Promise<ApiResponse<string> | ApiErrorResponse> {
+export async function addNewCluster(name: string, description: string, host: string, port: string): Promise<ApiResponse<string> | ApiErrorResponse> {
   try {
     const result: AxiosResponse<any> = await authApi({
       method: "post",
       url: "/backend/clusters",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer " + token,
       },
       data: {
         name,

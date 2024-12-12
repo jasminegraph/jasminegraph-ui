@@ -1,6 +1,7 @@
 'use client';
 import axios from "axios";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "@/hooks/useAccessToken";
+import { SELECTED_CLUSTER } from "@/hooks/useCluster";
 
 const getAccessToken = () => {
     if (typeof window === "undefined") {
@@ -9,11 +10,19 @@ const getAccessToken = () => {
     return localStorage.getItem(ACCESS_TOKEN);
 }
 
+const getClusterID = () => {
+    if (typeof window === "undefined") {
+        return null;
+    }
+    return localStorage.getItem(SELECTED_CLUSTER);
+}   
+
 export const authApi = axios.create({
   headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
       "Authorization": "Bearer " + getAccessToken(),
+      "Cluster-ID": getClusterID(),
   }
 })
 
