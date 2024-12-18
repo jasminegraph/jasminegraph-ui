@@ -53,39 +53,6 @@ export interface GraphAnalyzer {
   inputParameters: AnalyzerInput;
 }
 
-// Example of defining a specific analyzer
-// const exampleAnalyzer: GraphAnalyzer = {
-//   id: AnalyzeOptions.EXAMPLE,
-//   name: "Example Analyzer",
-//   description: "This is an example analyzer.",
-//   inputParameters: {
-//     // input
-//     input: {
-//       type: InputTypes.INPUT,
-//       label: "Input",
-//     },
-//     // input number
-//     inputNumber: {
-//       type: InputTypes.INPUTNUMBER,
-//       label: "Input Number",
-//     },
-//     // switch
-//     switch: {
-//       type: InputTypes.SWITCH,
-//       label: "Switch",
-//     },
-//     // select
-//     select: {
-//       type: InputTypes.SELECT,
-//       label: "Select",
-//       options: [
-//         { value: "option1", label: "Option 1" },
-//         { value: "option2", label: "Option 2" },
-//       ],
-//     },
-//   },
-// }
-
 export const triangleCountAnalyzer: GraphAnalyzer = {
   id: AnalyzeOptions.TRIANGLECOUNT,
   name: "Triangle Count",
@@ -106,7 +73,6 @@ export const triangleCountAnalyzer: GraphAnalyzer = {
 };
 
 export const Analyzers: GraphAnalyzer[] = [
-  // exampleAnalyzer,
   triangleCountAnalyzer
   // Add more analyzers as needed
 ];
