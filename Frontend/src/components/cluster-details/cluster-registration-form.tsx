@@ -22,6 +22,7 @@ import {
 } from 'antd';
 import { USER_ROLES } from '@/data/user-data';
 import { registerUser } from '@/services/auth-service';
+import { addNewCluster } from '@/services/cluster-service';
 
 const { Option } = Select;
 
@@ -59,18 +60,18 @@ type props = {
   onSuccess: () => void;
 }
 
-const UserRegistrationForm = ({onSuccess}: props) => {
+const ClusterRegistrationForm = ({onSuccess}: props) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
 
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
-      const res = await registerUser(values.username, values.email, values.password, values.role);
-      message.loading("Creating profile", 2);
+      const res = await addNewCluster(values.name, values.description, values.host, values.port);
+      message.loading("Connecting New Cluster", 2);
       onSuccess();
     }catch(err){
-      message.error("Failed to create profile");
+      message.error("Failed to add cluster");
     }
     setLoading(false);
   };
@@ -85,86 +86,42 @@ const UserRegistrationForm = ({onSuccess}: props) => {
       scrollToFirstError
     >
       <Form.Item
-        name="username"
-        label="Username"
+        name="name"
+        label="Cluster Name"
         tooltip="Enter your username. Keep it simple and recognizable."
-        rules={[{ required: true, message: 'Please input your username!', whitespace: true }]}
+        rules={[{ required: true, message: 'Please input your cluster name!', whitespace: true }]}
       >
         <Input />
       </Form.Item>
 
       <Form.Item
-        name="email"
-        label="E-mail"
-        rules={[
-          {
-            type: 'email',
-            message: 'The input is not valid E-mail!',
-          },
-          {
-            required: true,
-            message: 'Please input your E-mail!',
-          },
-        ]}
+        name="description"
+        label="Description"
       >
         <Input />
       </Form.Item>
 
       <Form.Item 
-        name="role"
-        label="Select"
+        name="host"
+        label="Host"
       >
-        <Select>
-          {USER_ROLES.map((role, index) => (
-            <Select.Option key={index} value={role.value}>{role.label}</Select.Option>
-          ))}
-        </Select>
+        <Input />
       </Form.Item>
 
-      <Form.Item
-        name="password"
-        label="Password"
-        rules={[
-          {
-            required: true,
-            message: 'Please input your password!',
-          },
-        ]}
-        hasFeedback
+      <Form.Item 
+        name="port"
+        label="Port"
       >
-        <Input.Password />
+        <Input />
       </Form.Item>
-
-      <Form.Item
-        name="confirm"
-        label="Confirm Password"
-        dependencies={['password']}
-        hasFeedback
-        rules={[
-          {
-            required: true,
-            message: 'Please confirm your password!',
-          },
-          ({ getFieldValue }) => ({
-            validator(_, value) {
-              if (!value || getFieldValue('password') === value) {
-                return Promise.resolve();
-              }
-              return Promise.reject(new Error('The new password that you entered do not match!'));
-            },
-          }),
-        ]}
-      >
-        <Input.Password />
-      </Form.Item>
-
+      
       <Form.Item {...tailFormItemLayout}>
         <Button type="primary" htmlType="submit">
-          Register
+          Connect
         </Button>
       </Form.Item>
     </Form>
   );
 };
 
-export default UserRegistrationForm;
+export default ClusterRegistrationForm;

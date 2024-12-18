@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "JasmineGrapg UI backend",
+  "description": "JasmineGraph UI backend",
   "main": "./src/index.ts",
   "scripts": {
     "nodemon": "nodemon --watch \"*.ts\" --exec \"ts-node\" ./src/index.ts",
@@ -9,7 +9,7 @@
     "eslint:fix": "eslint --fix"
   },
   "author": "Somesh Chandimal",
-  "license": "ISC",
+  "license": "Apache 2.0",
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",

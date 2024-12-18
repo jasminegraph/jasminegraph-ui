@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 'use client';
 import React, { useEffect, useState } from "react";
 import { Descriptions, Input, Row, Col, Divider, Button } from 'antd';
@@ -5,15 +18,14 @@ import type { DescriptionsProps } from 'antd';
 import { Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
 import { IClusterDetails } from "@/types/cluster-types";
-import { ClusterData } from "@/data/cluster-data";
 
 interface DataType {
   key: string;
   nodeID: string;
-  IPaddress: string;
-  Status: boolean;
-  Role: string;
-  UpTime: number;
+  ipAddress: string;
+  status: boolean;
+  role: string;
+  upTime: number;
 }
 
 const columns: TableProps<DataType>['columns'] = [
@@ -24,16 +36,16 @@ const columns: TableProps<DataType>['columns'] = [
   },
   {
     title: 'IP Address',
-    dataIndex: 'IPaddress',
+    dataIndex: 'ipAddress',
     key: 'ip',
   },
   {
     title: 'Status',
-    dataIndex: 'Status',
+    dataIndex: 'status',
     key: 'status',
-    render: (_, { Status }) => (
+    render: (_, { status }) => (
       <>
-        {Status ? (
+        {status ? (
           <Tag color={'green'}>
             {"Active"}
           </Tag>) : (
@@ -46,12 +58,12 @@ const columns: TableProps<DataType>['columns'] = [
   },
   {
     title: 'Role',
-    dataIndex: 'Role',
+    dataIndex: 'role',
     key: 'role',
   },
   {
     title: 'Uptime',
-    dataIndex: 'UpTime',
+    dataIndex: 'upTime',
     key: 'uptime',
     render: (text) => <p>{text} days</p>
   }
@@ -81,24 +93,8 @@ export default function Instance({ params }: { params: { id: string } }) {
   const [clusterDetails, setClusterDetails] = useState<IClusterDetails>();
 
   const getNodeData = () => {
-    // const nodeData: DataType[] | undefined = clusterDetails?.nodes.map((worker) => {
-    //   return {
-    //     key: worker.nodeID,
-    //     nodeID: worker.nodeID,
-    //     Status: worker.status,
-    //     IPaddress: worker.IPaddress,
-    //     Role: worker.role,
-    //     UpTime: worker.upTime,
-    //   }
-    // });
     return [];
   }
-
-  useEffect(()=>{
-    // const info = ClusterData.find((cluster) => cluster.clusterId === params.id);
-    // setClusterDetails(info);
-    // setLoading(false);
-  },[params.id])
 
   return (
     <div className="">

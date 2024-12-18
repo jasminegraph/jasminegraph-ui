@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 'use client';
 import React, { useEffect, useState } from "react";
 import { IClusterDetails } from "@/types/cluster-types";
@@ -106,7 +119,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
         console.log("User added successfully")
       }
     }catch(err){
-      console.log("failed to user add")
+      console.log("failed to add user id: ", userID)
     }
   }
 
@@ -115,10 +128,10 @@ export default function AccessManagement({ params }: { params: { id: string } })
     try{
       const res = await removeUserFromCluster(userID, clusterDetails!._id);
       if(res.data){
-        console.log("User removed successfully")
+        console.log("User removed successfully (id: ", userID, ")")
       }
     }catch(err){
-      console.log("failed to user add")
+      console.log("Failed to add user id: ", userID)
     }
   }
 
@@ -158,7 +171,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
       }
       dispatch(set_Selected_Cluster(res.data))
     }catch(err){
-      console.log("Failed to fetch cluster")
+      console.log("Failed to fetch cluster (clusterID: ", params.id, ")")
     }
   }
 
@@ -170,7 +183,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
         dispatch(set_Users_Cache(res.data))
       }
     }catch(err){
-      console.log("Failed to fetch cluster")
+      console.log("Failed to fetch cluster (clusterID: ", params.id, ")")
     }
   }
   

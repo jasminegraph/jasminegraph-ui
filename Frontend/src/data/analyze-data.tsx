@@ -1,8 +1,20 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 import { ISelectProp } from "@/types/user-types";
 import { ISelectNumProp } from './../types/user-types';
 
 export enum AnalyzeOptions {
-  EXAMPLE = "example",
   TRIANGLECOUNT = "trian",
   // Add more options as needed
 }
@@ -41,39 +53,6 @@ export interface GraphAnalyzer {
   inputParameters: AnalyzerInput;
 }
 
-// Example of defining a specific analyzer
-const exampleAnalyzer: GraphAnalyzer = {
-  id: AnalyzeOptions.EXAMPLE,
-  name: "Example Analyzer",
-  description: "This is an example analyzer.",
-  inputParameters: {
-    // input
-    input: {
-      type: InputTypes.INPUT,
-      label: "Input",
-    },
-    // input number
-    inputNumber: {
-      type: InputTypes.INPUTNUMBER,
-      label: "Input Number",
-    },
-    // switch
-    switch: {
-      type: InputTypes.SWITCH,
-      label: "Switch",
-    },
-    // select
-    select: {
-      type: InputTypes.SELECT,
-      label: "Select",
-      options: [
-        { value: "option1", label: "Option 1" },
-        { value: "option2", label: "Option 2" },
-      ],
-    },
-  },
-}
-
 export const triangleCountAnalyzer: GraphAnalyzer = {
   id: AnalyzeOptions.TRIANGLECOUNT,
   name: "Triangle Count",
@@ -94,7 +73,6 @@ export const triangleCountAnalyzer: GraphAnalyzer = {
 };
 
 export const Analyzers: GraphAnalyzer[] = [
-  // exampleAnalyzer,
   triangleCountAnalyzer
   // Add more analyzers as needed
 ];

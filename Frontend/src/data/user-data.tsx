@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 import { ISelectProp, IUserAccessData } from "@/types/user-types";
 
 export const USER_ROLES: ISelectProp[] = [
@@ -10,76 +23,3 @@ export const USER_ROLES: ISelectProp[] = [
     label: 'Viewer',
   }
 ];
-
-export const userData: IUserAccessData[] = [
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440000',
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'Admin',
-    enabled: true,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440001',
-    fullName: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'Editor',
-    enabled: false,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440002',
-    fullName: 'Alice Johnson',
-    email: 'alice.j@example.com',
-    role: 'Viewer',
-    enabled: true,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440003',
-    fullName: 'Bob Brown',
-    email: 'bob.brown@example.com',
-    role: 'Admin',
-    enabled: true,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440004',
-    fullName: 'Charlie Green',
-    email: 'charlie.g@example.com',
-    role: 'Editor',
-    enabled: false,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440005',
-    fullName: 'Dave Black',
-    email: 'dave.black@example.com',
-    role: 'Viewer',
-    enabled: true,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440006',
-    fullName: 'Eve White',
-    email: 'eve.white@example.com',
-    role: 'Admin',
-    enabled: true,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440007',
-    fullName: 'Frank Yellow',
-    email: 'frank.yellow@example.com',
-    role: 'Editor',
-    enabled: false,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440008',
-    fullName: 'Grace Pink',
-    email: 'grace.pink@example.com',
-    role: 'Viewer',
-    enabled: true,
-  },
-  {
-    _id: '550e8400-e29b-41d4-a716-446655440009',
-    fullName: 'Henry Blue',
-    email: 'henry.blue@example.com',
-    role: 'Admin',
-    enabled: true,
-  }
-]

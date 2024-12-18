@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 "use client";
 import React, { useState } from "react";
 import { InboxOutlined } from "@ant-design/icons";
@@ -66,10 +79,10 @@ export default function GraphUpload() {
         }
       })
       .then(response => {
-        console.log('File uploaded successfully', response.data);
+        message.success("File uploaded successfully");
       })
       .catch(error => {
-        console.error('Error uploading file', error);
+        message.error("Failed to upload file");
       });
 
       setModalOpen(false);
@@ -90,10 +103,6 @@ export default function GraphUpload() {
         </p>
         <p className="ant-upload-text">
           Click or drag file to this area to upload
-        </p>
-        <p className="ant-upload-hint">
-          Support for a single or bulk upload. Strictly prohibited from
-          uploading company data or other banned files.
         </p>
       </Dragger>
       <Modal

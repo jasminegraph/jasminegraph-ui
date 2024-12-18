@@ -1,47 +1,49 @@
 version: '3'
 services:
   
-  # Frontend Service
+  # # Frontend Service
   frontend:
-    image: jasminegraph-backend:latest  # Replace with your frontend image
+    image: jasminegraph-frontend:latest  # Replace with your frontend image
     ports:
       - "3000:3000"
+    networks:
+      - next-node
     environment:
-      - REACT_APP_BACKEND_URL=http://backend:8000 # Pointing to the backend service
+      - BACKEND=http://backend:8080 # Pointing to the backend service
+      - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
     depends_on:
       - backend  # Ensure backend service starts before frontend
 
   # Backend Service
   backend:
-    image: your-backend-image:latest  # Replace with your backend image
+    image: jasminegraph-backend:latest  # Replace with your backend image
     ports:
-      - "8000:8000"
+      - "8080:8080"
+    networks:
+      - node-mongo
+      - next-node
     depends_on:
-      - mongo  # Ensure MongoDB starts before backend
+      - mongoCont  # Ensure MongoDB starts before backend
     environment:
-      - MONGO_URL=mongodb://mongo:27017/mydatabase # MongoDB connection string pointing to the mongo service
+      - MONGO_URL=mongodb://mongoCont:27017/jasminegraph # MongoDB connection string pointing to the mongo service
 
   # MongoDB Service
-  mongo:
+  mongoCont:
     image: mongo:latest
     ports:
       - "27017:27017"
+    networks:
+      - node-mongo
     volumes:
-      - ./mongo-data:/data/db  # Persist MongoDB data locally
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: root
+      - ./mongodb-data:/data/db  # Persist MongoDB data locally
 
 volumes:
   mongodb-data:
     driver: local
-    name: mongo-date
-  mongodb-log:
-    driver: local
-    name: mongo-log
-  
     
 networks:
-  mongodb_network:
+  node-mongo:
     driver: bridge
-    name: mongo-network
+  next-node:
+    driver: bridge
+    

@@ -13,6 +13,9 @@ RUN npm ci
 # Copy the app source code to the container  
 COPY . .  
 
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+
 # Build the Next.js app  
 RUN npm run build  
 

@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 "use client";
 import React, { useState, useEffect } from "react";
 import {
@@ -66,7 +79,6 @@ export default function QueryPropoerties() {
   const getGraphsData = async () => {
     try{
     const res = await getGraphList();
-    console.log("::res::", res)
     if(res.data){
       const filteredData: ISelectProp[] = res.data.map((graph: any) => {
          return {
@@ -75,10 +87,9 @@ export default function QueryPropoerties() {
         }
       })
       setGraphs(filteredData);
-      console.log(filteredData)
     }
     }catch(err){
-      message.error("Failed to fetch graphs");
+      message.error("Failed to fetch the list of graphs");
     }
   }
 
@@ -100,12 +111,11 @@ export default function QueryPropoerties() {
   };
 
   const runAnalysis = async (values: any) => {
-    console.log("::values::", values)
     const result = await analyzeGraph(values);
     if (result.data) {
       message.success("Analysis completed successfully");
     } else {
-      message.error(result.message);
+      message.error("Error in graph analysis: " + result.message);
     }
     setIsAnalysing(false);
   }
@@ -114,14 +124,12 @@ export default function QueryPropoerties() {
     if (param && param.method) {
       const tool = Analyzers.find((tool) => tool.name == param.method || tool.id == param.method)
       setSelectedTool(tool);
-      console.log(param)
     }
   }
 
   const onFinish: FormProps<FieldType>['onFinish'] = async (values) => {
     setIsAnalysing(true);
     await runAnalysis(values);
-    console.log('Success:', values);
   };
 
   return (
@@ -133,10 +141,9 @@ export default function QueryPropoerties() {
         onFinish={onFinish}
         size={"large"}
         style={{ maxWidth: 600, marginTop: "20px" }}
-        onChange={(e) => console.log(e)}
         onValuesChange={onValueChange}
       >
-        <Form.Item<FieldType> label="Graph" name="graph_id" rules={[{ required: true, message: 'Please select graph' }]}>
+        <Form.Item<FieldType> label="Graph" name="graph_id" rules={[{ required: true, message: 'Please select a graph' }]}>
           <Select>
             {graphs.map((option, index) => (
               <Select.Option key={index} value={option.value}>
@@ -146,7 +153,7 @@ export default function QueryPropoerties() {
           </Select>
         </Form.Item>
         <Form.Item<FieldType> label="Analysis" name="method"
-          rules={[{ required: true, message: 'Please select analysing method!' }]}>
+          rules={[{ required: true, message: 'Please select type of analysis' }]}>
           <Select>
             {Analyzers.map((option, index) => (
               <Select.Option key={index} value={option.id}>
@@ -170,7 +177,7 @@ export default function QueryPropoerties() {
       {isAnalysing && (
       <Box sx={{ width: '100%', display: "flex", flexDirection: "column"}}>
         <LinearProgress />
-        <Button color="danger" variant="filled">
+        <Button color="danger" type="primary">
           Cancel
         </Button>
       </Box>

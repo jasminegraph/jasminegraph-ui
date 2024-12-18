@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 "use client";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
@@ -24,7 +37,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       const token = getSrvAccessToken();
       const res = await getUserDataByToken(token!).then((res) => res.data);
-      console.log(res.data)
       const userData: IUserAccessData = {
         email: res.data.email,
         fullName: res.data.fullName,
@@ -33,12 +45,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
         _id: res.data._id,
       }
       dispatch(set_User_Data(userData));
-
-
-      // dispatch(set_User_Data(userData.role));
-      // if (userData.role == "not_assigned") {
-      //   router.push(`/onboarding`);
-      // }
     } catch (error) {
       localStorage.removeItem("token");
       localStorage.removeItem("refreshToken");
@@ -50,7 +56,6 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    console.log(pathName);
     if(pathName == "/auth" || pathName == "/setup") return setIsLoading(false);
     if(isUserDataFetched){
       setIsLoading(false);

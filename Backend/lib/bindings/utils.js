@@ -1,7 +1,5 @@
 function neighbourhoodHighlight(params) {
-  // console.log("in nieghbourhoodhighlight");
   allNodes = nodes.get({ returnType: "Object" });
-  // originalNodes = JSON.parse(JSON.stringify(allNodes));
   // if something is selected:
   if (params.nodes.length > 0) {
     highlightActive = true;
@@ -11,7 +9,6 @@ function neighbourhoodHighlight(params) {
 
     // mark all nodes as hard to read.
     for (let nodeId in allNodes) {
-      // nodeColors[nodeId] = allNodes[nodeId].color;
       allNodes[nodeId].color = "rgba(200,200,200,0.5)";
       if (allNodes[nodeId].hiddenLabel === undefined) {
         allNodes[nodeId].hiddenLabel = allNodes[nodeId].label;
@@ -32,7 +29,6 @@ function neighbourhoodHighlight(params) {
 
     // all second degree nodes get a different color and their label back
     for (i = 0; i < allConnectedNodes.length; i++) {
-      // allNodes[allConnectedNodes[i]].color = "pink";
       allNodes[allConnectedNodes[i]].color = "rgba(150,150,150,0.75)";
       if (allNodes[allConnectedNodes[i]].hiddenLabel !== undefined) {
         allNodes[allConnectedNodes[i]].label =
@@ -43,7 +39,6 @@ function neighbourhoodHighlight(params) {
 
     // all first degree nodes get their own color and their label back
     for (i = 0; i < connectedNodes.length; i++) {
-      // allNodes[connectedNodes[i]].color = undefined;
       allNodes[connectedNodes[i]].color = nodeColors[connectedNodes[i]];
       if (allNodes[connectedNodes[i]].hiddenLabel !== undefined) {
         allNodes[connectedNodes[i]].label =
@@ -60,12 +55,9 @@ function neighbourhoodHighlight(params) {
       allNodes[selectedNode].hiddenLabel = undefined;
     }
   } else if (highlightActive === true) {
-    // console.log("highlightActive was true");
     // reset all nodes
     for (let nodeId in allNodes) {
-      // allNodes[nodeId].color = "purple";
       allNodes[nodeId].color = nodeColors[nodeId];
-      // delete allNodes[nodeId].color;
       if (allNodes[nodeId].hiddenLabel !== undefined) {
         allNodes[nodeId].label = allNodes[nodeId].hiddenLabel;
         allNodes[nodeId].hiddenLabel = undefined;
@@ -79,17 +71,13 @@ function neighbourhoodHighlight(params) {
   if (params.nodes.length > 0) {
     for (let nodeId in allNodes) {
       if (allNodes.hasOwnProperty(nodeId)) {
-        // console.log(allNodes[nodeId]);
         updateArray.push(allNodes[nodeId]);
       }
     }
     nodes.update(updateArray);
   } else {
-    // console.log("Nothing was selected");
     for (let nodeId in allNodes) {
       if (allNodes.hasOwnProperty(nodeId)) {
-        // console.log(allNodes[nodeId]);
-        // allNodes[nodeId].color = {};
         updateArray.push(allNodes[nodeId]);
       }
     }

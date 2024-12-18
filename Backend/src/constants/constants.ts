@@ -11,7 +11,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-export const LIST_COMMAND = 'lst';
-export const GRAPH_UPLOAD_COMMAND = 'adgr';
-export const GRAPH_REMOVE_COMMAND = 'rmgr';
-export const TRIANGLE_COUNT_COMMAND = 'trian';
+export const HTTP = {
+  "200": 200,
+  "201": 201,	
+  "400": 400,
+  "401": 401,
+  "404": 404,
+  "422": 422,
+  "500": 500
+}

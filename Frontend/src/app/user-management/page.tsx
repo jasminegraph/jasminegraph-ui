@@ -1,13 +1,23 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
-import { ClusterData } from "@/data/cluster-data";
-import { IClusterDetails } from "@/types/cluster-types";
 import Highlighter from 'react-highlight-words';
-import { Tag, Button, Modal, Input, Space, Table, Layout, theme, Typography } from 'antd';
+import { Tag, Button, Modal, Input, Space, Table, Layout, theme, Typography, message } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import type { SearchProps } from "antd/es/input/Search";
 import type { TableProps, PaginationProps } from 'antd';
 import type { InputRef, TableColumnType } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
@@ -23,10 +33,10 @@ const { Content } = Layout;
 interface DataType {
   key: string;
   userID: string;
-  Name: string;
-  Email: string;
-  Role: string;
-  Status: boolean;
+  name: string;
+  email: string;
+  role: string;
+  status: boolean;
   [key: string]: string | boolean;
 }
 
@@ -52,24 +62,15 @@ export default function Clusters() {
   const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef<InputRef>(null);
 
-  // const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
-  //   const filteredClusters = ClusterData.filter((cluster) => {
-  //     return cluster.name.toLowerCase().includes(value.toLowerCase());
-  //   });
-  //   setClusters(filteredClusters);
-  // }
-
   const showModal = () => {
     setOpenModal(true);
   };
 
   const handleOk = (e: React.MouseEvent<HTMLElement>) => {
-    console.log(e);
     setOpenModal(false);
   };
 
   const handleCancel = (e: React.MouseEvent<HTMLElement>) => {
-    console.log(e);
     setOpenModal(false);
   };
 
@@ -78,10 +79,10 @@ export default function Clusters() {
       return {
         key: data._id,
         userID: data._id,
-        Name: data.fullName,
-        Email: data.email,
-        Role: data.role,
-        Status: data.enabled,
+        name: data.fullName,
+        email: data.email,
+        role: data.role,
+        status: data.enabled,
       };
     });
   }
@@ -205,7 +206,7 @@ export default function Clusters() {
       title: 'Status',
       dataIndex: 'Status',
       key: 'status',
-      render: (_, { Status }) => (
+      render: (_, { status: Status }) => (
         <>
           {Status ? (
             <Tag color={'green'}>
@@ -228,7 +229,7 @@ export default function Clusters() {
         dispatch(set_Users_Cache(res.data))
       }
     }catch(err){
-      console.log("Failed to fetch cluster")
+      message.error("Failed to fetch user data")
     }
   }
 
