@@ -17,7 +17,6 @@ import type { CollapseProps } from 'antd';
 import { Button, Collapse, Modal, Spin } from 'antd';
 import { getGraphVizualization } from "@/services/graph-visualiztion";
 import { LoadingOutlined } from '@ant-design/icons';
-import ReactHtmlParser from 'react-html-parser';
 
 const text = `
   Graphs' details (size, last_modified, nodes, edges)
