@@ -80,6 +80,3 @@ export const QueryInterfaceMenu: MenuItem[] = [
     icon: <CodeSandboxOutlined />,
   },
 ];
-
-
-

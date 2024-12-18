@@ -24,4 +24,4 @@ const authRoute = () => {
   return router;
 };
 
-export { authRoute }
+export { authRoute };

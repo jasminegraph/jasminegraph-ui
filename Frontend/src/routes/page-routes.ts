@@ -44,4 +44,4 @@ export const QUERY_PANEL_ROUTES = {
   query: "/",
   properties: "/properties",
   console: "/console"
-}
+};

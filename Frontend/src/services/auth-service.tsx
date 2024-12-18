@@ -148,5 +148,3 @@ export async function getUserDataByToken(token: string){
       return Promise.reject();
   }
 }
-
-
