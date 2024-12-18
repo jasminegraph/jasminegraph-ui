@@ -18,6 +18,9 @@ import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUN
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
 import { HTTP } from '../constants/constants';
+import { exec } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 let socket;
 let tSocket;
@@ -204,4 +207,25 @@ const triangleCount = async (req: Request, res: Response) => {
   }
 };
 
-export { getGraphList, uploadGraph, removeGraph, triangleCount };
+const getGraphVisualization = async (req, res) => {
+  console.log('Generating graph visualization...');
+  // Run the Python script to generate the graph
+  exec('python ./src/script/generate-graph-v1.py', (error, stdout, stderr) => {
+      if (error) {
+          console.error(`Error executing the operation: ${error}`);
+          return res.status(500).send('Error generating graph');
+      }
+
+      // Read the generated HTML file
+      fs.readFile(path.join(__dirname, 'graph.html'), 'utf8', (err, data) => {
+          if (err) {
+              console.error(`Error reading the file: ${err}`);
+              return res.status(500).send('Error reading graph file');
+          }
+
+          res.send(data);
+      });
+  });
+}
+
+export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization };
