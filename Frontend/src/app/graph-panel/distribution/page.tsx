@@ -14,31 +14,75 @@ limitations under the License.
 'use client';
 import React from "react";
 import type { CollapseProps } from 'antd';
-import { Collapse } from 'antd';
+import { Button, Collapse, Modal, Spin } from 'antd';
+import { getGraphVizualization } from "@/services/graph-visualiztion";
+import { LoadingOutlined } from '@ant-design/icons';
+import ReactHtmlParser from 'react-html-parser';
 
 const text = `
   Graphs' details (size, last_modified, nodes, edges)
 `;
 
-const items: CollapseProps['items'] = [
-  {
-    key: '1',
-    label: 'Worker 1',
-    children: <p>{text}</p>,
-  },
-  {
-    key: '2',
-    label: 'Worker 2',
-    children: <p>{text}</p>,
-  },
-  {
-    key: '3',
-    label: 'Worker 3',
-    children: <p>{text}</p>,
-  },
-];
-
 export default function GraphDistribution() {
+  const [openModal, setOpenModal] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [graph, setGraph] = React.useState<any>(null);
+
+  const getGraph = async () => {
+    try{
+      setLoading(true);
+      const res = await getGraphVizualization();
+      console.log(res);
+      setLoading(false);
+      return res;
+    }catch(err){
+      console.log(err);
+      setLoading(false);
+    }
+  }
+
+  const onViewGraph = async (key: string) => {
+    console.log("::onViewGraph::", key);
+    setOpenModal(true);
+    const graph = await getGraph();
+    setGraph(graph);
+  }
+
+  const IFrameRenderer = ({ htmlContent }:{htmlContent: string}) => {
+    return (
+        <iframe
+            title="Graph Renderer"
+            srcDoc={htmlContent}
+            style={{ width: "100%", height: "600px", border: "none" }}
+            sandbox="allow-scripts allow-same-origin"
+        />
+    );
+  };
+
+  const CollapseComponent = ({key}:{key: string}) => {
+    return (
+      <div className="flex align-center justify-between">
+        <p>{text}</p>
+        <Button color="primary" type="default" onClick={() => onViewGraph(key)}>
+          View
+        </Button>
+      </div>
+    );
+  }
+
+  const items: CollapseProps['items'] = [
+    {
+      key: '1',
+      label: 'Worker 1',
+      children: <CollapseComponent key="1" />,
+    },
+    {
+      key: '2',
+      label: 'Worker 2',
+      children: <CollapseComponent key="2" />,
+    }
+  ];
+
   return (
     <div className="">
       <div style={{margin: "20px 0px", width: "80%"}}>
@@ -51,6 +95,18 @@ export default function GraphDistribution() {
       <div style={{width: "80%"}}>
         <Collapse items={items} defaultActiveKey={['1']} />
       </div>
+      <Modal
+        title="Graph"
+        open={openModal}
+        footer={<></>}
+        width={1200}
+        onCancel={() => setOpenModal(false)}
+      >
+        {loading ? (<Spin indicator={<LoadingOutlined spin />} size="default" />
+      ):(
+        <div><IFrameRenderer htmlContent={graph} /></div>
+      )}
+      </Modal>
     </div>
   );
 }

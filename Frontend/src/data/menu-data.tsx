@@ -37,11 +37,13 @@ export const ClusterTopMenu: MenuItem[] = [
     label: 'Deployment',
     key: Routes.CLUSTER_PAGE_ROUTES.deployment,
     icon: <DeploymentUnitOutlined />,
+    disabled: true,
   },
   {
     label: 'Logs',
     key: Routes.CLUSTER_PAGE_ROUTES.logs,
     icon: <AlignLeftOutlined />,
+    disabled: true,
   },
 ];
 
