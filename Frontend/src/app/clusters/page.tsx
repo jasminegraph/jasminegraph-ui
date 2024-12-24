@@ -50,7 +50,7 @@ export default function Clusters() {
       setClusters(res.data)
     }
     }catch(err){
-      message.error("Failed to fetch clusters");
+      message.error("Failed to fetch JasmineGraph clusters");
     }
   }
 
