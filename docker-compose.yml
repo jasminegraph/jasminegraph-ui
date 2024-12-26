@@ -11,8 +11,6 @@ services:
     environment:
       - BACKEND=http://backend:8080 # Pointing to the backend service
       - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
-    depends_on:
-      - backend  # Ensure backend service starts before frontend
 
   # Backend Service
   backend:
@@ -24,6 +22,8 @@ services:
       - next-node
     depends_on:
       - mongoCont  # Ensure MongoDB starts before backend
+    volumes:
+      - /var/tmp/jasminegraph-ui-backend:/app/caches 
     environment:
       - MONGO_URL=mongodb://mongoCont:27017/jasminegraph # MongoDB connection string pointing to the mongo service
 
