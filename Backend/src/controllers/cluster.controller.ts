@@ -44,6 +44,7 @@ const addNewCluster = async (req: Request, res: Response) => {
     
     return res.status(HTTP[201]).json({ data: clusterCreated });
   } catch (err) {
+    console.error(err, 'Error creating cluster');
     return res.status(HTTP[404]).json({ 
       message: 'Internal Server Error: Unable to create the cluster.', 
       error: err instanceof Error ? err.message : 'Unknown error occurred' 
@@ -70,6 +71,7 @@ const getCluster = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: cluster });
   } catch (err) {
+    console.error(err, 'Error getting cluster');
     return res.status(HTTP[404]).json({ 
       message: 'Internal Server Error: Unable to get the cluster.', 
       error: err instanceof Error ? err.message : 'Unknown error occurred' 
@@ -93,6 +95,7 @@ const addUserToCluster = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: cluster });
   } catch (err) {
+    console.error(err, 'Error adding user to cluster');
     return res.status(HTTP[404]).json({ 
       message: 'Internal Server Error: Unable to add the user to the cluster.',
       error: err instanceof Error ? err.message : 'Unknown error occurred',
@@ -116,6 +119,7 @@ const removeUserFromCluster = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: cluster });
   } catch (err) {
+    console.error(err, 'Error removing user from cluster');
     return res.status(HTTP[404]).json({ 
       message: 'Internal Server Error: Unable to remove the user from the cluster.',
       error: err instanceof Error ? err.message : 'Unknown error occurred',
@@ -132,6 +136,7 @@ const getMyClusters = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: clusters });
   } catch (err) {
+    console.error(err, 'Error fetching clusters for user');
     return res.status(HTTP[404]).json({ 
       message: 'Internal Server Error: Unable to fetch clusters for the user. Please try again later.',
       error: err instanceof Error ? err.message : 'Unknown error occurred',
