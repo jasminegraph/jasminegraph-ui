@@ -24,11 +24,11 @@ const addNewCluster = async (req: Request, res: Response) => {
   try {
     const token = await Token.findOne({ accessToken });
     if (!token) {
-      return res.status(HTTP[401]).json({ message: 'Unauthorized' });
+      return res.status(HTTP[401]).json({ message: 'Unauthorized: Invalid or missing access token.' });
     }
     const user = await User.findOne({ _id: token.userId });
     if (!user) {
-      return res.status(HTTP[HTTP[404]]).json({ message: 'User not found' });
+      return res.status(HTTP[HTTP[404]]).json({ message: 'User not found: The token is associated with a non-existent user.' });
     }
 
     const newCluster: ClusterInput = {
@@ -44,7 +44,10 @@ const addNewCluster = async (req: Request, res: Response) => {
     
     return res.status(HTTP[201]).json({ data: clusterCreated });
   } catch (err) {
-    return res.status(HTTP[200]).send('Server error');
+    return res.status(HTTP[404]).json({ 
+      message: 'Internal Server Error: Unable to create the cluster.', 
+      error: err instanceof Error ? err.message : 'Unknown error occurred' 
+    });
   }
 
 }
@@ -67,7 +70,10 @@ const getCluster = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: cluster });
   } catch (err) {
-    return res.status(HTTP[200]).send('Server error');
+    return res.status(HTTP[404]).json({ 
+      message: 'Internal Server Error: Unable to get the cluster.', 
+      error: err instanceof Error ? err.message : 'Unknown error occurred' 
+    });
   }
 };
 
@@ -87,7 +93,10 @@ const addUserToCluster = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: cluster });
   } catch (err) {
-    return res.status(HTTP[200]).send('Server error');
+    return res.status(HTTP[404]).json({ 
+      message: 'Internal Server Error: Unable to add the user to the cluster.',
+      error: err instanceof Error ? err.message : 'Unknown error occurred',
+    });
   }
 };
 
@@ -107,7 +116,10 @@ const removeUserFromCluster = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: cluster });
   } catch (err) {
-    return res.status(HTTP[200]).send('Server error');
+    return res.status(HTTP[404]).json({ 
+      message: 'Internal Server Error: Unable to remove the user from the cluster.',
+      error: err instanceof Error ? err.message : 'Unknown error occurred',
+    });
   }
 };
 
@@ -120,7 +132,10 @@ const getMyClusters = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: clusters });
   } catch (err) {
-    return res.status(HTTP[200]).send('Server error');
+    return res.status(HTTP[404]).json({ 
+      message: 'Internal Server Error: Unable to fetch clusters for the user. Please try again later.',
+      error: err instanceof Error ? err.message : 'Unknown error occurred',
+    });
   }
 };
 
