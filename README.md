@@ -1,6 +1,6 @@
 # jasminegraph-ui
 
-Web based User Interface for JasmineGraph Distributed Graph Database Server
+Web based User Interface for [JasmineGraph](https://github.com/miyurud/jasminegraph) Distributed Graph Database Server
 
 ## Overview
 
@@ -60,24 +60,83 @@ yarn dev
 
 Open your browser and navigate to http://localhost:3000 to access the application.
 
-### Building and Running with Docker
 
-To build and run the application using Docker, follow these steps:
+# JasmineGraph Docker Deployment
 
-1. Ensure Docker is installed and running on your machine.
-2. Build the Docker image:
+This guide will help you set up and deploy JasmineGraph using Docker. We’ll build the frontend and backend services separately, then use Docker Compose to bring everything up.
+
+## Prerequisites
+
+Ensure you have the following installed:
+
+- [Docker](https://docs.docker.com/get-docker/)
+
+## Deployment Instructions
+
+1. **Clone the Repository**
+
+   Clone the JasmineGraph repository:
+
+   ```bash
+   git clone https://github.com/jasminegraph/jasminegraph-ui.git
+   cd jasminegraph
+   ```
+
+2. **Build the Frontend Service**
+
+   Navigate to the `frontend` directory and build the Docker image:
+
+   ```bash
+   cd frontend
+   docker build -t jasminegraph-frontend .
+   ```
+
+3. **Build the Backend Service**
+
+   Navigate to the `backend` directory and build the Docker image:
+
+   ```bash
+   cd ../backend
+   docker build -t jasminegraph-backend .
+   ```
+
+4. **Start the Services with Docker Compose**
+
+   From the root directory of the project, use Docker Compose to start both the frontend and backend services:
+
+   ```bash
+   cd ..
+   docker compose up
+   ```
+
+   This command will start all the services defined in your `docker-compose.yml` file.
+
+5. **Access the Application**
+
+   Once the containers are running, you can access JasmineGraph through the specified frontend and backend endpoints.
+
+## Stopping the Services
+
+To stop the services, press `Ctrl+C` in the terminal running `docker compose up`, or run:
 
 ```bash
-docker build -t jasminegraph-ui .
+docker compose down
 ```
 
-3. Run the Docker container:
+## Additional Notes
 
-```bash
-docker run -p 3000:3000 jasminegraph-ui
-```
+- Make sure to adjust any configurations as needed in your `docker-compose.yml`.
+- If you encounter permission issues, try running the Docker commands with `sudo`.
 
-Open your browser and navigate to http://localhost:3000 to access the application.
+## Troubleshooting
+
+- Check Docker logs if any service fails to start:
+
+  ```bash
+  docker logs <container_name>
+  ```
+
+- Ensure no other processes are using the same ports specified in your `docker-compose.yml`.
 
 ## Contributing
 
