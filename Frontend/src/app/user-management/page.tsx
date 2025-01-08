@@ -74,6 +74,10 @@ export default function Clusters() {
     setOpenModal(false);
   };
 
+  useEffect(() => {
+    console.log(userData)
+}, [userData])
+
   const getTableData = () => {
     return userData.map((data) => {
       return {
@@ -187,19 +191,19 @@ export default function Clusters() {
     },
     {
       title: 'Name',
-      dataIndex: 'Name',
+      dataIndex: 'name',
       key: 'name',
       ...getColumnSearchProps('Name')
     },
     {
       title: 'Email',
-      dataIndex: 'Email',
+      dataIndex: 'email',
       key: 'email',
       ...getColumnSearchProps('Email')
     },
     {
       title: 'Role',
-      dataIndex: 'Role',
+      dataIndex: 'role',
       key: 'role',
     },
     {
