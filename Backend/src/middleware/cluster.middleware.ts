@@ -19,6 +19,7 @@ const clusterMiddleware = (req: Request, res: Response, next: NextFunction) => {
     if (!cluster) {
         return res.status(401).send('Missing Cluster-ID');
     }
+    console.log('Cluster Middleware: ', cluster);	
     next();
 };
 

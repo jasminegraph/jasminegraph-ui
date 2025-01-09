@@ -19,6 +19,9 @@ export async function getGraphList() {
     const result = await authApi({
       method: "get",
       url: `/backend/graph/list`,
+      headers: {
+        "Cluster-ID": localStorage.getItem("selectedCluster"),
+      },
     }).then((res) => res.data);
     return {
       data: result,
