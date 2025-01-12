@@ -13,6 +13,7 @@ limitations under the License.
 
 import express from 'express';
 import dotenv from 'dotenv';
+import http from 'http';
 
 import { connectToDatabase } from './databaseConnection';
 import { userRoute } from './routes/user.routes';
@@ -21,6 +22,7 @@ import { clusterRoute } from './routes/cluster.routes';
 import { graphRoute } from './routes/graph.routes';
 import authMiddleware from './middleware/auth.middleware';
 import clusterMiddleware from './middleware/cluster.middleware';
+import { setupWebSocket } from './controllers/socket.controller';
 
 dotenv.config();
 
@@ -30,6 +32,11 @@ const PORT = parseInt(process.env.PORT || '8080');
 console.log('MONGO:', process.env.MONGO_URL);
 
 const app = express();
+
+// Create an HTTP server
+const server = http.createServer(app);
+
+setupWebSocket(server);
 
 app.use('/public', express.static('public'));
 
@@ -46,8 +53,9 @@ app.get('/ping', (req, res) => {
   return res.json({ message: 'pong' });
 });
 
-app.listen(PORT, async () => {
+server.listen(PORT, async () => {
   await connectToDatabase();
 
   console.log(`Application started on URL ${HOST}:${PORT} 🎉`);
+  console.log(`WebSocket server is also available at ws://localhost:${PORT}`);
 });

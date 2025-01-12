@@ -101,7 +101,6 @@ export default function Instance({ params }: { params: { id: string } }) {
       <Row style={{justifyContent: "space-between", margin: "20px 0px"}}>
         <Col span={18}>
         <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>Node Details</h1>
-        <p>Manage cluster nodes and add new nodes.</p>
         </Col>
       </Row>
       <Table columns={columns} dataSource={getNodeData()} pagination={false} />

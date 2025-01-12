@@ -12,100 +12,73 @@ limitations under the License.
  */
 
 'use client';
-import React from "react";
+import React, { useEffect } from "react";
 import type { CollapseProps } from 'antd';
-import { Button, Collapse, Modal, Spin } from 'antd';
+import { Button, Collapse, message, Modal, Spin } from 'antd';
 import { getGraphVizualization } from "@/services/graph-visualiztion";
 import { LoadingOutlined } from '@ant-design/icons';
+import GraphVisualization from "@/components/visualization/graph-visualization";
+import { Select, Space } from 'antd';
+import { getGraphList } from "@/services/graph-service";
+import { DataType } from "../graph/page";
 
 const text = `
   Graphs' details (size, last_modified, nodes, edges)
 `;
 
 export default function GraphDistribution() {
-  const [openModal, setOpenModal] = React.useState(false);
-  const [loading, setLoading] = React.useState(false);
-  const [graph, setGraph] = React.useState<any>(null);
+  const [selectedGraph, setSelectedGraph] = React.useState<any>();
+  const [graphs, setGraphs] = React.useState<any[]>([]);
 
-  const getGraph = async () => {
+  const getGraphsData = async () => {
     try{
-      setLoading(true);
-      const res = await getGraphVizualization();
-      console.log(res);
-      setLoading(false);
-      return res;
+    const res = await getGraphList();
+    console.log(res)
+    if(res.data){
+      const filteredData: DataType[] = res.data.map((graph: any) => {
+        return {
+          value: graph.idgraph,
+          label: graph.name,
+        }
+      })
+      setGraphs(filteredData);
+    }
     }catch(err){
-      console.log(err);
-      setLoading(false);
+      message.error("Failed to fetch graphs: " + err);
     }
   }
 
-  const onViewGraph = async (key: string) => {
-    console.log("::onViewGraph::", key);
-    setOpenModal(true);
-    const graph = await getGraph();
-    setGraph(graph);
-  }
+  useEffect(() => {
+    getGraphsData();
+  }, [])
 
-  const IFrameRenderer = ({ htmlContent }:{htmlContent: string}) => {
-    return (
-        <iframe
-            title="Graph Renderer"
-            srcDoc={htmlContent}
-            style={{ width: "100%", height: "600px", border: "none" }}
-            sandbox="allow-scripts allow-same-origin"
-        />
-    );
+  const handleChange = (value: string) => {
+    setSelectedGraph(value);
   };
-
-  const CollapseComponent = ({key}:{key: string}) => {
-    return (
-      <div className="flex align-center justify-between">
-        <p>{text}</p>
-        <Button color="primary" type="default" onClick={() => onViewGraph(key)}>
-          View
-        </Button>
-      </div>
-    );
-  }
-
-  const items: CollapseProps['items'] = [
-    {
-      key: '1',
-      label: 'Worker 1',
-      children: <CollapseComponent key="1" />,
-    },
-    {
-      key: '2',
-      label: 'Worker 2',
-      children: <CollapseComponent key="2" />,
-    }
-  ];
 
   return (
     <div className="">
       <div style={{margin: "20px 0px", width: "80%"}}>
-        <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>Graph Database Distribution</h1>
-        <p>This section provides an overview of the distribution of graph datasets across different workers. 
-          Click on each worker to view the specific graph datasets stored on their respective nodes. 
-          This information helps in managing and monitoring the graph dataset deployment effectively.
+        <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>Graph Visualization</h1>
+        <p>This page allows users to explore and analyze graph datasets interactively. 
+          Nodes and edges are displayed dynamically, showing relationships and connections 
+          within the data. Users can load different datasets, view updates in real-time, 
+          and interact with the graph by zooming and repositioning nodes
         </p>
       </div>
       <div style={{width: "80%"}}>
-        <Collapse items={items} defaultActiveKey={['1']} />
+        <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px"}}>
+          <div>Select Graph:</div>
+          <Select
+            style={{ width: 120 }}
+            onChange={handleChange}
+            value={selectedGraph}
+            options={graphs}
+            size="large"
+          />
+        </div>
+        {selectedGraph && <GraphVisualization graphID={selectedGraph} />}
       </div>
-      <Modal
-        title="Graph"
-        open={openModal}
-        footer={<></>}
-        width={1200}
-        onCancel={() => setOpenModal(false)}
-      >
-        {loading ? (<Spin indicator={<LoadingOutlined spin />} size="default" />
-      ):(
-        <div><IFrameRenderer htmlContent={graph} /></div>
-      )}
-      </Modal>
     </div>
   );
 }

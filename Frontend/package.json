@@ -22,7 +22,8 @@
     "react-highlight-words": "^0.20.0",
     "react-redux": "^9.1.2",
     "react-toastify": "^10.0.5",
-    "sass": "^1.77.6"
+    "sass": "^1.77.6",
+    "vis-network": "^9.1.9"
   },
   "devDependencies": {
     "@types/node": "^20",

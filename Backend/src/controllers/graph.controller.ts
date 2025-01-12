@@ -14,13 +14,20 @@ limitations under the License.
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
-import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
+import { 
+  GRAPH_REMOVE_COMMAND, 
+  GRAPH_UPLOAD_COMMAND, 
+  GRAPH_DATA_COMMAND,
+  LIST_COMMAND, 
+  TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
 import { HTTP } from '../constants/constants';
-import { exec } from 'child_process';
+import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
-import path from 'path';
+import readline from 'readline';
+import WebSocket from 'ws';
+import { parseGraphFile } from '../utils/graph';
 
 let socket;
 let tSocket;
@@ -96,7 +103,7 @@ const getGraphList = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
-            res.status(HTTP[200]).send(commandOutput);
+            res.status(HTTP[200]).send(JSON.parse(commandOutput));
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
@@ -199,7 +206,7 @@ const triangleCount = async (req: Request, res: Response) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, 50000); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -208,24 +215,43 @@ const triangleCount = async (req: Request, res: Response) => {
 };
 
 const getGraphVisualization = async (req, res) => {
-  console.log('Generating graph visualization...');
-  // Run the Python script to generate the graph
-  exec('python ./src/script/generate-graph-v1.py', (error, stdout, stderr) => {
-      if (error) {
-          console.error(`Error executing the operation: ${error}`);
-          return res.status(500).send('Error generating graph');
-      }
-
-      // Read the generated HTML file
-      fs.readFile(path.join(__dirname, 'graph.html'), 'utf8', (err, data) => {
-          if (err) {
-              console.error(`Error reading the file: ${err}`);
-              return res.status(500).send('Error reading graph file');
-          }
-
-          res.send(data);
-      });
-  });
+  const filePath = './src/script/sample/sample.dl';
+  try{
+    const graph = parseGraphFile(filePath);
+    return res.status(HTTP[200]).send({data: graph})
+  } catch (err){
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
 }
 
-export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization };
+const getGraphData = async (req, res) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
+  try {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
+      let commandOutput = '';
+
+      tSocket.on('data', (buffer) => {
+        commandOutput += buffer.toString('utf8');
+      });
+
+      // Write the command to the Telnet server
+      tSocket.write(GRAPH_DATA_COMMAND + '\n', 'utf8', () => {
+        setTimeout(() => {
+          if (commandOutput) {
+            console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
+            res.status(HTTP[200]).send({data: JSON.parse(commandOutput)});
+          } else {
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+          }
+        }, 500); // Adjust timeout to wait for the server response if needed
+      });
+    });
+  } catch (err) {
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
+}
+
+export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData };
