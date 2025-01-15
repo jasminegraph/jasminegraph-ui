@@ -34,7 +34,7 @@ export const setupWebSocket = (server: any) => {
       }
 
       if (data.type === 'QUERY') {
-        streamQueryResult(data.clientId);
+        streamQueryResult(data.clientId, data.query);
       }
     });
   });
@@ -90,7 +90,7 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
   }
 };
 
-const streamQueryResult = async (clientId: string) => {
+const streamQueryResult = async (clientId: string, query: string) => {
   // const connection = await getClusterDetails(req);
   // if (!(connection.host || connection.port)) {
   //   return res.status(404).send(connection);
@@ -164,7 +164,7 @@ const streamQueryResult = async (clientId: string) => {
       });
 
       // Write the command to the Telnet server
-      tSocket.write(CYPHER_AST_COMMAND + '|1|match (n) return n' + '\n', 'utf8', ()=>{
+      tSocket.write(CYPHER_AST_COMMAND + '|1|' + query + '\n', 'utf8', ()=>{
         setTimeout(()=>{}, 5000)
       });
     });
