@@ -29,17 +29,17 @@ import readline from 'readline';
 import WebSocket from 'ws';
 import { parseGraphFile } from '../utils/graph';
 
-let socket;
-let tSocket;
+export let socket;
+export let tSocket;
 
-type IConnection = {
+export type IConnection = {
   host: string;
   port: number;
 }
 
 const DEV_MODE = process.env.DEV_MODE === 'true';
 
-const getClusterDetails = async (req: Request) => {
+export const getClusterDetails = async (req: Request) => {
   const clusterID = req.header('Cluster-ID');
   const cluster = await Cluster.findOne({ _id: clusterID });
   if (!cluster) {
@@ -53,7 +53,7 @@ const getClusterDetails = async (req: Request) => {
   }
 }
 
-const telnetConnection = (connection: IConnection) => (callback: any) => {
+export const telnetConnection = (connection: IConnection) => (callback: any) => {
   // If the global connection is undefined or closed, create a new connection
   if (!socket || socket.destroyed) {
     socket = net.createConnection(connection.port, connection.host, () => {
@@ -67,21 +67,34 @@ const telnetConnection = (connection: IConnection) => (callback: any) => {
         tSocket.writeDont(option);
       });
 
-      console.log('Telnet connection established');
-      callback();
+      tSocket.on('error', (err) => {
+        console.error(`Telnet connection error: ${err.message}`);
+        if (callback) callback(err);  // Call callback with the error
+      });
+
+      tSocket.on('close', () => {
+        console.log('Telnet connection closed');
+        socket = null; // Explicitly set to null to indicate the absence of connection
+        tSocket = null;
+      });
+
+      tSocket.on('end', () => {
+        console.log('Telnet connection ended');
+        socket = null; // Explicitly set to null to indicate the absence of connection
+        tSocket = null;
+      });
+
+      console.log(`Telnet connection established with ${connection.host}:${connection.port}`);
+      callback();  // Invoke the callback when connection is ready
     });
 
     socket.on('error', (err) => {
-      console.error('Connection error: ' + err.message);
-    });
-
-    socket.on('close', () => {
-      console.log('Telnet connection closed');
-      socket = undefined; // Reset socket when closed
-      tSocket = undefined;
+      console.error(`Socket error: ${err.message}`);
+      if (callback) callback(err);  // Call callback with the error
     });
   } else {
-    callback(); // Use existing connection
+    console.log('Using existing Telnet connection');
+    callback();  // Use existing connection
   }
 };
 
@@ -241,7 +254,7 @@ const getGraphData = async (req, res) => {
       tSocket.write(GRAPH_DATA_COMMAND + '\n', 'utf8', () => {
         setTimeout(() => {
           if (commandOutput) {
-            console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
+            console.log(new Date().toLocaleString() + ' - ' + GRAPH_DATA_COMMAND + ' - ' + commandOutput);
             res.status(HTTP[200]).send({data: JSON.parse(commandOutput)});
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });

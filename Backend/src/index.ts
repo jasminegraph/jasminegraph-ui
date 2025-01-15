@@ -18,6 +18,7 @@ import http from 'http';
 import { connectToDatabase } from './databaseConnection';
 import { userRoute } from './routes/user.routes';
 import { authRoute } from './routes/auth.routes';
+import { queryRoute } from './routes/query.routes';
 import { clusterRoute } from './routes/cluster.routes';
 import { graphRoute } from './routes/graph.routes';
 import authMiddleware from './middleware/auth.middleware';
@@ -47,6 +48,7 @@ app.use('/auth', authRoute());
 app.use('/users', userRoute());
 app.use('/clusters', authMiddleware,  clusterRoute());
 app.use('/graph', clusterMiddleware, graphRoute());
+app.use('/query', clusterMiddleware, queryRoute());
 
 // write an endpoint to check backend is running or not
 app.get('/ping', (req, res) => {

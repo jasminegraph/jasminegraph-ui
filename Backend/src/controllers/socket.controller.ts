@@ -2,6 +2,10 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import readline from 'readline';
 import WebSocket from 'ws';
+import { HTTP } from '../constants/constants';
+import { ErrorCode, ErrorMsg } from '../constants/error.constants';
+import { CYPHER_AST_COMMAND } from '../constants/frontend.server.constants';
+import { getClusterDetails, socket, telnetConnection, tSocket } from "./graph.controller";
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
 
@@ -28,10 +32,23 @@ export const setupWebSocket = (server: any) => {
       if (data.type === 'REQUEST_GRAPH') {
         streamGraphVisualization(data.clientId, data.graphFilePath);
       }
+
+      if (data.type === 'QUERY') {
+        streamQueryResult(data.clientId);
+      }
     });
   });
 };
 
+export const sendToClient = (clientId, data) => {
+  const client = clients.get(clientId);
+  if (client && client.readyState === WebSocket.OPEN) {
+    client.send(JSON.stringify(data));
+    console.log(`Sent data to client ${clientId}:`, data);
+  } else {
+    console.error(`Client ${clientId} not connected or WebSocket not open.`);
+  }
+};
 
 const streamGraphVisualization = async (clientId: string, filePath: string) => {
   const client = clients.get(clientId);
@@ -72,3 +89,88 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
     console.error(`Error streaming graph data to client ${clientId}:`, err);
   }
 };
+
+const streamQueryResult = async (clientId: string) => {
+  // const connection = await getClusterDetails(req);
+  // if (!(connection.host || connection.port)) {
+  //   return res.status(404).send(connection);
+  // }
+
+  const connection = {
+    host: "10.8.100.245",
+    port: 7776
+  }
+
+  let sharedBuffer: string[] = [];
+
+  const producer = async () => {
+    console.log("PRODUCER START WORK")
+    var remaining: string = '';
+
+    while(true){
+      if(sharedBuffer.length > 0){
+        remaining += sharedBuffer.shift()!
+        
+        let splitIndex;
+
+        if(remaining.trim() == '-1'){
+          console.log("Termination signal received. Closing Telnet connection.");
+          tSocket.end();
+          return
+        }
+        
+        // Extract complete JSON objects from the buffer
+        while ((splitIndex = remaining.indexOf('\n')) !== -1) {
+          const jsonString = remaining.slice(0, splitIndex).trim(); // Extract a complete object
+          remaining = remaining.slice(splitIndex + 1); // Remove processed part
+          
+          if (jsonString) {
+            if (jsonString == "-1") {
+              console.log("Termination signal received. Closing Telnet connection.");
+              tSocket.end();
+              return; // Exit the producer loop
+            }
+            
+            try {
+              const parsed = JSON.parse(jsonString); // Parse the JSON
+              console.log("===>>>", parsed)
+              sendToClient(clientId, parsed)
+            } catch (error) {
+              console.error('Error parsing JSON:', error, 'Data:', jsonString);
+            }
+          }
+
+
+          if(remaining.trim() == '-1' || jsonString == '-1'){
+            console.log("Termination signal received. Closing Telnet connection.");
+            tSocket.end();
+            return
+          }
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }
+
+  try {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
+      producer();
+
+      console.log("function continuing");
+      tSocket.on('data', (buffer) => {
+        sharedBuffer.push(buffer.toString('utf8'))
+      });
+
+      tSocket.on('end', () => {
+        console.log('Telnet connection ended');
+        tSocket.destroy()
+      });
+
+      // Write the command to the Telnet server
+      tSocket.write(CYPHER_AST_COMMAND + '|1|match (n) return n' + '\n', 'utf8');
+    });
+  } catch (err) {
+    return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
+}
