@@ -5,7 +5,8 @@ import WebSocket from 'ws';
 import { HTTP } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { CYPHER_AST_COMMAND } from '../constants/frontend.server.constants';
-import { getClusterDetails, socket, telnetConnection } from "./graph.controller";
+import { getClusterDetails, IConnection, socket, telnetConnection } from "./graph.controller";
+import { Cluster } from '../models/cluster.model';
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
 
@@ -34,7 +35,7 @@ export const setupWebSocket = (server: any) => {
       }
 
       if (data.type === 'QUERY') {
-        streamQueryResult(data.clientId, data.graphId, data.query);
+        streamQueryResult(data.clientId, data.clusterId, data.graphId, data.query);
       }
     });
   });
@@ -90,15 +91,16 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
   }
 };
 
-const streamQueryResult = async (clientId: string, graphId:string, query: string) => {
-  // const connection = await getClusterDetails(req);
-  // if (!(connection.host || connection.port)) {
-  //   return res.status(404).send(connection);
-  // }
+const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {
+  const cluster = await Cluster.findOne({ _id: clusterId });
+  if (!(cluster?.host || cluster?.port)) {
+    sendToClient(clientId, { Error: "cluster not found"})
+    return
+  }
 
-  const connection = {
-    host: "10.8.100.245",
-    port: 7776
+  const connection: IConnection = {
+    host: cluster.host,
+    port: cluster.port
   }
 
   let sharedBuffer: string[] = [];
@@ -131,7 +133,7 @@ const streamQueryResult = async (clientId: string, graphId:string, query: string
             
             try {
               const parsed = JSON.parse(jsonString); // Parse the JSON
-              console.log("===>>>", parsed)
+              // console.log("===>>>", parsed)
               sendToClient(clientId, parsed)
             } catch (error) {
               console.error('Error parsing JSON:', error, 'Data:', jsonString);
@@ -154,7 +156,6 @@ const streamQueryResult = async (clientId: string, graphId:string, query: string
     telnetConnection({host: connection.host, port: connection.port})((tSocket: any) => {
       producer();
 
-      console.log("function continuing");
       tSocket.on('data', (buffer) => {
         sharedBuffer.push(buffer.toString('utf8'))
       });
@@ -164,9 +165,7 @@ const streamQueryResult = async (clientId: string, graphId:string, query: string
       });
 
       // Write the command to the Telnet server
-      tSocket.write(CYPHER_AST_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8', ()=>{
-        setTimeout(()=>{}, 5000)
-      });
+      tSocket.write(CYPHER_AST_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
     });
   } catch (err) {
     return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
