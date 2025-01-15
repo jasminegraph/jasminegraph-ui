@@ -67,34 +67,21 @@ export const telnetConnection = (connection: IConnection) => (callback: any) => 
         tSocket.writeDont(option);
       });
 
-      tSocket.on('error', (err) => {
-        console.error(`Telnet connection error: ${err.message}`);
-        if (callback) callback(err);  // Call callback with the error
-      });
-
-      tSocket.on('close', () => {
-        console.log('Telnet connection closed');
-        socket = null; // Explicitly set to null to indicate the absence of connection
-        tSocket = null;
-      });
-
-      tSocket.on('end', () => {
-        console.log('Telnet connection ended');
-        socket = null; // Explicitly set to null to indicate the absence of connection
-        tSocket = null;
-      });
-
-      console.log(`Telnet connection established with ${connection.host}:${connection.port}`);
-      callback();  // Invoke the callback when connection is ready
+      console.log('Telnet connection established');
+      callback(tSocket);
     });
 
     socket.on('error', (err) => {
-      console.error(`Socket error: ${err.message}`);
-      if (callback) callback(err);  // Call callback with the error
+      console.error('Connection error: ' + err.message);
+    });
+
+    socket.on('end', () => {
+      console.log('Telnet connection closed');
+      socket = undefined; // Reset socket when closed
+      tSocket = undefined;
     });
   } else {
-    console.log('Using existing Telnet connection');
-    callback();  // Use existing connection
+    callback(tSocket); // Use existing connection
   }
 };
 

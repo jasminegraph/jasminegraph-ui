@@ -5,7 +5,7 @@ import WebSocket from 'ws';
 import { HTTP } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { CYPHER_AST_COMMAND } from '../constants/frontend.server.constants';
-import { getClusterDetails, socket, telnetConnection, tSocket } from "./graph.controller";
+import { getClusterDetails, socket, telnetConnection } from "./graph.controller";
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
 
@@ -115,7 +115,6 @@ const streamQueryResult = async (clientId: string) => {
 
         if(remaining.trim() == '-1'){
           console.log("Termination signal received. Closing Telnet connection.");
-          tSocket.end();
           return
         }
         
@@ -127,7 +126,6 @@ const streamQueryResult = async (clientId: string) => {
           if (jsonString) {
             if (jsonString == "-1") {
               console.log("Termination signal received. Closing Telnet connection.");
-              tSocket.end();
               return; // Exit the producer loop
             }
             
@@ -143,7 +141,6 @@ const streamQueryResult = async (clientId: string) => {
 
           if(remaining.trim() == '-1' || jsonString == '-1'){
             console.log("Termination signal received. Closing Telnet connection.");
-            tSocket.end();
             return
           }
         }
@@ -154,7 +151,7 @@ const streamQueryResult = async (clientId: string) => {
   }
 
   try {
-    telnetConnection({host: connection.host, port: connection.port})(() => {
+    telnetConnection({host: connection.host, port: connection.port})((tSocket: any) => {
       producer();
 
       console.log("function continuing");
@@ -164,11 +161,12 @@ const streamQueryResult = async (clientId: string) => {
 
       tSocket.on('end', () => {
         console.log('Telnet connection ended');
-        tSocket.destroy()
       });
 
       // Write the command to the Telnet server
-      tSocket.write(CYPHER_AST_COMMAND + '|1|match (n) return n' + '\n', 'utf8');
+      tSocket.write(CYPHER_AST_COMMAND + '|1|match (n) return n' + '\n', 'utf8', ()=>{
+        setTimeout(()=>{}, 5000)
+      });
     });
   } catch (err) {
     return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
