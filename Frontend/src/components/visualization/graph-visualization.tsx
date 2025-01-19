@@ -1,3 +1,16 @@
+/**
+Copyright 2024 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 'use client';
 import { getGraphVizualization } from '@/services/graph-visualiztion';
 import { Button, Progress, Spin } from 'antd';
@@ -6,8 +19,9 @@ import { DataSet, Network } from 'vis-network/standalone';
 import { LoadingOutlined } from '@ant-design/icons';
 
 import 'vis-network/styles/vis-network.css';
+import { delay } from '@/utils/time';
 
-type INode = {
+export type INode = {
   id: number;
   label: string;
   shape: string;
@@ -40,9 +54,7 @@ const GraphVisualization = ({graphID}:Props) => {
       setLoading(false);
       setPercent(0);
       setProgressing(true);
-      // Function to introduce a delay
-      const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
+      
       if(res.data){
         const newNodes: INode[] = res.data.nodes ?? [];
         const newEdges: IEdge[] = res.data.edges ?? [];
@@ -116,23 +128,6 @@ const GraphVisualization = ({graphID}:Props) => {
       network.destroy();
     };
   }, []);
-
-  // const addEdge = () => {
-    
-  //   const newNodes: INode[] = [
-  //     { id: nodeCount, label: `Node ${nodeCount}`, shape: 'dot', color: '#97c2fc'},
-  //     { id: nodeCount + 1, label: `Node ${nodeCount + 1}`, shape: 'dot', color: '#97c2fc'},
-  //   ]
-  //   const newEdge: IEdge[] = [
-  //     { from: nodeCount + 1, to: nodeCount}
-  //   ]
-
-  //   newNodes.forEach(node => nodesRef.current.add(node))
-  //   newEdge.forEach(edge => edgesRef.current.add(edge))
-  //   setNodeCount(nodeCount+2)
-
-  //   console.log("EDGE ADD")
-  // }
 
   return (
     <div>
