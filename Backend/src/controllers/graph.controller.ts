@@ -143,7 +143,7 @@ const uploadGraph = async (req: Request, res: Response) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: ErrorMsg.NoResponseFromServer });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -173,7 +173,7 @@ const removeGraph = async (req: Request, res: Response) => {
           } else {
             return res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 5000); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -206,7 +206,7 @@ const triangleCount = async (req: Request, res: Response) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 50000); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -246,7 +246,7 @@ const getGraphData = async (req, res) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
