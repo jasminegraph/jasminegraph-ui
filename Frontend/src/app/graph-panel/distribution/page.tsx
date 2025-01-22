@@ -33,7 +33,6 @@ export default function GraphDistribution() {
   const getGraphsData = async () => {
     try{
     const res = await getGraphList();
-    console.log(res)
     if(res.data){
       const filteredData: DataType[] = res.data.map((graph: any) => {
         return {

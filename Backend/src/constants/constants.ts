@@ -20,3 +20,8 @@ export const HTTP = {
   "422": 422,
   "500": 500
 }
+
+export const TIMEOUT = {
+  hundred: 100,
+  default: 5000,
+}

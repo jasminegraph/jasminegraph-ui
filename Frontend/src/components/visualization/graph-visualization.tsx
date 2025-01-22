@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasminGraph Team
+Copyright 2025 JasminGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -20,6 +20,8 @@ import { LoadingOutlined } from '@ant-design/icons';
 
 import 'vis-network/styles/vis-network.css';
 import { delay } from '@/utils/time';
+
+const DEFAULT_TIMEOUT = 75;
 
 export type INode = {
   id: number;
@@ -50,7 +52,6 @@ const GraphVisualization = ({graphID}:Props) => {
     try{
       setLoading(true);
       const res = await getGraphVizualization();
-      console.log(res);
       setLoading(false);
       setPercent(0);
       setProgressing(true);
@@ -64,20 +65,19 @@ const GraphVisualization = ({graphID}:Props) => {
         for (let index = 0; index < newNodes.length; index++) {
           const node = newNodes[index];
           nodesRef.current.add(node);
-          await delay(75);
+          await delay(DEFAULT_TIMEOUT);
           setPercent(Math.ceil((index/nodeCount)*100))
         }
         
       }
       return res;
     }catch(err){
-      console.log(err);
+      console.log("error while getting graph data: ", err);
       setLoading(false);
     }
   }
   
   const onViewGraph = async (key: string) => {
-    console.log("::onViewGraph::", key);
     const graph = await getGraph();
     setGraph(graph);
   }

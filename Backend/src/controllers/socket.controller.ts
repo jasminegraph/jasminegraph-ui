@@ -1,8 +1,21 @@
+/**
+Copyright 2025 JasminGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import readline from 'readline';
 import WebSocket from 'ws';
-import { HTTP } from '../constants/constants';
+import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { CYPHER_AST_COMMAND } from '../constants/frontend.server.constants';
 import { getClusterDetails, IConnection, socket, telnetConnection } from "./graph.controller";
@@ -82,9 +95,6 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify(nodeData));
       }
-
-      // Delay between sending each line
-      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   } catch (err) {
     console.error(`Error streaming graph data to client ${clientId}:`, err);
@@ -106,7 +116,6 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
   let sharedBuffer: string[] = [];
 
   const producer = async () => {
-    console.log("PRODUCER START WORK")
     var remaining: string = '';
 
     while(true){
@@ -133,7 +142,6 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
             
             try {
               const parsed = JSON.parse(jsonString); // Parse the JSON
-              // console.log("===>>>", parsed)
               sendToClient(clientId, parsed)
             } catch (error) {
               console.error('Error parsing JSON:', error, 'Data:', jsonString);
@@ -148,7 +156,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
         }
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, TIMEOUT.hundred));
     }
   }
 

@@ -44,7 +44,6 @@ export default function Query() {
   const getGraphsData = async () => {
     try{
     const res = await getGraphList();
-    console.log(res)
     if(res.data){
       const filteredData: DataType[] = res.data.map((graph: any) => {
         return {
@@ -74,7 +73,6 @@ export default function Query() {
         socket.onopen = () => {};
         socket.onmessage = (event) => {
           const message = JSON.parse(event.data);
-          console.log(message)
           if(message?.type == "CONNECTED"){
             setClientID(message?.clientId)
           }else{
@@ -82,7 +80,7 @@ export default function Query() {
           }
         };
         socket.onclose = () => {
-          console.log("disconnected");
+          console.log("socket disconnected");
         };
         setSocket(socket);
       } catch (err) {
@@ -139,10 +137,6 @@ export default function Query() {
     })),
   ];
 
-  const onChange = (key: string) => {
-    console.log(key);
-  };
-
   const tabItems: TabItem[] = [
     {
       key: '1',
@@ -191,7 +185,6 @@ export default function Query() {
       </div>
       {messagePool.length > 0 && (
         <Tabs
-          onChange={onChange}
           type="card"
           items={tabItems}
         />

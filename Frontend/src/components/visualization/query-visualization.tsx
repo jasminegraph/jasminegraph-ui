@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasminGraph Team
+Copyright 2025 JasminGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -21,6 +21,8 @@ import { useAppSelector } from '@/redux/hook';
 import { INode } from './graph-visualization';
 import randomColor from 'randomcolor';
 import { delay } from '@/utils/time';
+
+const DEFAULT_DELAY = 75;
 
 const QueryVisualization = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -50,7 +52,7 @@ const QueryVisualization = () => {
         color
       }
       nodesRef.current.add(node);
-      await delay(75);
+      await delay(DEFAULT_DELAY);
       setPercent(Math.ceil((index+1/messagePool.length)*100))
     }
     setLoading(false);

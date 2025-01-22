@@ -22,7 +22,7 @@ import {
   TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
-import { HTTP } from '../constants/constants';
+import { HTTP, TIMEOUT } from '../constants/constants';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import readline from 'readline';
@@ -107,7 +107,7 @@ const getGraphList = async (req: Request, res: Response) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {

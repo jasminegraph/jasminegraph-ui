@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasminGraph Team
+Copyright 2025 JasminGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,7 +13,7 @@ limitations under the License.
 
 import { getClusterDetails, telnetConnection, tSocket } from "./graph.controller";
 import { CYPHER_AST_COMMAND } from '../constants/frontend.server.constants';
-import { HTTP } from '../constants/constants';
+import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 
 const queryHandler = async (req, res) => {
@@ -25,7 +25,6 @@ const queryHandler = async (req, res) => {
   let sharedBuffer: string[] = [];
 
   const producer = async () => {
-    console.log("PRODUCER START WORK")
     var remaining: string = '';
 
     while(true){
@@ -38,18 +37,14 @@ const queryHandler = async (req, res) => {
         while ((splitIndex = remaining.indexOf('\n')) !== -1) {
           const jsonString = remaining.slice(0, splitIndex).trim(); // Extract a complete object
           remaining = remaining.slice(splitIndex + 1); // Remove processed part
-          console.log("::::JSON", jsonString)
           
           if (jsonString) {
             try {
               const parsed = JSON.parse(jsonString); // Parse the JSON
-              console.log("===>>>", parsed)
             } catch (error) {
               console.error('Error parsing JSON:', error, 'Data:', jsonString);
             }
           }
-
-          // console.log("::REMAINING>>", remaining.trim())
 
           if(remaining.trim() == '-1' || jsonString == '-1'){
             console.log("Skipping processing due to termination signal");
@@ -67,10 +62,8 @@ const queryHandler = async (req, res) => {
       let commandOutput = '';
       producer();
 
-      console.log("function continuing");
       tSocket.on('data', (buffer) => {
         commandOutput += buffer.toString('utf8')
-        console.log("chunck =>>>", buffer.toString('utf8'))
         sharedBuffer.push(buffer.toString('utf8'))
       });
 
@@ -83,7 +76,7 @@ const queryHandler = async (req, res) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 5000); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
