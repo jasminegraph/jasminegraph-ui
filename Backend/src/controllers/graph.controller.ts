@@ -14,22 +14,32 @@ limitations under the License.
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
-import { GRAPH_REMOVE_COMMAND, GRAPH_UPLOAD_COMMAND, LIST_COMMAND, TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
+import { 
+  GRAPH_REMOVE_COMMAND, 
+  GRAPH_UPLOAD_COMMAND, 
+  GRAPH_DATA_COMMAND,
+  LIST_COMMAND, 
+  TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
-import { HTTP } from '../constants/constants';
+import { HTTP, TIMEOUT } from '../constants/constants';
+import { v4 as uuidv4 } from 'uuid';
+import fs from 'fs';
+import readline from 'readline';
+import WebSocket from 'ws';
+import { parseGraphFile } from '../utils/graph';
 
-let socket;
-let tSocket;
+export let socket;
+export let tSocket;
 
-type IConnection = {
+export type IConnection = {
   host: string;
   port: number;
 }
 
 const DEV_MODE = process.env.DEV_MODE === 'true';
 
-const getClusterDetails = async (req: Request) => {
+export const getClusterDetails = async (req: Request) => {
   const clusterID = req.header('Cluster-ID');
   const cluster = await Cluster.findOne({ _id: clusterID });
   if (!cluster) {
@@ -43,7 +53,7 @@ const getClusterDetails = async (req: Request) => {
   }
 }
 
-const telnetConnection = (connection: IConnection) => (callback: any) => {
+export const telnetConnection = (connection: IConnection) => (callback: any) => {
   // If the global connection is undefined or closed, create a new connection
   if (!socket || socket.destroyed) {
     socket = net.createConnection(connection.port, connection.host, () => {
@@ -58,20 +68,20 @@ const telnetConnection = (connection: IConnection) => (callback: any) => {
       });
 
       console.log('Telnet connection established');
-      callback();
+      callback(tSocket);
     });
 
     socket.on('error', (err) => {
       console.error('Connection error: ' + err.message);
     });
 
-    socket.on('close', () => {
+    socket.on('end', () => {
       console.log('Telnet connection closed');
       socket = undefined; // Reset socket when closed
       tSocket = undefined;
     });
   } else {
-    callback(); // Use existing connection
+    callback(tSocket); // Use existing connection
   }
 };
 
@@ -93,11 +103,11 @@ const getGraphList = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
-            res.status(HTTP[200]).send(commandOutput);
+            res.status(HTTP[200]).send(JSON.parse(commandOutput));
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -133,7 +143,7 @@ const uploadGraph = async (req: Request, res: Response) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: ErrorMsg.NoResponseFromServer });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -163,7 +173,7 @@ const removeGraph = async (req: Request, res: Response) => {
           } else {
             return res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 5000); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -196,7 +206,7 @@ const triangleCount = async (req: Request, res: Response) => {
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
           }
-        }, 500); // Adjust timeout to wait for the server response if needed
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
       });
     });
   } catch (err) {
@@ -204,4 +214,44 @@ const triangleCount = async (req: Request, res: Response) => {
   }
 };
 
-export { getGraphList, uploadGraph, removeGraph, triangleCount };
+const getGraphVisualization = async (req, res) => {
+  const filePath = './src/script/sample/sample.dl';
+  try{
+    const graph = parseGraphFile(filePath);
+    return res.status(HTTP[200]).send({data: graph})
+  } catch (err){
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
+}
+
+const getGraphData = async (req, res) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
+  try {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
+      let commandOutput = '';
+
+      tSocket.on('data', (buffer) => {
+        commandOutput += buffer.toString('utf8');
+      });
+
+      // Write the command to the Telnet server
+      tSocket.write(GRAPH_DATA_COMMAND + '\n', 'utf8', () => {
+        setTimeout(() => {
+          if (commandOutput) {
+            console.log(new Date().toLocaleString() + ' - ' + GRAPH_DATA_COMMAND + ' - ' + commandOutput);
+            res.status(HTTP[200]).send({data: JSON.parse(commandOutput)});
+          } else {
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+          }
+        }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
+      });
+    });
+  } catch (err) {
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
+}
+
+export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData };

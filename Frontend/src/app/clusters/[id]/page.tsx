@@ -89,11 +89,16 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
     },
     {
       key: '2',
+      label: 'Host',
+      children: clusterDetails?.host || "",
+    },
+    {
+      key: '3',
       label: 'JasmineGraph Version',
       children: '1.21.101',
     },
     {
-      key: '3',
+      key: '4',
       label: 'Platform',
       children: '-',
     },

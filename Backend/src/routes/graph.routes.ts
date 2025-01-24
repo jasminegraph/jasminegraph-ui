@@ -12,7 +12,7 @@ limitations under the License.
  */
 
 import { Router } from 'express';
-import { getGraphList, uploadGraph, removeGraph, triangleCount } from '../controllers/graph.controller';
+import { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData } from '../controllers/graph.controller';
 import multer from 'multer';
 import path from 'path';
 
@@ -35,6 +35,8 @@ const graphRoute = () => {
   router.post('/upload', upload.single("file"), uploadGraph);
   router.delete('/:id', removeGraph);
   router.post('/analyze/trianglecount', triangleCount)
+  router.get('/visualize', getGraphVisualization);
+  router.get('/data', getGraphData)
 
   return router;
 };

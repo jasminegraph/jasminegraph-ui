@@ -15,8 +15,8 @@ Backend/.yarn/install-state.gz
 mongodb-data/*
 
 # env
-Backend/.env
-Frontend/.env
+# Backend/.env
+# Frontend/.env
 
 # testing
 /coverage
@@ -38,7 +38,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+# .env*.local
 
 # vercel
 Frontend/.vercel
@@ -50,3 +50,5 @@ next-env.d.ts
 *.html
 
 Backend/public/*
+
+mongodb-data/

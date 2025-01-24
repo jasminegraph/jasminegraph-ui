@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasminGraph Team
+Copyright 2025 JasminGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,33 +14,14 @@ limitations under the License.
 'use client';
 import {authApi} from "./axios";
 
-export async function getGraphList() {
+export async function getGraphVizualization() {
   try {
     const result = await authApi({
       method: "get",
-      url: `/backend/graph/list`,
-      headers: {
-        "Cluster-ID": localStorage.getItem("selectedCluster"),
-      },
+      url: `/backend/graph/visualize`,
     }).then((res) => res.data);
-    return {
-      data: result,
-    };
+    return result;
   } catch (err) {
-    return Promise.reject();
-  }
-}
-
-export async function deleteGraph(id: string) {
-  try {
-    const result = await authApi({
-      method: "delete",
-      url: `/backend/graph/${id}`,
-    }).then((res) => res.data);
-    return {
-      data: result,
-    };
-  } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }
