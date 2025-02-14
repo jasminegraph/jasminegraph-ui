@@ -25,3 +25,19 @@ export async function getGraphVizualization() {
     return Promise.reject(err);
   }
 }
+
+export async function getGraphDegreeData(graphId: string, type: string){
+  try {
+    const result = await authApi({
+      method: "post",
+      url: `/backend/graph/degree`,
+      data: {
+        graphId,
+        type
+      },
+    }).then((res) => res.data);
+    return result;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}

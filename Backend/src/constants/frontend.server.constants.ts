@@ -17,3 +17,5 @@ export const GRAPH_REMOVE_COMMAND = 'rmgr';
 export const TRIANGLE_COUNT_COMMAND = 'trian';
 export const GRAPH_DATA_COMMAND = "graphv";
 export const CYPHER_AST_COMMAND = "cypher-ast";
+export const INDEGREE_COMMAND = "idd";
+export const OUTDEGREE_COMMAND = "odd";
