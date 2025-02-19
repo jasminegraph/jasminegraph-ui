@@ -12,51 +12,33 @@ limitations under the License.
  */
 
 'use client';
-import { getGraphDegreeData } from '@/services/graph-visualiztion';
-import { Button, Progress, Spin } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Progress, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { ScatterChart } from '@mui/x-charts/ScatterChart';
+import { useAppSelector } from '@/redux/hook';
+import { GraphType } from '@/data/graph-data';
 
 type Props = {
-  graphID: any;
-  degree: string;
+  loading: boolean;
+  degree: GraphType;
 }
 
-type DataNode = {
-  node: string;
-  value: string;
-}
+const InDegreeVisualization = ({loading, degree}:Props) => {
+  const [progressing, setProgressing] = useState(false);
+  const [percent, setPercent] = useState<number>(0);
 
-const InDegreeVisualization = ({graphID, degree}:Props) => {
-  const [loading, setLoading] = React.useState(false);
-  const [progressing, setProgressing] = React.useState(false);
-  const [percent, setPercent] = React.useState<number>(0);
-  const [graph, setGraph] = React.useState<DataNode[]>([]);
-
-  const getGraph = async () => {
-    try{
-      setLoading(true);
-      const res = await getGraphDegreeData(graphID, degree);
-      setLoading(false);
-      setPercent(0);
-      setProgressing(true);
-      
-      return res || [];
-    }catch(err){
-      console.log("error while getting graph data: ", err);
-      setLoading(false);
-    }
-  }
+  const { inDegreeDataPool, outDegreeDataPool } = useAppSelector((state) => state.queryData)
   
-  const onViewGraph = async () => {
-    const graph = await getGraph();
-    setGraph(graph || []);
-  }
+  const [dataPool, setDataPool] = useState(degree === "in_degree" ? inDegreeDataPool : outDegreeDataPool);
 
   useEffect(() => {
-    onViewGraph()
-  }, [graphID, degree])
+    const timeout = setTimeout(() => {
+      setDataPool(degree === "in_degree" ? inDegreeDataPool : outDegreeDataPool);
+    }, 300); // Delay updates by 300ms
+
+    return () => clearTimeout(timeout); // Cleanup on re-render
+  }, [degree, inDegreeDataPool, outDegreeDataPool]);
 
   return (
     <div>
@@ -66,7 +48,7 @@ const InDegreeVisualization = ({graphID, degree}:Props) => {
         height={500}
         series={[
           {
-            data: graph.map((v, index) => ({ x: Number(v.node), y: Number(v.value), id: index })),
+            data: dataPool.map((point, index) => ({ x: Number(point.node), y: Number(point.value), id: index })),
           },
         ]}
       />

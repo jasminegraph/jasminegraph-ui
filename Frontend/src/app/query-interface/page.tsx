@@ -22,6 +22,7 @@ import { Select, Space } from 'antd';
 import { getGraphList } from "@/services/graph-service";
 import { DataType } from "../graph-panel/graph/page";
 import QueryVisualization from "@/components/visualization/query-visualization";
+import useWebSocket, { ReadyState } from "react-use-websocket";
 
 type TabItem = Required<TabsProps>['items'][number];
 
@@ -33,9 +34,9 @@ export default function Query() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
-  const [socket, setSocket] = useState<WebSocket>();
-  const [clientID, setClientID] = useState<string>('');
-
+  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
+  const [clientId, setClientID] = useState<string>('')
+  
   const { messagePool } = useAppSelector((state) => state.queryData);
 
   const [selectedGraph, setSelectedGraph] = React.useState<any>();
@@ -66,45 +67,30 @@ export default function Query() {
     setSelectedGraph(value);
   };
 
-  const initSocket = async () => {
-    if(socket?.CLOSED || !socket){
-      try {
-        const socket = new WebSocket(WS_URL);
-        socket.onopen = () => {};
-        socket.onmessage = (event) => {
-          const message = JSON.parse(event.data);
-          if(message?.type == "CONNECTED"){
-            setClientID(message?.clientId)
-          }else{
-            dispatch(add_query_result(message));
-          }
-        };
-        socket.onclose = () => {
-          console.log("socket disconnected");
-        };
-        setSocket(socket);
-      } catch (err) {
-        console.log("Error connecting to messaging server");
-      }
+  useEffect(() => {
+    const message = lastJsonMessage as any;
+    if(!message) return;
+    if(message?.type == "CONNECTED"){
+      setClientID(message?.clientId || '')
+    } else {
+      dispatch(add_query_result(message));
     }
-  };
+  }, [lastJsonMessage])
 
   const onQuerySubmit = async () => {
+    // if(query.length > 0) return;
     try{
       setLoading(true);
       dispatch(clear_result());
-      await initSocket()
-      if (socket?.readyState === WebSocket.OPEN){
-        socket?.send(
-          JSON.stringify({
-            type: "QUERY",
-            query,
-            graphId: selectedGraph,
-            clientId: clientID,
-            clusterId: localStorage.getItem("selectedCluster")
-          })
-        );
-      }    
+      if(readyState === ReadyState.OPEN){
+        sendJsonMessage({
+          type: "QUERY",
+          query,
+          graphId: selectedGraph,
+          clientId: clientId,
+          clusterId: localStorage.getItem("selectedCluster")
+        })
+      }   
     }catch (err){
       console.log("ERROR::", err)
     }finally{
@@ -113,44 +99,93 @@ export default function Query() {
   }
 
   // Keys that must always be first
-  const fixedKeys = ["id", "type", "name"];
+  // const fixedKeys = ["id", "type", "name"];
 
   // Get all unique keys from the data
-  const allKeys = Array.from(
-    new Set(messagePool.flatMap((item) => Object.keys(item)))
-  );
+  const allKeys = Object.keys(messagePool)
+  console.log(allKeys);
+  //   Array.from(
+  //   new Set(messagePool.flatMap((item) => Object.keys(item)))
+  // );
 
   // Separate dynamic keys (excluding fixed ones)
-  const dynamicKeys = allKeys.filter((key) => !fixedKeys.includes(key));
+  // const dynamicKeys = allKeys.filter((key) => !fixedKeys.includes(key));
   
   // Define columns, placing fixed keys first
-  const columns = [
-    ...fixedKeys.map((key) => ({
-      title: key.charAt(0).toUpperCase() + key.slice(1),
-      dataIndex: key,
-      key: key,
-    })),
-    ...dynamicKeys.map((key) => ({
-      title: key.charAt(0).toUpperCase() + key.slice(1),
-      dataIndex: key,
-      key: key,
-    })),
-  ];
+  // const columns = [
+  //   // ...fixedKeys.map((key) => ({
+  //   //   title: key.charAt(0).toUpperCase() + key.slice(1),
+  //   //   dataIndex: key,
+  //   //   key: key,
+  //   // })),
+  //   ...allKeys.map((key) => ({
+  //     title: key,
+  //     dataIndex: key,
+  //     key: key,
+  //   })),
+  // ];
+
+  // const columns = Object.keys(messagePool).map((key) => ({
+  //   title: key,
+  //   dataIndex: key,
+  //   key,
+  // }));
+
+  // Prepare a single row with stringified values
+  // const dataSource = [
+  //   Object.fromEntries(
+  //     Object.entries(messagePool).map(([key, value]) => [key, JSON.stringify(value, null, 2)])
+  //   ),
+  // ];
+
+  // const dataSource = [
+  //   Object.fromEntries(
+  //     Object.entries(messagePool).map(([key, value]) => [key, JSON.stringify(value, null, 2)])
+  //   ),
+  // ];
+
+  // const dataSource = Object.values(messagePool)
+  //   .flat()
+  //   .map((obj, index) => ({ key: index, ...obj }));
+
+  const categories = Object.keys(messagePool);
+
+  // Transform data into rows
+  const maxRows = Math.max(...categories.map((key) => messagePool[key].length));
+  const dataSource = Array.from({ length: maxRows }, (_, rowIndex) => {
+    const row: Record<string, any> = { key: rowIndex.toString() };
+
+    categories.forEach((category) => {
+      row[category] = messagePool[category][rowIndex]
+        ? JSON.stringify(messagePool[category][rowIndex], null, 2)
+        : ""; // Empty if no data
+    });
+
+    return row;
+  });
+
+  const columns = categories.map((category) => ({
+    title: category, // Column Name
+    dataIndex: category,
+    key: category,
+  }));
 
   const tabItems: TabItem[] = [
     {
       key: '1',
       label: 'Table View',
-      children: <>
+      children: 
+        <>
           <Table
-          dataSource={messagePool}
-          columns={columns}
-          rowKey="id" // Use 'id' as the unique row identifier
-          pagination={{ pageSize: 20 }}
-          scroll={{ y: 70 * 5 }}
-          size="small"
-        />
-      </>,
+            dataSource={dataSource}
+            columns={columns}
+            rowKey="id" // Use 'id' as the unique row identifier
+            pagination={{ pageSize: 20 }}
+            scroll={{ y: 90 * 5 }}
+            size="small"
+            // rowClassName={() => "whitespace-pre-wrap"}
+          />
+        </>,
     },
     {
       key: '2',
@@ -178,12 +213,13 @@ export default function Query() {
             onChange={(e) => setQuery(e.target.value)}
             autoSize={{ minRows: 1, maxRows: 7 }}
             size="large"
+            style={{ fontWeight: "500"}}
           />
         </div>
         <CaretRightOutlined style={{fontSize: "24px", margin: "2px", padding: "0px 10px"}} onClick={onQuerySubmit}/>
         {/* <DownloadOutlined style={{fontSize: "20px", margin: "2px"}} /> */}
       </div>
-      {messagePool.length > 0 && (
+      {Object.keys(messagePool).length > 0 && (
         <Tabs
           type="card"
           items={tabItems}

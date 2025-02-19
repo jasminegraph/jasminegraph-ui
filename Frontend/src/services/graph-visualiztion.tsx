@@ -14,11 +14,11 @@ limitations under the License.
 'use client';
 import {authApi} from "./axios";
 
-export async function getGraphVizualization() {
+export async function getGraphVizualization(id: string) {
   try {
     const result = await authApi({
       method: "get",
-      url: `/backend/graph/visualize`,
+      url: `/backend/graph/visualize?id=${id}`,
     }).then((res) => res.data);
     return result;
   } catch (err) {

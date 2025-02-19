@@ -33,28 +33,50 @@ const QueryVisualization = () => {
   const edgesRef = useRef<any>(null);
   const { messagePool } = useAppSelector((state) => state.queryData);
 
+  
+
   const RefreshGraph = async () => {
     let colorMap = new Map<string, string>();
     setLoading(true)
     setProgressing(true)
     nodesRef.current = new DataSet([]);
-    for (let index = 0; index < messagePool.length; index++) {
-      const message = messagePool[index];
-      let color = colorMap.get(message.type);
+    Object.keys(messagePool).forEach((key) => {
+      const messages = messagePool[key];
+      console.log(messages)
+      let color = colorMap.get(key);
       if(!color){
         color = randomColor({format: 'hex'});
-        colorMap.set(message.type, color)
+        colorMap.set(key, color)
       }
-      const node: INode = { 
-        id: message.id, 
-        label: message.name,
-        shape: "dot",
-        color
-      }
-      nodesRef.current.add(node);
-      await delay(DEFAULT_DELAY);
-      setPercent(Math.ceil((index+1/messagePool.length)*100))
-    }
+
+      messages.forEach(async (data) => {
+        const node: INode = { 
+          id: data.id, 
+          label: data.name,
+          shape: "dot",
+          color
+        }
+        nodesRef.current.add(node);
+        await delay(DEFAULT_DELAY);
+      })
+    })
+    // for (let index = 0; index < Object.keys(messagePool).length; index++) {
+    //   const message = messagePool[index];
+    //   let color = colorMap.get(index);
+    //   if(!color){
+    //     color = randomColor({format: 'hex'});
+    //     colorMap.set(message.type, color)
+    //   }
+    //   const node: INode = { 
+    //     id: message.id, 
+    //     label: message.name,
+    //     shape: "dot",
+    //     color
+    //   }
+    //   nodesRef.current.add(node);
+    //   await delay(DEFAULT_DELAY);
+    //   setPercent(Math.ceil((index+1/messagePool.length)*100))
+    // }
     setLoading(false);
   }
 

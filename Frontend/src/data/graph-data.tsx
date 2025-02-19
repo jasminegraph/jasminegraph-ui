@@ -11,12 +11,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-export const LIST_COMMAND = 'lst';
-export const GRAPH_UPLOAD_COMMAND = 'adgr';
-export const GRAPH_REMOVE_COMMAND = 'rmgr';
-export const TRIANGLE_COUNT_COMMAND = 'trian';
-export const GRAPH_DATA_COMMAND = "graphv";
-export const CYPHER_AST_COMMAND = "cypher-ast";
-export const CYPHER_COMMAND = "cypher";
-export const INDEGREE_COMMAND = "idd";
-export const OUTDEGREE_COMMAND = "odd";
+export const GRAPH_TYPES = {
+  INDEGREE: "in_degree",
+  OUTDEGREE: "out_degree"
+} as const;
+
+export type GraphType = (typeof GRAPH_TYPES)[keyof typeof GRAPH_TYPES];
+
+export const GRAPH_VISUALIZATION_TYPE = [
+  {
+    value: "full_view",
+    label: "Full View"
+  },
+  {
+    value: GRAPH_TYPES.INDEGREE,
+    label: "In Degree"
+  },
+  {
+    value: GRAPH_TYPES.OUTDEGREE,
+    label: "Out Degree"
+  },
+] as const;
+
+export type GraphVisualizationType = (typeof GRAPH_VISUALIZATION_TYPE)[number]["value"]

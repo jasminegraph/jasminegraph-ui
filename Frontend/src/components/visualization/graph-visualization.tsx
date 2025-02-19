@@ -51,7 +51,7 @@ const GraphVisualization = ({graphID}:Props) => {
   const getGraph = async () => {
     try{
       setLoading(true);
-      const res = await getGraphVizualization();
+      const res = await getGraphVizualization(graphID);
       setLoading(false);
       setPercent(0);
       setProgressing(true);
@@ -115,9 +115,9 @@ const GraphVisualization = ({graphID}:Props) => {
         },
         width: 2,
       },
-      physics: {
-        enabled: true,
-      },
+      // physics: {
+      //   enabled: true,
+      // },
     };
 
     // Initialize the network

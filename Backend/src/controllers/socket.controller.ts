@@ -17,7 +17,7 @@ import readline from 'readline';
 import WebSocket from 'ws';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
-import { CYPHER_AST_COMMAND, INDEGREE_COMMAND, OUTDEGREE_COMMAND } from '../constants/frontend.server.constants';
+import { CYPHER_AST_COMMAND, CYPHER_COMMAND, INDEGREE_COMMAND, OUTDEGREE_COMMAND } from '../constants/frontend.server.constants';
 import { getClusterDetails, IConnection, socket, telnetConnection } from "./graph.controller";
 import { Cluster } from '../models/cluster.model';
 
@@ -177,7 +177,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
       });
 
       // Write the command to the Telnet server
-      tSocket.write(CYPHER_AST_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
+      tSocket.write(CYPHER_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
     });
   } catch (err) {
     return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
@@ -185,7 +185,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
 }
 
 const getDegreeData = async (clientId: string, clusterId:string, graphId:string, type: string) => {
-  const COMMAND = type == "idd" ? INDEGREE_COMMAND : type == "odd" ? OUTDEGREE_COMMAND : INDEGREE_COMMAND;   
+  const COMMAND = type == "in_degree" ? INDEGREE_COMMAND : type == "out_degree" ? OUTDEGREE_COMMAND : INDEGREE_COMMAND;   
   
   const cluster = await Cluster.findOne({ _id: clusterId });
   if (!(cluster?.host || cluster?.port)) {
@@ -210,6 +210,7 @@ const getDegreeData = async (clientId: string, clusterId:string, graphId:string,
         let splitIndex;
 
         if(remaining.trim() == '-1'){
+          sendToClient(clientId, { graphId, degree_type: type, type: "FINISHED" })
           console.log("Termination signal received. Closing Telnet connection.");
           return
         }
@@ -221,13 +222,14 @@ const getDegreeData = async (clientId: string, clusterId:string, graphId:string,
           
           if (jsonString) {
             if (jsonString == "-1") {
+              sendToClient(clientId, { graphId, degree_type: type, type: "FINISHED" })
               console.log("Termination signal received. Closing Telnet connection.");
               return; // Exit the producer loop
             }
             
             try {
               const parsed = JSON.parse(jsonString); // Parse the JSON
-              sendToClient(clientId, parsed)
+              sendToClient(clientId, {...parsed, type})
             } catch (error) {
               console.error('Error parsing JSON:', error, 'Data:', jsonString);
             }
@@ -235,6 +237,7 @@ const getDegreeData = async (clientId: string, clusterId:string, graphId:string,
 
 
           if(remaining.trim() == '-1' || jsonString == '-1'){
+            sendToClient(clientId, { graphId, degree_type: type, type: "FINISHED" })
             console.log("Termination signal received. Closing Telnet connection.");
             return
           }

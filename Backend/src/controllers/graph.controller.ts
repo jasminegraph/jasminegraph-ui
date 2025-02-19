@@ -215,7 +215,9 @@ const triangleCount = async (req: Request, res: Response) => {
 };
 
 const getGraphVisualization = async (req, res) => {
-  const filePath = './src/script/sample/sample.dl';
+  const id = req.query.id as string;
+  const filePath = `./src/script/sample/graph_dataset${id}.json`;
+
   try{
     const graph = parseGraphFile(filePath);
     return res.status(HTTP[200]).send({data: graph})
