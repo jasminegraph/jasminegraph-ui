@@ -18,7 +18,7 @@ import WebSocket from 'ws';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { CYPHER_AST_COMMAND, CYPHER_COMMAND, INDEGREE_COMMAND, OUTDEGREE_COMMAND } from '../constants/frontend.server.constants';
-import { getClusterDetails, IConnection, socket, telnetConnection } from "./graph.controller";
+import { getClusterDetails, IConnection, telnetConnection } from "./graph.controller";
 import { Cluster } from '../models/cluster.model';
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
@@ -106,6 +106,7 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
 };
 
 const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {
+  console.log(graphId, query)
   const cluster = await Cluster.findOne({ _id: clusterId });
   if (!(cluster?.host || cluster?.port)) {
     sendToClient(clientId, { Error: "cluster not found"})

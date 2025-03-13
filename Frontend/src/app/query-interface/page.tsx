@@ -98,55 +98,9 @@ export default function Query() {
     }
   }
 
-  // Keys that must always be first
-  // const fixedKeys = ["id", "type", "name"];
-
   // Get all unique keys from the data
   const allKeys = Object.keys(messagePool)
   console.log(allKeys);
-  //   Array.from(
-  //   new Set(messagePool.flatMap((item) => Object.keys(item)))
-  // );
-
-  // Separate dynamic keys (excluding fixed ones)
-  // const dynamicKeys = allKeys.filter((key) => !fixedKeys.includes(key));
-  
-  // Define columns, placing fixed keys first
-  // const columns = [
-  //   // ...fixedKeys.map((key) => ({
-  //   //   title: key.charAt(0).toUpperCase() + key.slice(1),
-  //   //   dataIndex: key,
-  //   //   key: key,
-  //   // })),
-  //   ...allKeys.map((key) => ({
-  //     title: key,
-  //     dataIndex: key,
-  //     key: key,
-  //   })),
-  // ];
-
-  // const columns = Object.keys(messagePool).map((key) => ({
-  //   title: key,
-  //   dataIndex: key,
-  //   key,
-  // }));
-
-  // Prepare a single row with stringified values
-  // const dataSource = [
-  //   Object.fromEntries(
-  //     Object.entries(messagePool).map(([key, value]) => [key, JSON.stringify(value, null, 2)])
-  //   ),
-  // ];
-
-  // const dataSource = [
-  //   Object.fromEntries(
-  //     Object.entries(messagePool).map(([key, value]) => [key, JSON.stringify(value, null, 2)])
-  //   ),
-  // ];
-
-  // const dataSource = Object.values(messagePool)
-  //   .flat()
-  //   .map((obj, index) => ({ key: index, ...obj }));
 
   const categories = Object.keys(messagePool);
 

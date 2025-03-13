@@ -78,6 +78,8 @@ const GraphVisualization = ({graphID}:Props) => {
   }
   
   const onViewGraph = async (key: string) => {
+    nodesRef.current = new DataSet([]);
+    edgesRef.current = new DataSet([]);
     const graph = await getGraph();
     setGraph(graph);
   }
@@ -127,7 +129,7 @@ const GraphVisualization = ({graphID}:Props) => {
       // Cleanup on component unmount
       network.destroy();
     };
-  }, []);
+  }, [graphID]);
 
   return (
     <div>

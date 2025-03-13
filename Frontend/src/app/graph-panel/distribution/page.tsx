@@ -38,6 +38,7 @@ export default function GraphDistribution() {
   const [visualizationType, setVisualizationType] = useState<GraphVisualizationType | undefined>(undefined);
   const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
   const [clientId, setClientID] = useState<string>('')
+  const [isVisualize, setIsVisualize] = useState<boolean>(false);
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -114,7 +115,10 @@ export default function GraphDistribution() {
 
   const onVisualize = async () => {
     if(Object.values(GRAPH_TYPES).includes(visualizationType as GraphType)){
+      setIsVisualize(false);
       onDegreeQuerySubmit();
+    }else{
+      setIsVisualize(true);
     }
   }
 
@@ -162,7 +166,7 @@ export default function GraphDistribution() {
             </Button>
           </div>
         </div>
-        {(visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph} />}
+        {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph} />}
         {(selectedGraph && (visualizationType=="in_degree" || visualizationType=="out_degree")) && 
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>

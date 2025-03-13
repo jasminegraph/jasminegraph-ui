@@ -33,7 +33,6 @@ export const queryDataSlice = createSlice({
     add_query_result: (state, {payload}: {payload: any}) => {
       console.log(payload)
       const key = Object.keys(payload)[0];
-      console.log(key);
       const node = payload[key];
       
       if (!state.messagePool[key]) {
@@ -41,7 +40,6 @@ export const queryDataSlice = createSlice({
       }
 
       if(node){
-        console.log(node);
         state.messagePool[key].push(node);
       }
     },
