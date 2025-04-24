@@ -1,23 +1,8 @@
-/**
-Copyright 2025 JasminGraph Team
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
- */
-
-'use client';
 import { getGraphVizualization } from '@/services/graph-visualiztion';
 import { Button, Progress, Spin } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { DataSet, Network } from 'vis-network/standalone';
 import { LoadingOutlined } from '@ant-design/icons';
-
 import 'vis-network/styles/vis-network.css';
 import { delay } from '@/utils/time';
 import { IGraphDetails } from '@/types/graph-types';
@@ -29,188 +14,136 @@ export type INode = {
   label: string;
   shape: string;
   color: string;
-}
+  size?: number;
+};
 
 type IEdge = {
   from: number;
   to: number;
   properties?: any;
-}
+};
 
 type Props = {
   graphID: any;
   graph: IGraphDetails | undefined;
-}
+};
 
-// https://vscode.dev/editor/profile/github/4c843f89b2977a1e4815080fa5aa95e3
-
-const TwoLevelGraphVisualization = ({graphID}:Props) => {
-  const [loading, setLoading] = React.useState(false);
-  const [progressing, setProgressing] = React.useState(false);
-  const [percent, setPercent] = React.useState<number>(0);
-  // const [graph, setGraph] = React.useState<>(null);
-  const networkContainerRef = useRef(null); // Reference for the container
+const TwoLevelGraphVisualization = ({ graphID, graph }: Props) => {
+  const [loading, setLoading] = useState(false);
+  const [progressing, setProgressing] = useState(false);
+  const [percent, setPercent] = useState<number>(0);
+  const networkContainerRef = useRef<HTMLDivElement>(null);
   const nodesRef = useRef<any>(null);
   const edgesRef = useRef<any>(null);
 
-  const newEdges: IEdge[] = [
-    {
-      from: 1,
-      to: 0
-    },
-    {
-      from: 1,
-      to: 2
-    },
-    {
-      from:1, 
-      to: 3
-    }];
+  const getNodeSize = (partitionID: number, min: number, max: number): number => {
+    const totalNodes = graph?.partitions.reduce((sum, partition) => sum + partition.vertexcount + partition.central_vertexcount, 0);
+    const averageNodes = (totalNodes || 0) / (graph?.partitions.length || 1);
+    const partitionNodes = graph?.partitions.find((partition) => partition.idpartition == partitionID)?.vertexcount;
 
-  const newNodes: INode[] =  [
-    {
-      id: 0,
-      label: '0',
-      shape: 'dot', 
-      color: '#97c2fc'
-    },
-    {
-      id: 1,
-      label: '1',
-      shape: 'dot', 
-      color: '#97c2fc'
-    },
-    {
-      id: 2,
-      label: '2',
-      shape: 'dot', 
-      color: '#97c2fc'
-    },
-    {
-      id: 3,
-      label: '3',
-      shape: 'dot', 
-      color: '#97c2fc'
-    }];
+     console.log("Total Nodes", totalNodes, averageNodes)
+     if(partitionNodes && totalNodes)
+      return min + (max-min)*(partitionNodes/totalNodes)
+    return min;
+  }
+
+  const loadHighLevelEdgeList = () => {
+    const partitionCount = graph?.partitions.length || 0;
+    console.log("PARTITION COUNT", partitionCount)
+    for (let i=0; i<partitionCount;i++){
+      for(let j=i; j<partitionCount;i++){
+        console.log(i,j)
+      }
+    }
+  }
+
+  // (0,1)
+  // (0,2)
+  // (0,3)
+  // (0,4)
+
+  // (1,2)
+  // (1,3)
+  // (1,4)
+
+  // (2,3)
+  // (2,4)
+
+  // (3,4)
 
   const loadHighLevelView = async () => {
+    try {
+      setLoading(true);
 
-    try{
-      const res = await getGraphVizualization(graphID);
-      graph?.partitions.forEach((partition, index) => {
-        const node : INode = {
+      const nodes: INode[] = [];
+      const edges: IEdge[] = [];
+
+      nodes.forEach((node) => nodesRef.current.add(node));
+      edges.forEach((edge) => edgesRef.current.add(edge));
+
+      // Optionally, add nodes from graph.partitions
+      graph?.partitions.forEach((partition) => {
+        const node: INode = {
           id: partition.idpartition,
           label: partition.idpartition.toString(),
-          shape: 'dot', 
-          color: '#97c2fc'
-        }
-        console.log("adding", node)
+          shape: 'dot',
+          color: '#97c2fc',
+          size: 60,
+        };
         nodesRef.current.add(node);
-      });  
-      const newEdges: IEdge[] = [
-        {
-          from: 1,
-          to: 0
-        },
-        {
-          from: 1,
-          to: 2
-        },
-        {
-          from:1, 
-          to: 3
-        }];
-      newNodes.forEach((node)=> nodesRef.current.add(node));
-      newEdges.forEach((edge)=> edgesRef.current.add(edge));
-    }catch(err){
-      console.log("error while getting graph data: ", err);
-      setLoading(false);
-    }
-  }
-  
-  const getGraph = async () => {
-    try{
-      setLoading(true);
-      const res = await getGraphVizualization(graphID);
-      setLoading(false);
-      setPercent(0);
-      setProgressing(true);
-      
-      if(res.data){
-        const newNodes: INode[] = res.data.nodes ?? [];
-        const newEdges: IEdge[] = res.data.edges ?? [];
-        const nodeCount = newNodes.length
+      });
+    
 
-        newEdges.forEach((edge, index) => edgesRef.current.add(edge));  
-        for (let index = 0; index < newNodes.length; index++) {
-          const node = newNodes[index];
-          nodesRef.current.add(node);
-          await delay(DEFAULT_TIMEOUT);
-          setPercent(Math.ceil((index/nodeCount)*100))
-        }
-        
-      }
-      return res;
-    }catch(err){
-      console.log("error while getting graph data: ", err);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error while getting graph data: ', err);
       setLoading(false);
     }
-  }
-  
-  const onViewGraph = async (key: string) => {
-    nodesRef.current = new DataSet([]);
-    edgesRef.current = new DataSet([]);
-    // const graph = await getGraph();
+  };
+
+  const onViewGraph = async () => {
+    nodesRef.current.clear();
+    edgesRef.current.clear();
     await loadHighLevelView();
-  }
+    loadHighLevelEdgeList();
+  };
 
   useEffect(() => {
-    onViewGraph(graphID)
-  }, [graphID])
+    onViewGraph();
+  }, [graphID]);
 
   useEffect(() => {
-    if (!networkContainerRef.current) return;
+    if (!networkContainerRef.current) {
+      console.error('Network container ref is not assigned');
+      return;
+    }
 
-    // Sample nodes and edges (you can dynamically fetch these from the backend)
-    nodesRef.current = new DataSet([]);
-
-    edgesRef.current = new DataSet([]);
-
-    // Graph options
     const options = {
       nodes: {
         shape: 'dot',
-        size: 20,
-        font: {
-          size: 15,
-        },
-        color: {
-          border: '#2B7CE9',
-          background: '#97C2FC',
-        },
+        size: 60,
+        font: { size: 15 },
+        color: { border: '#2B7CE9', background: '#97C2FC' },
       },
       edges: {
-        color: {
-          color: '#848484',
-          highlight: '#848484',
-          hover: '#848484',
-        },
+        color: { color: '#848484', highlight: '#848484', hover: '#848484' },
         width: 2,
       },
-      // physics: {
+      autoResize: true,
+      // configure: {
       //   enabled: true,
-      // },
+      //   filter: 'nodes,edges',
+      //   container: undefined,
+      //   showButton: true
+      // }
     };
 
-    // Initialize the network
     const network = new Network(networkContainerRef.current, { nodes: nodesRef.current, edges: edgesRef.current }, options);
 
-    onViewGraph(graphID)
     return () => {
-      // Cleanup on component unmount
       network.destroy();
     };
-  }, [graphID]);
+  }, []);
 
   return (
     <div>
@@ -218,12 +151,13 @@ const TwoLevelGraphVisualization = ({graphID}:Props) => {
       <div
         ref={networkContainerRef}
         style={{
-          width: '100%',
+          // width: '100%',
           height: '600px',
           border: '1px solid lightgray',
           backgroundColor: '#ffffff',
+          aspectRatio: "16/9"
         }}
-      ></div>
+      />
       {progressing && <Progress percent={percent} showInfo={false} />}
     </div>
   );
