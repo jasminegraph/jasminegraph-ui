@@ -20,6 +20,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 
 import 'vis-network/styles/vis-network.css';
 import { delay } from '@/utils/time';
+import { IGraphDetails } from '@/types/graph-types';
 
 const DEFAULT_TIMEOUT = 75;
 
@@ -33,11 +34,12 @@ export type INode = {
 type IEdge = {
   from: number;
   to: number;
+  properties?: any;
 }
 
 type Props = {
   graphID: any;
-  graph: 
+  graph: IGraphDetails | undefined;
 }
 
 // https://vscode.dev/editor/profile/github/4c843f89b2977a1e4815080fa5aa95e3
@@ -46,10 +48,85 @@ const TwoLevelGraphVisualization = ({graphID}:Props) => {
   const [loading, setLoading] = React.useState(false);
   const [progressing, setProgressing] = React.useState(false);
   const [percent, setPercent] = React.useState<number>(0);
-  const [graph, setGraph] = React.useState<any>(null);
+  // const [graph, setGraph] = React.useState<>(null);
   const networkContainerRef = useRef(null); // Reference for the container
   const nodesRef = useRef<any>(null);
   const edgesRef = useRef<any>(null);
+
+  const newEdges: IEdge[] = [
+    {
+      from: 1,
+      to: 0
+    },
+    {
+      from: 1,
+      to: 2
+    },
+    {
+      from:1, 
+      to: 3
+    }];
+
+  const newNodes: INode[] =  [
+    {
+      id: 0,
+      label: '0',
+      shape: 'dot', 
+      color: '#97c2fc'
+    },
+    {
+      id: 1,
+      label: '1',
+      shape: 'dot', 
+      color: '#97c2fc'
+    },
+    {
+      id: 2,
+      label: '2',
+      shape: 'dot', 
+      color: '#97c2fc'
+    },
+    {
+      id: 3,
+      label: '3',
+      shape: 'dot', 
+      color: '#97c2fc'
+    }];
+
+  const loadHighLevelView = async () => {
+
+    try{
+      const res = await getGraphVizualization(graphID);
+      graph?.partitions.forEach((partition, index) => {
+        const node : INode = {
+          id: partition.idpartition,
+          label: partition.idpartition.toString(),
+          shape: 'dot', 
+          color: '#97c2fc'
+        }
+        console.log("adding", node)
+        nodesRef.current.add(node);
+      });  
+      const newEdges: IEdge[] = [
+        {
+          from: 1,
+          to: 0
+        },
+        {
+          from: 1,
+          to: 2
+        },
+        {
+          from:1, 
+          to: 3
+        }];
+      newNodes.forEach((node)=> nodesRef.current.add(node));
+      newEdges.forEach((edge)=> edgesRef.current.add(edge));
+    }catch(err){
+      console.log("error while getting graph data: ", err);
+      setLoading(false);
+    }
+  }
   
   const getGraph = async () => {
     try{
@@ -83,8 +160,8 @@ const TwoLevelGraphVisualization = ({graphID}:Props) => {
   const onViewGraph = async (key: string) => {
     nodesRef.current = new DataSet([]);
     edgesRef.current = new DataSet([]);
-    const graph = await getGraph();
-    setGraph(graph);
+    // const graph = await getGraph();
+    await loadHighLevelView();
   }
 
   useEffect(() => {
@@ -128,6 +205,7 @@ const TwoLevelGraphVisualization = ({graphID}:Props) => {
     // Initialize the network
     const network = new Network(networkContainerRef.current, { nodes: nodesRef.current, edges: edgesRef.current }, options);
 
+    onViewGraph(graphID)
     return () => {
       // Cleanup on component unmount
       network.destroy();
@@ -151,4 +229,4 @@ const TwoLevelGraphVisualization = ({graphID}:Props) => {
   );
 };
 
-export default TwoLevelGraphVisulization;
+export default TwoLevelGraphVisualization;
