@@ -166,7 +166,7 @@ export default function GraphDistribution() {
             </Button>
           </div>
         </div>
-        {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph} />}
+        {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph}/>}
         {(selectedGraph && (visualizationType=="in_degree" || visualizationType=="out_degree")) && 
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>
