@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraphh Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -17,3 +17,6 @@ export const GRAPH_REMOVE_COMMAND = 'rmgr';
 export const TRIANGLE_COUNT_COMMAND = 'trian';
 export const GRAPH_DATA_COMMAND = "graphv";
 export const CYPHER_AST_COMMAND = "cypher-ast";
+export const CYPHER_COMMAND = "cypher";
+export const INDEGREE_COMMAND = "idd";
+export const OUTDEGREE_COMMAND = "odd";

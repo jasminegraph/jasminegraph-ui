@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasmineGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,14 +11,26 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-export const ErrorCode = {
-  NoResponseFromServer: 'j-001',
-  ServerError: 'j-002',
-  ClusterNotFound: 'j-003',
-};
+export const GRAPH_TYPES = {
+  INDEGREE: "in_degree",
+  OUTDEGREE: "out_degree"
+} as const;
 
-export const ErrorMsg = {
-  NoResponseFromServer: 'Trying to connect to server on IP on this port, No response from server',
-  ServerError: 'Server error',
-  ClusterNotFound: 'Cluster not found',
-};
+export type GraphType = (typeof GRAPH_TYPES)[keyof typeof GRAPH_TYPES];
+
+export const GRAPH_VISUALIZATION_TYPE = [
+  {
+    value: "full_view",
+    label: "Full View"
+  },
+  {
+    value: GRAPH_TYPES.INDEGREE,
+    label: "In Degree"
+  },
+  {
+    value: GRAPH_TYPES.OUTDEGREE,
+    label: "Out Degree"
+  },
+] as const;
+
+export type GraphVisualizationType = (typeof GRAPH_VISUALIZATION_TYPE)[number]["value"]

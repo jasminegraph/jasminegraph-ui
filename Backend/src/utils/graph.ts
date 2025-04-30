@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -19,11 +19,13 @@ export interface INode {
   label: string;
   color: string;
   shape: string;
+  properties: any;
 }
 
 export interface IEdge {
   from: number;
   to: number;
+  properties: any;
 }
 
 export interface Graph {
@@ -42,18 +44,20 @@ export const parseGraphFile = (filePath: string): Graph => {
   const edges: IEdge[] = [];
 
   lines.forEach((line) => {
-    const [from, to] = line.split(' ').map(Number);
+    const jsonLine = JSON.parse(line);
+    const from = jsonLine.source
+    const to = jsonLine.destination
+    const edge = jsonLine.properties
 
-    // Add nodes to the map to ensure uniqueness
-    if (!nodesMap.has(from)) {
-      nodesMap.set(from, { id: from, label: `Node ${from}`, shape: 'dot', color: '#97c2fc' });
+    // // Add nodes to the map to ensure uniqueness
+    if (!nodesMap.has(from.id)) {
+      nodesMap.set(from.id, { id: from.id, label: from.properties.name || from.properties.type || `Node ${from.id}`, properties: from.properties || '',  shape: 'dot', color: '#97c2fc' });
     }
-    if (!nodesMap.has(to)) {
-      nodesMap.set(to, { id: to, label: `Node ${to}`, shape: 'dot', color: '#97c2fc' });
+    if (!nodesMap.has(to.id)) {
+      nodesMap.set(to.id, { id: to.id, label: to.properties.name || to.properties.type || `Node ${to.id}`, properties: to.properties || '',  shape: 'dot', color: '#97c2fc' });
     }
 
-    // Add the edge
-    edges.push({ from, to });
+    edges.push({ from: from.id, to: to.id, properties: edge });
   });
 
   // Convert the map of nodes to an array

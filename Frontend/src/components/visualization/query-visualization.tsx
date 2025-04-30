@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -20,9 +20,6 @@ import 'vis-network/styles/vis-network.css';
 import { useAppSelector } from '@/redux/hook';
 import { INode } from './graph-visualization';
 import randomColor from 'randomcolor';
-import { delay } from '@/utils/time';
-
-const DEFAULT_DELAY = 75;
 
 const QueryVisualization = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -33,34 +30,35 @@ const QueryVisualization = () => {
   const edgesRef = useRef<any>(null);
   const { messagePool } = useAppSelector((state) => state.queryData);
 
-  const RefreshGraph = async () => {
+  const RefreshGraph = (): any[] => {
     let colorMap = new Map<string, string>();
     setLoading(true)
     setProgressing(true)
-    nodesRef.current = new DataSet([]);
-    for (let index = 0; index < messagePool.length; index++) {
-      const message = messagePool[index];
-      let color = colorMap.get(message.type);
+    var dataNode: any[] = [];
+    Object.keys(messagePool).forEach((key) => {
+      const messages = messagePool[key];
+      console.log(messages)
+      let color = colorMap.get(key);
       if(!color){
         color = randomColor({format: 'hex'});
-        colorMap.set(message.type, color)
+        colorMap.set(key, color)
       }
-      const node: INode = { 
-        id: message.id, 
-        label: message.name,
-        shape: "dot",
-        color
-      }
-      nodesRef.current.add(node);
-      await delay(DEFAULT_DELAY);
-      setPercent(Math.ceil((index+1/messagePool.length)*100))
-    }
-    setLoading(false);
-  }
 
-  useEffect(() => {
-    RefreshGraph();
-  }, [messagePool])
+      messages.forEach((data) => {
+        const node: INode = { 
+          id: data.id, 
+          label: data.name,
+          shape: "dot",
+          color
+        }
+        dataNode.push(node)
+        return node
+      })
+
+    })
+    setLoading(false);
+    return dataNode
+  }
 
   useEffect(() => {
     if (!networkContainerRef.current) return;
@@ -98,6 +96,8 @@ const QueryVisualization = () => {
 
     // Initialize the network
     const network = new Network(networkContainerRef.current, { nodes: nodesRef.current, edges: edgesRef.current }, options);
+    const dataNode = RefreshGraph();
+    nodesRef.current.add([...dataNode])    
 
     return () => {
       // Cleanup on component unmount

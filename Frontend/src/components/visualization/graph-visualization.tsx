@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -51,7 +51,7 @@ const GraphVisualization = ({graphID}:Props) => {
   const getGraph = async () => {
     try{
       setLoading(true);
-      const res = await getGraphVizualization();
+      const res = await getGraphVizualization(graphID);
       setLoading(false);
       setPercent(0);
       setProgressing(true);
@@ -78,6 +78,8 @@ const GraphVisualization = ({graphID}:Props) => {
   }
   
   const onViewGraph = async (key: string) => {
+    nodesRef.current = new DataSet([]);
+    edgesRef.current = new DataSet([]);
     const graph = await getGraph();
     setGraph(graph);
   }
@@ -115,9 +117,9 @@ const GraphVisualization = ({graphID}:Props) => {
         },
         width: 2,
       },
-      physics: {
-        enabled: true,
-      },
+      // physics: {
+      //   enabled: true,
+      // },
     };
 
     // Initialize the network
@@ -127,7 +129,7 @@ const GraphVisualization = ({graphID}:Props) => {
       // Cleanup on component unmount
       network.destroy();
     };
-  }, []);
+  }, [graphID]);
 
   return (
     <div>

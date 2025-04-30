@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasminGraph Team
+Copyright 2024 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -215,7 +215,9 @@ const triangleCount = async (req: Request, res: Response) => {
 };
 
 const getGraphVisualization = async (req, res) => {
-  const filePath = './src/script/sample/sample.dl';
+  const id = req.query.id as string;
+  const filePath = `./src/script/sample/graph_dataset${id}.json`;
+
   try{
     const graph = parseGraphFile(filePath);
     return res.status(HTTP[200]).send({data: graph})

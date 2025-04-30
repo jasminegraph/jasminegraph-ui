@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,14 +11,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import { createSlice } from "@reduxjs/toolkit";
+import { GRAPH_TYPES, GraphType } from "@/data/graph-data";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface IQueryData {
-  messagePool: any[];
+  messagePool: Record<string, any[]>;
+  inDegreeDataPool: any[];
+  outDegreeDataPool: any[];
 }
 
 const initialData: IQueryData = {
-  messagePool: [],
+  messagePool: {},
+  inDegreeDataPool: [],
+  outDegreeDataPool: [],
 };
 
 export const queryDataSlice = createSlice({
@@ -26,23 +31,42 @@ export const queryDataSlice = createSlice({
   initialState: initialData,
   reducers: {
     add_query_result: (state, {payload}: {payload: any}) => {
-      const isIdPresent = state.messagePool.some(
-        (message) => message.id === payload.id
-      );
+      const key = Object.keys(payload)[0];
+      const node = payload[key];
+      
+      if (!state.messagePool[key]) {
+        state.messagePool[key] = [];
+      }
 
-      if (!isIdPresent) {
-        state.messagePool.push(payload);
+      if(node){
+        state.messagePool[key].push(node);
+      }
+    },
+    add_degree_data: (state, action: PayloadAction<{data: any, type: GraphType}>) => {
+      if(action.payload.type == GRAPH_TYPES.INDEGREE){
+        state.inDegreeDataPool.push(action.payload.data);
+      }else if(action.payload.type == GRAPH_TYPES.OUTDEGREE){
+        state.outDegreeDataPool.push(action.payload.data)
       }
     },
     clear_result: (state) => {
-      state.messagePool = [];
-    }
+      state.messagePool = {};
+    },
+    clear_degree_data: (state, action: PayloadAction<GraphType>) => {
+      if(action.payload == GRAPH_TYPES.INDEGREE){
+        state.inDegreeDataPool = [];
+      }else if(action.payload == GRAPH_TYPES.OUTDEGREE){
+        state.outDegreeDataPool = [];
+      }
+    },
   },
 });
 
 export const {
   add_query_result,
-  clear_result
+  clear_result,
+  add_degree_data,
+  clear_degree_data
 } = queryDataSlice.actions;
 
 export default queryDataSlice.reducer;

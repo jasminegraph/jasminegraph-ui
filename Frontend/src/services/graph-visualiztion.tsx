@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -14,11 +14,27 @@ limitations under the License.
 'use client';
 import {authApi} from "./axios";
 
-export async function getGraphVizualization() {
+export async function getGraphVizualization(id: string) {
   try {
     const result = await authApi({
       method: "get",
-      url: `/backend/graph/visualize`,
+      url: `/backend/graph/visualize?id=${id}`,
+    }).then((res) => res.data);
+    return result;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+export async function getGraphDegreeData(graphId: string, type: string){
+  try {
+    const result = await authApi({
+      method: "post",
+      url: `/backend/graph/degree`,
+      data: {
+        graphId,
+        type
+      },
     }).then((res) => res.data);
     return result;
   } catch (err) {
