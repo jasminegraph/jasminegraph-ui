@@ -19,7 +19,7 @@ import { getGraphList } from "@/services/graph-service";
 import InDegreeVisualization from "@/components/visualization/indegree-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { GRAPH_TYPES, GRAPH_VISUALIZATION_TYPE, GraphType, GraphVisualizationType } from "@/data/graph-data";
-import { add_degree_data, clear_degree_data } from "@/redux/features/queryData";
+import { add_degree_data, clear_degree_data, add_visualize_data, clear_visualize_data } from "@/redux/features/queryData";
 import { useAppDispatch } from "@/redux/hook";
 import { IOption } from "@/types/options-types";
 import { IGraphDetails } from "@/types/graph-types";
@@ -31,6 +31,224 @@ type ISocketResponse = {
   type: string,
   clientId?: string
 }
+
+const ListResponse = [
+  {
+    "centralpartitioncount": 4,
+    "edgecount": 6594,
+    "idgraph": 1,
+    "name": "sample1",
+    "partitions": [
+      {
+        "central_edgecount": 8,
+        "central_edgecount_with_dups": 17,
+        "central_vertexcount": 8,
+        "edgecount": 1577,
+        "idpartition": 0,
+        "vertexcount": 1212
+      },
+      {
+        "central_edgecount": 15,
+        "central_edgecount_with_dups": 22,
+        "central_vertexcount": 15,
+        "edgecount": 1477,
+        "idpartition": 1,
+        "vertexcount": 1213
+      },
+      {
+        "central_edgecount": 11,
+        "central_edgecount_with_dups": 21,
+        "central_vertexcount": 11,
+        "edgecount": 1792,
+        "idpartition": 2,
+        "vertexcount": 1268
+      },
+      {
+        "central_edgecount": 9,
+        "central_edgecount_with_dups": 26,
+        "central_vertexcount": 9,
+        "edgecount": 1705,
+        "idpartition": 3,
+        "vertexcount": 1248
+      }
+    ],
+    "status": "op",
+    "upload_path": "/var/tmp/powergrid1.dl",
+    "vertexcount": 4941
+  },
+  {
+    "centralpartitioncount": 4,
+    "edgecount": 6594,
+    "idgraph": 2,
+    "name": "sample2",
+    "partitions": [
+      {
+        "central_edgecount": 8,
+        "central_edgecount_with_dups": 17,
+        "central_vertexcount": 8,
+        "edgecount": 1577,
+        "idpartition": 0,
+        "vertexcount": 1212
+      },
+      {
+        "central_edgecount": 15,
+        "central_edgecount_with_dups": 22,
+        "central_vertexcount": 15,
+        "edgecount": 1477,
+        "idpartition": 1,
+        "vertexcount": 1213
+      },
+      {
+        "central_edgecount": 11,
+        "central_edgecount_with_dups": 21,
+        "central_vertexcount": 11,
+        "edgecount": 1792,
+        "idpartition": 2,
+        "vertexcount": 1268
+      },
+      {
+        "central_edgecount": 9,
+        "central_edgecount_with_dups": 26,
+        "central_vertexcount": 9,
+        "edgecount": 1705,
+        "idpartition": 3,
+        "vertexcount": 1248
+      }
+    ],
+    "status": "op",
+    "upload_path": "/var/tmp/powergrid2.dl",
+    "vertexcount": 4941
+  },
+  {
+    "centralpartitioncount": 4,
+    "edgecount": 6594,
+    "idgraph": 3,
+    "name": "sample3",
+    "partitions": [
+      {
+        "central_edgecount": 8,
+        "central_edgecount_with_dups": 17,
+        "central_vertexcount": 8,
+        "edgecount": 1577,
+        "idpartition": 0,
+        "vertexcount": 1212
+      },
+      {
+        "central_edgecount": 15,
+        "central_edgecount_with_dups": 22,
+        "central_vertexcount": 15,
+        "edgecount": 1477,
+        "idpartition": 1,
+        "vertexcount": 1213
+      },
+      {
+        "central_edgecount": 11,
+        "central_edgecount_with_dups": 21,
+        "central_vertexcount": 11,
+        "edgecount": 1792,
+        "idpartition": 2,
+        "vertexcount": 1268
+      },
+      {
+        "central_edgecount": 9,
+        "central_edgecount_with_dups": 26,
+        "central_vertexcount": 9,
+        "edgecount": 1705,
+        "idpartition": 3,
+        "vertexcount": 1248
+      }
+    ],
+    "status": "op",
+    "upload_path": "/var/tmp/powergrid3.dl",
+    "vertexcount": 4941
+  },
+  {
+    "centralpartitioncount": 4,
+    "edgecount": 6594,
+    "idgraph": 4,
+    "name": "sample4",
+    "partitions": [
+      {
+        "central_edgecount": 8,
+        "central_edgecount_with_dups": 17,
+        "central_vertexcount": 8,
+        "edgecount": 1577,
+        "idpartition": 0,
+        "vertexcount": 1212
+      },
+      {
+        "central_edgecount": 15,
+        "central_edgecount_with_dups": 22,
+        "central_vertexcount": 15,
+        "edgecount": 1477,
+        "idpartition": 1,
+        "vertexcount": 1213
+      },
+      {
+        "central_edgecount": 11,
+        "central_edgecount_with_dups": 21,
+        "central_vertexcount": 11,
+        "edgecount": 1792,
+        "idpartition": 2,
+        "vertexcount": 1268
+      },
+      {
+        "central_edgecount": 9,
+        "central_edgecount_with_dups": 26,
+        "central_vertexcount": 9,
+        "edgecount": 1705,
+        "idpartition": 3,
+        "vertexcount": 1248
+      }
+    ],
+    "status": "op",
+    "upload_path": "/var/tmp/powergrid4.dl",
+    "vertexcount": 4941
+  },
+  {
+    "centralpartitioncount": 4,
+    "edgecount": 6594,
+    "idgraph": 5,
+    "name": "test-data",
+    "partitions": [
+      {
+        "central_edgecount": 8,
+        "central_edgecount_with_dups": 17,
+        "central_vertexcount": 8,
+        "edgecount": 1577,
+        "idpartition": 0,
+        "vertexcount": 1212
+      },
+      {
+        "central_edgecount": 15,
+        "central_edgecount_with_dups": 22,
+        "central_vertexcount": 15,
+        "edgecount": 1477,
+        "idpartition": 1,
+        "vertexcount": 1213
+      },
+      {
+        "central_edgecount": 11,
+        "central_edgecount_with_dups": 21,
+        "central_vertexcount": 11,
+        "edgecount": 1792,
+        "idpartition": 2,
+        "vertexcount": 1268
+      },
+      {
+        "central_edgecount": 9,
+        "central_edgecount_with_dups": 26,
+        "central_vertexcount": 9,
+        "edgecount": 1705,
+        "idpartition": 3,
+        "vertexcount": 1248
+      }
+    ],
+    "status": "op",
+    "upload_path": "/var/tmp/powergrid5.dl",
+    "vertexcount": 4941
+  }
+];
 
 export default function GraphDistribution() {
   const dispatch = useAppDispatch();
@@ -53,7 +271,10 @@ export default function GraphDistribution() {
 
   const getGraphsData = async () => {
     try{
-    const res = await getGraphList();
+    // const res = await getGraphList();
+    const res = {
+      data: ListResponse
+    };
     if(res.data){
       const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
@@ -93,6 +314,8 @@ export default function GraphDistribution() {
       setClientID(message?.clientId || '')
     }else if (Object.values(GRAPH_TYPES).includes(message.type as GraphType)) {
       dispatch(add_degree_data({data: message, type: message?.type as GraphType}));
+    } else {
+      dispatch(add_visualize_data({ ...message}));
     }
   }, [lastJsonMessage]) 
 
@@ -119,6 +342,30 @@ export default function GraphDistribution() {
       console.log("ERROR::", err)
     }finally{
       setLoading(false)
+    }
+  }
+
+  const onPartitionDetailsView = async (partitionID: number | null | undefined) => {
+    if(partitionID){
+      try{
+        setLoading(true);
+        dispatch(clear_visualize_data());
+        if (readyState === ReadyState.OPEN){
+          sendJsonMessage(
+            {
+              type: "QUERY",
+              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} AND n.id < 10 return n,m`,
+              graphId: 10,
+              clientId: clientId,
+              clusterId: localStorage.getItem("selectedCluster"),            
+            }
+          );
+        }    
+      }catch (err){
+        console.log("ERROR::", err)
+      }finally{
+        setLoading(false)
+      }
     }
   }
 
@@ -175,8 +422,13 @@ export default function GraphDistribution() {
             </Button>
           </div>
         </div>
-        {selectedGraph && isVisualize && (visualizationType=="full_view") && <TwoLevelGraphVisualization graphID={selectedGraph} graph={graphs.find((graph) => graph.idgraph == selectedGraph)} />}
-        {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph}/>}
+        {selectedGraph && isVisualize && (visualizationType=="full_view") && (
+          <TwoLevelGraphVisualization 
+            graphID={selectedGraph} 
+            graph={graphs.find((graph) => graph.idgraph == selectedGraph)}
+            onPartitionClick={onPartitionDetailsView} />
+          )}
+        {/* {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph}/>} */}
         {(selectedGraph && (visualizationType=="in_degree" || visualizationType=="out_degree")) && 
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>
