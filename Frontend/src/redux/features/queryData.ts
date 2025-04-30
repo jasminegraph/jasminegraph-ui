@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -39,7 +39,6 @@ export const queryDataSlice = createSlice({
   initialState: initialData,
   reducers: {
     add_query_result: (state, {payload}: {payload: any}) => {
-      console.log(payload)
       const key = Object.keys(payload)[0];
       const node = payload[key];
       
