@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasminGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -105,8 +105,7 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
   }
 };
 
-const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {
-  console.log(graphId, query)
+const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {  
   const cluster = await Cluster.findOne({ _id: clusterId });
   if (!(cluster?.host || cluster?.port)) {
     sendToClient(clientId, { Error: "cluster not found"})
