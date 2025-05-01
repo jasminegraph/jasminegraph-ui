@@ -1,4 +1,4 @@
-import { Button, Card, message, Spin } from "antd";
+import { Alert, Button, Card, message, Spin } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 import { DataSet, Network } from "vis-network/standalone";
 import { LoadingOutlined } from "@ant-design/icons";
@@ -58,10 +58,7 @@ const TwoLevelGraphVisualization = ({
   const [network, setNetwork] = useState<Network | null>(null);
   const nodesRef = useRef<any>(new DataSet([]));
   const edgesRef = useRef<any>(new DataSet([]));
-
-  const lowLevelGraphData = useAppSelector(
-    (state) => state.queryData.visualizeData
-  );
+  const [vertexCountExceed, setVertexCountExceed] = useState<boolean>(false);
 
   const loadHighLevelEdgeList = (): IEdge[] => {
     const edges: IEdge[] = [];
@@ -202,7 +199,7 @@ const TwoLevelGraphVisualization = ({
 
   const getDetails = () => {
     const partitionDetails = graph?.partitions.find(
-      (g) => g.idpartition == selectedNode[0]
+      (g) => selectedNode && g.idpartition == selectedNode[0]
     );
     console.log("PARTITION DETAILS", graph, partitionDetails);
     const items: DescriptionsProps["items"] = [
@@ -235,6 +232,28 @@ const TwoLevelGraphVisualization = ({
     return items;
   };
 
+  const onLowLevelView = async () => {
+    const nodeDetails = graph?.partitions.find(
+      (g) => selectedNode && g.idpartition == selectedNode[0]
+    );
+    console.log("NODE DETAILS", nodeDetails);
+    if (!nodeDetails) {
+      message.warning("No node details found for the selected node.");
+      return;
+    }
+    if ( nodeDetails.vertexcount > 1000) {
+      setVertexCountExceed(true);
+      message.warning("Vertex count exceeds 1000. Cannot view low-level graph.");
+      return;
+    } else {
+      setVertexCountExceed(false);
+    }
+    if(selectedNode && selectedNode.length > 0){
+      onPartitionClick(selectedNode[0])
+    }
+    onLowLevelViewClick();
+  }
+
   return (
     <div>
       <Spin
@@ -242,6 +261,12 @@ const TwoLevelGraphVisualization = ({
         indicator={<LoadingOutlined spin />}
         fullscreen
       />
+      {vertexCountExceed &&
+        <Alert
+        message="Vertex count exceeds 1000. Cannot view low-level graph."
+        type="warning"
+        />
+      }
         <div
           style={{
             position: "relative",
@@ -276,12 +301,7 @@ const TwoLevelGraphVisualization = ({
                 />
                 <Button
                   type="primary"
-                  onClick={() => {
-                    if(selectedNode && selectedNode.length > 0){
-                      onPartitionClick(selectedNode[0])
-                    }
-                    onLowLevelViewClick();
-                  }}
+                  onClick={() => onLowLevelView()}
                 >
                   View Graph
                 </Button>
