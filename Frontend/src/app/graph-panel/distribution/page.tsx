@@ -73,11 +73,6 @@ export default function GraphDistribution() {
     getGraphsData();
   }, []);
 
-  useEffect(() => {
-    console.log("GRAPG OPTION", graphOptions);
-    console.log("GRAPHS",graphs);
-  }, [graphOptions, graphs])
-
   const handleChange = (value: string) => {
     setSelectedGraph(value);
   };
@@ -118,7 +113,7 @@ export default function GraphDistribution() {
         );
       }    
     }catch (err){
-      console.log("ERROR::", err)
+      message.error(err)
     }finally{
       setLoading(false)
     }
@@ -133,7 +128,7 @@ export default function GraphDistribution() {
           sendJsonMessage(
             {
               type: "QUERY",
-              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} AND n.id < 10 return n,m`,
+              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} return n,m`,
               graphId: 10,
               clientId: clientId,
               clusterId: localStorage.getItem("selectedCluster"),            
@@ -141,7 +136,7 @@ export default function GraphDistribution() {
           );
         }    
       }catch (err){
-        console.log("ERROR::", err)
+        message.error(err)
       }finally{
         setLoading(false)
       }

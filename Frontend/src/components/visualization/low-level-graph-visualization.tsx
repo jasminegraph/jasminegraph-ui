@@ -60,8 +60,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
       nodesRef.current.clear();
       edgesRef.current.clear();
 
-      console.log('Low-Level Graph Data:', lowLevelGraphData);
-
       if (lowLevelGraphData && lowLevelGraphData.node && Array.isArray(lowLevelGraphData.edge)) {
         const { node, edge } = lowLevelGraphData;
 
@@ -85,9 +83,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
           }
           return { ...edge };
         });
-
-        console.log('Validated Low-Level Nodes:', validatedNodes);
-        console.log('Validated Low-Level Edges:', validatedEdges);
 
         if (validatedNodes.length === 0) {
           message.warning('No valid nodes found for low-level view.');

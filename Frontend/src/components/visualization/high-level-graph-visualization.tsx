@@ -83,8 +83,6 @@ const TwoLevelGraphVisualization = ({
       nodesRef.current.clear();
       edgesRef.current.clear();
 
-      console.log('Low-Level Graph Data:', lowLevelGraphData);
-
       if (graph && graph.partitions && Array.isArray(graph.partitions)) {
 
         // Validate node format
@@ -106,9 +104,6 @@ const TwoLevelGraphVisualization = ({
           }
           return { ...edge };
         });
-
-        console.log('Validated Low-Level Nodes:', validatedNodes);
-        console.log('Validated Low-Level Edges:', validatedEdges);
 
         if (validatedNodes.length === 0) {
           message.warning('No valid nodes found for low-level view.');
