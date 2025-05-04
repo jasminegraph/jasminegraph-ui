@@ -58,6 +58,8 @@ npm run nodemon
 
 Open your browser and navigate to http://localhost:3000 to access the application.
 
+info:
+To shutdown close both Frontend and Backend terminals
 
 # JasmineGraph Docker Deployment
 
@@ -68,6 +70,7 @@ This guide will help you set up and deploy JasmineGraph using Docker. We’ll bu
 Ensure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
+- Start Jasminegraph Server in Docker mode
 
 ## Deployment Instructions
 
@@ -77,7 +80,7 @@ Ensure you have the following installed:
 
    ```bash
    git clone https://github.com/jasminegraph/jasminegraph-ui.git
-   cd jasminegraph
+   cd jasminegraph-ui
    ```
 
 2. **Build the Frontend Service**
