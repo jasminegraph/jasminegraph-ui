@@ -17,7 +17,7 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 
 - Node.js (>= 12.x.x)
 - npm (>= 6.x.x)
-- mongoDB (>=v7.0.14) (follow this [guide](https://www.mongodb.com/docs/manual/installation/))
+- mongoDB (>=v7.0.14) (follow this [guide](https://www.mongodb.com/docs/manual/administration/install-community/))
 - Docker (optional, if you prefer to run using Docker)
 
 
