@@ -168,7 +168,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
   }, []);
 
   const getDetails = () => {
-    const node = lowLevelGraphData.node.find((node: any) => node.id == selectedNode[0]);
+    const node = lowLevelGraphData.node.find((node: any) => selectedNode && node.id == selectedNode[0]);
     const keys = Object.keys(node);
 
     console.log("NODE DETAILS", node, keys);
@@ -216,7 +216,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
         }}>
           {selectedNode && selectedNode?.length > 0 && (
             <Card 
-              variant="borderless" 
               style={{ maxWidth: 300 }}
             >
               <Descriptions column={1} title={`Node ${selectedNode}`}  items={getDetails()} />

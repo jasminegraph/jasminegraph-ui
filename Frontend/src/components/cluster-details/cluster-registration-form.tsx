@@ -23,6 +23,7 @@ import {
 import { USER_ROLES } from '@/data/user-data';
 import { registerUser } from '@/services/auth-service';
 import { addNewCluster } from '@/services/cluster-service';
+import useAccessToken from '@/hooks/useAccessToken';
 
 const { Option } = Select;
 
@@ -63,11 +64,13 @@ type props = {
 const ClusterRegistrationForm = ({onSuccess}: props) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
-
+  const { getSrvAccessToken } = useAccessToken();
+  
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
-      const res = await addNewCluster(values.name, values.description, values.host, values.port);
+      const token = getSrvAccessToken() || "";
+      await addNewCluster(values.name, values.description, values.host, values.port, token);
       message.loading("Connecting New Cluster", 2);
       onSuccess();
     }catch(err){
