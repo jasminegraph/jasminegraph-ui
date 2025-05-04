@@ -1,0 +1,49 @@
+version: '3'
+services:
+  
+  # # Frontend Service
+  frontend:
+    image: jasminegraph-frontend:latest  # Replace with your frontend image
+    ports:
+      - "3000:3000"
+    networks:
+      - next-node
+    environment:
+      - BACKEND=http://backend:8080 # Pointing to the backend service
+      - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
+
+  # Backend Service
+  backend:
+    image: jasminegraph-backend:latest  # Replace with your backend image
+    ports:
+      - "8080:8080"
+    networks:
+      - node-mongo
+      - next-node
+    depends_on:
+      - mongoCont  # Ensure MongoDB starts before backend
+    volumes:
+      - /var/tmp/jasminegraph-ui-backend:/app/caches 
+    environment:
+      - MONGO_URL=mongodb://mongoCont:27017/jasminegraph # MongoDB connection string pointing to the mongo service
+
+  # MongoDB Service
+  mongoCont:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    networks:
+      - node-mongo
+    volumes:
+      - ./mongodb-data:/data/db  # Persist MongoDB data locally
+
+volumes:
+  mongodb-data:
+    driver: local
+    
+networks:
+  node-mongo:
+    driver: bridge
+  next-node:
+    driver: bridge
+    

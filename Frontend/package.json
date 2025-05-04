@@ -1,0 +1,44 @@
+{
+  "name": "jasminegraph-ui",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.4.4",
+    "@mui/x-charts": "^7.26.0",
+    "@reduxjs/toolkit": "^2.2.5",
+    "@types/randomcolor": "^0.5.9",
+    "antd": "^5.18.3",
+    "antd-style": "^3.7.1",
+    "axios": "^1.7.2",
+    "google-auth-library": "^9.11.0",
+    "next": "14.2.4",
+    "randomcolor": "^0.6.2",
+    "react": "^18",
+    "react-dom": "^18",
+    "react-highlight-words": "^0.20.0",
+    "react-redux": "^9.1.2",
+    "react-toastify": "^10.0.5",
+    "react-use-websocket": "^4.13.0",
+    "sass": "^1.77.6",
+    "vis-network": "^9.1.9"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/react-highlight-words": "^0.20.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.4",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5"
+  }
+}

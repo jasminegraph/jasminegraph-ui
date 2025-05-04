@@ -1,0 +1,1 @@
+export const VISUALIZATION_VERTEX_LIMIT= 1000;
