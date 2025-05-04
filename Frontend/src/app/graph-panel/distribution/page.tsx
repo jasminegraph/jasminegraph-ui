@@ -202,7 +202,6 @@ export default function GraphDistribution() {
             graph={graphs.find((graph) => graph.idgraph == selectedGraph)}
             onPartitionClick={onPartitionDetailsView} />
           )}
-        {/* {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph}/>} */}
         {(selectedGraph && (visualizationType=="in_degree" || visualizationType=="out_degree")) && 
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>

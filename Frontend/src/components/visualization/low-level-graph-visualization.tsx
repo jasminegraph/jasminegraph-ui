@@ -1,3 +1,16 @@
+/**
+Copyright 2025 JasmineGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 import { Button, Card, message, Progress, Spin } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { DataSet, Network } from 'vis-network/standalone';
@@ -7,8 +20,10 @@ import { Descriptions } from 'antd';
 import type { DescriptionsProps } from 'antd';
 import { useAppSelector } from '@/redux/hook';
 
-const DEFAULT_TIMEOUT = 75;
-
+export const ERROR_MSG = {
+  noData: "No valid low-level graph data available for partition",
+  failedMsg: "Failed to load low-level graph data."
+}
 export type INode = {
   id: number;
   label: string;
@@ -96,14 +111,14 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
           network.fit(); // Ensure the view is adjusted
         }
       } else {
-        console.warn('No valid low-level graph data available for partition:', selectedNode);
-        message.warning('No low-level graph data available for this partition.');
+        console.warn(ERROR_MSG.noData, selectedNode);
+        message.warning(ERROR_MSG.noData);
       }
 
       setLoading(false);
     } catch (err) {
-      console.error('Error while loading low-level graph data: ', err);
-      message.error('Failed to load low-level graph data.');
+      console.error(ERROR_MSG.failedMsg, err);
+      message.error(ERROR_MSG.failedMsg);
       setLoading(false);
     }
   };

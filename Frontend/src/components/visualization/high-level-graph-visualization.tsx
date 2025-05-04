@@ -1,3 +1,16 @@
+/**
+Copyright 2025 JasmineGraph Team
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+    http://www.apache.org/licenses/LICENSE-2.0
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 import { Alert, Button, Card, message, Spin } from "antd";
 import React, { useEffect, useRef, useState } from "react";
 import { DataSet, Network } from "vis-network/standalone";
@@ -7,6 +20,8 @@ import { IGraphDetails } from "@/types/graph-types";
 import { Descriptions } from "antd";
 import type { DescriptionsProps } from "antd";
 import { useAppSelector } from "@/redux/hook";
+import { ERROR_MSG } from './low-level-graph-visualization';
+import { VISUALIZATION_VERTEX_LIMIT } from "@/properties";
 
 export type INode = {
   id: number;
@@ -63,11 +78,9 @@ const TwoLevelGraphVisualization = ({
   const loadHighLevelEdgeList = (): IEdge[] => {
     const edges: IEdge[] = [];
     const partitionCount = graph?.partitions.length || 0;
-    console.log("PARTITION COUNT", partitionCount);
     for (let i = 0; i < partitionCount; i++) {
       for (let j = i + 1; j <= partitionCount; j++) {
         edges.push({ from: i, to: j, properties: `${i}-${j} edge` });
-        console.log(i, j);
       }
     }
 
@@ -114,14 +127,14 @@ const TwoLevelGraphVisualization = ({
           network.fit(); // Ensure the view is adjusted
         }
       } else {
-        console.warn('No valid low-level graph data available for partition:', selectedNode);
-        message.warning('No low-level graph data available for this partition.');
+        console.warn(ERROR_MSG.noData, selectedNode);
+        message.warning(ERROR_MSG.noData);
       }
 
       setLoading(false);
     } catch (err) {
-      console.error('Error while loading low-level graph data: ', err);
-      message.error('Failed to load low-level graph data.');
+      console.error(ERROR_MSG.failedMsg, err);
+      message.error(ERROR_MSG.failedMsg);
       setLoading(false);
     }
   };
@@ -241,9 +254,9 @@ const TwoLevelGraphVisualization = ({
       message.warning("No node details found for the selected node.");
       return;
     }
-    if ( nodeDetails.vertexcount > 1000) {
+    if ( nodeDetails.vertexcount > VISUALIZATION_VERTEX_LIMIT) {
       setVertexCountExceed(true);
-      message.warning("Vertex count exceeds 1000. Cannot view low-level graph.");
+      message.warning(`Vertex count exceeds ${VISUALIZATION_VERTEX_LIMIT}. Cannot view low-level graph.`);
       return;
     } else {
       setVertexCountExceed(false);
@@ -263,7 +276,7 @@ const TwoLevelGraphVisualization = ({
       />
       {vertexCountExceed &&
         <Alert
-        message="Vertex count exceeds 1000. Cannot view low-level graph."
+        message={`Vertex count exceeds ${VISUALIZATION_VERTEX_LIMIT}. Cannot view low-level graph.`}
         type="warning"
         />
       }
