@@ -78,7 +78,6 @@ export default function Query() {
   }, [lastJsonMessage])
 
   const onQuerySubmit = async () => {
-    // if(query.length > 0) return;
     try{
       setLoading(true);
       dispatch(clear_result());

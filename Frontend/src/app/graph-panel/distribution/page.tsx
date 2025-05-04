@@ -16,12 +16,14 @@ import React, { useState, useEffect } from "react";
 import { Button, message, Select } from 'antd';
 import GraphVisualization from "@/components/visualization/graph-visualization";
 import { getGraphList } from "@/services/graph-service";
-import { DataType } from "../graph/page";
 import InDegreeVisualization from "@/components/visualization/indegree-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { GRAPH_TYPES, GRAPH_VISUALIZATION_TYPE, GraphType, GraphVisualizationType } from "@/data/graph-data";
-import { add_degree_data, clear_degree_data } from "@/redux/features/queryData";
+import { add_degree_data, clear_degree_data, add_visualize_data, clear_visualize_data } from "@/redux/features/queryData";
 import { useAppDispatch } from "@/redux/hook";
+import { IOption } from "@/types/options-types";
+import { IGraphDetails } from "@/types/graph-types";
+import TwoLevelGraphVisualization from "@/components/visualization/two-level-graph-visualization";
 
 const WS_URL = "ws://localhost:8080";
 
@@ -33,7 +35,8 @@ type ISocketResponse = {
 export default function GraphDistribution() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState<boolean>(false);
-  const [graphs, setGraphs] = useState<any[]>([]);
+  const [graphs, setGraphs] = useState<IGraphDetails[]>([]);
+  const [graphOptions, setGraphOptions] = useState<IOption[]>([]);
   const [selectedGraph, setSelectedGraph] = useState<string | undefined>(undefined);
   const [visualizationType, setVisualizationType] = useState<GraphVisualizationType | undefined>(undefined);
   const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
@@ -52,13 +55,14 @@ export default function GraphDistribution() {
     try{
     const res = await getGraphList();
     if(res.data){
-      const filteredData: DataType[] = res.data.map((graph: any) => {
+      const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
           value: graph.idgraph,
           label: graph.name,
         }
       })
-      setGraphs(filteredData);
+      setGraphOptions(filteredData)
+      setGraphs(res.data);
     }
     }catch(err){
       message.error("Failed to fetch graphs: " + err);
@@ -84,6 +88,8 @@ export default function GraphDistribution() {
       setClientID(message?.clientId || '')
     }else if (Object.values(GRAPH_TYPES).includes(message.type as GraphType)) {
       dispatch(add_degree_data({data: message, type: message?.type as GraphType}));
+    } else {
+      dispatch(add_visualize_data({ ...message}));
     }
   }, [lastJsonMessage]) 
 
@@ -107,9 +113,33 @@ export default function GraphDistribution() {
         );
       }    
     }catch (err){
-      console.log("ERROR::", err)
+      message.error(err)
     }finally{
       setLoading(false)
+    }
+  }
+
+  const onPartitionDetailsView = async (partitionID: number | null | undefined) => {
+    if(partitionID){
+      try{
+        setLoading(true);
+        dispatch(clear_visualize_data());
+        if (readyState === ReadyState.OPEN){
+          sendJsonMessage(
+            {
+              type: "QUERY",
+              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} return n,m`,
+              graphId: 10,
+              clientId: clientId,
+              clusterId: localStorage.getItem("selectedCluster"),            
+            }
+          );
+        }    
+      }catch (err){
+        message.error(err)
+      }finally{
+        setLoading(false)
+      }
     }
   }
 
@@ -140,7 +170,7 @@ export default function GraphDistribution() {
               style={{ width: 120 }}
               onChange={handleChange}
               value={selectedGraph}
-              options={graphs}
+              options={graphOptions}
               size="large"
             />
           </div>
@@ -166,7 +196,12 @@ export default function GraphDistribution() {
             </Button>
           </div>
         </div>
-        {selectedGraph && isVisualize && (visualizationType=="full_view") && <GraphVisualization graphID={selectedGraph} />}
+        {selectedGraph && isVisualize && (visualizationType=="full_view") && (
+          <TwoLevelGraphVisualization 
+            graphID={selectedGraph} 
+            graph={graphs.find((graph) => graph.idgraph == selectedGraph)}
+            onPartitionClick={onPartitionDetailsView} />
+          )}
         {(selectedGraph && (visualizationType=="in_degree" || visualizationType=="out_degree")) && 
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>

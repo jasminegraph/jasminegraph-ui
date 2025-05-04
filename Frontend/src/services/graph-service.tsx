@@ -12,9 +12,10 @@ limitations under the License.
  */
 
 'use client';
+import { IGraphDetails } from "@/types/graph-types";
 import {authApi} from "./axios";
 
-export async function getGraphList() {
+export async function getGraphList(): Promise<{data: IGraphDetails[]}> {
   try {
     const result = await authApi({
       method: "get",
@@ -23,6 +24,7 @@ export async function getGraphList() {
         "Cluster-ID": localStorage.getItem("selectedCluster"),
       },
     }).then((res) => res.data);
+
     return {
       data: result,
     };

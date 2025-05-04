@@ -17,17 +17,10 @@ import { Space, Table, Tag, Button, Popconfirm, message, Spin } from "antd";
 import type { TableProps } from 'antd';
 import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { getGraphList, deleteGraph } from "@/services/graph-service";
-export interface DataType {
-  key: string;
-  name: string;
-  type: string;
-  vertexCount: number;
-  edgeCount: number;
-  status: string;
-}
+import { IGraphDetails } from "@/types/graph-types";
 
 export default function GraphDetails() {
-  const [graphs, setGraphs] = React.useState<any[]>([]);
+  const [graphs, setGraphs] = React.useState<IGraphDetails[]>([]);
   const [loading, setLoading] = React.useState(false);
 
   const getGraphsData = async () => {
@@ -35,17 +28,7 @@ export default function GraphDetails() {
       setLoading(true);
       const res = await getGraphList();
       if(res.data){
-        const filteredData: DataType[] = res.data.map((graph: any) => {
-          return {
-            key: graph.idgraph,
-            name: graph.name,
-            type: graph.type,
-            vertexCount: graph.vertexcount,
-            edgeCount: graph.edgecount,
-            status: graph.status,
-          }
-        })
-      setGraphs(filteredData);
+      setGraphs(res.data);
     }
     }catch(err){
       message.error("Failed to fetch graphs: " + err);
@@ -59,7 +42,7 @@ export default function GraphDetails() {
     getGraphsData();
   }, [])
 
-  const columns: TableProps<DataType>['columns'] = [
+  const columns: TableProps<IGraphDetails>['columns'] = [
     {
       title: 'Name',
       dataIndex: 'name',
@@ -100,14 +83,14 @@ export default function GraphDetails() {
     {
       title: 'Delete',
       key: 'delete',
-      render: (_: any, record: DataType) => (
+      render: (_: any, record: IGraphDetails) => (
         <Popconfirm
           title="Delete Graph"
-          description={`Are you sure you want to delete this graph: ${record.key} ?`}
+          description={`Are you sure you want to delete this graph: ${record.idgraph} ?`}
           icon={<QuestionCircleOutlined style={{ color: 'red' }} />}
           onConfirm={async () => {
             try {
-              await deleteGraph(record.key);
+              await deleteGraph(record.idgraph.toString());
               message.success("Graph deleted successfully");
               getGraphsData();
             } catch (err) {
