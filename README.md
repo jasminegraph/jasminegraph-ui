@@ -17,7 +17,7 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 
 - Node.js (>= 12.x.x)
 - npm (>= 6.x.x)
-- mongoDB (>=v7.0.14)
+- mongoDB (>=v7.0.14) (follow this [guide](https://www.mongodb.com/docs/manual/installation/))
 - Docker (optional, if you prefer to run using Docker)
 
 
@@ -45,14 +45,14 @@ npm install
 Run Frontend Application:
 
 ```bash
-cd Frontend
+cd ../Frontend
 npm run dev
 ```
 
-Run Backend Application
+Run Backend Application in a new terminal
 
 ```bash
-cd ../Backend
+cd Backend
 npm run nodemon
 ```
 
@@ -94,7 +94,7 @@ Ensure you have the following installed:
    Navigate to the `Backend` directory and build the Docker image:
 
    ```bash
-   cd ../Backend
+   cd Backend
    docker build -t jasminegraph-backend .
    ```
 
