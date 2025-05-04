@@ -20,9 +20,9 @@ import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { add_query_result, clear_result } from "@/redux/features/queryData";
 import { Select, Space } from 'antd';
 import { getGraphList } from "@/services/graph-service";
-import { DataType } from "../graph-panel/graph/page";
 import QueryVisualization from "@/components/visualization/query-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
+import { IOption } from "@/types/options-types";
 
 type TabItem = Required<TabsProps>['items'][number];
 
@@ -46,7 +46,7 @@ export default function Query() {
     try{
     const res = await getGraphList();
     if(res.data){
-      const filteredData: DataType[] = res.data.map((graph: any) => {
+      const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
           value: graph.idgraph,
           label: graph.name,

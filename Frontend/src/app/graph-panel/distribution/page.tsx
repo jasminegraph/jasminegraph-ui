@@ -113,7 +113,7 @@ export default function GraphDistribution() {
         );
       }    
     }catch (err){
-      message.error(err)
+      console.error(err)
     }finally{
       setLoading(false)
     }
@@ -136,7 +136,7 @@ export default function GraphDistribution() {
           );
         }    
       }catch (err){
-        message.error(err)
+        console.error(err)
       }finally{
         setLoading(false)
       }

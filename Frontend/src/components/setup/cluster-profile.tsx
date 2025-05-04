@@ -42,10 +42,12 @@ const ClusterSetup = ({onSuccess}:props) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState<boolean>(false);
   const { getSrvAccessToken } = useAccessToken();
+
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
-      const res = await addNewCluster(values.name, values.description, values.host, values.port);
+      const token = getSrvAccessToken() || "";
+      await addNewCluster(values.name, values.description, values.host, values.port, token);
       onSuccess();
     }catch(err){
       console.log(err);

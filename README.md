@@ -16,10 +16,14 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 ## Prerequisites
 
 - Node.js (>= 12.x.x)
-- npm (>= 6.x.x) or yarn (>= 1.x.x)
+- npm (>= 6.x.x)
+- mongoDB (>=v7.0.14)
 - Docker (optional, if you prefer to run using Docker)
 
-## Installation
+
+### Running the Application Locally
+
+To run the application locally, use the following command:
 
 Clone the repository:
 
@@ -30,32 +34,26 @@ cd jasminegraph-ui
 
 Install dependencies:
 
-Using npm:
-
 ```bash
+cd Frontend
+npm install
+
+cd ../Backend
 npm install
 ```
 
-Using yarn:
+Run Frontend Application:
 
 ```bash
-yarn install
-```
-
-### Running the Application Locally
-
-To run the application locally, use the following command:
-
-Using npm:
-
-```bash
+cd Frontend
 npm run dev
 ```
 
-Using yarn:
+Run Backend Application
 
 ```bash
-yarn dev
+cd ../Backend
+npm run nodemon
 ```
 
 Open your browser and navigate to http://localhost:3000 to access the application.
@@ -84,19 +82,19 @@ Ensure you have the following installed:
 
 2. **Build the Frontend Service**
 
-   Navigate to the `frontend` directory and build the Docker image:
+   Navigate to the `Frontend` directory and build the Docker image:
 
    ```bash
-   cd frontend
+   cd Frontend
    docker build -t jasminegraph-frontend .
    ```
 
 3. **Build the Backend Service**
 
-   Navigate to the `backend` directory and build the Docker image:
+   Navigate to the `Backend` directory and build the Docker image:
 
    ```bash
-   cd ../backend
+   cd ../Backend
    docker build -t jasminegraph-backend .
    ```
 

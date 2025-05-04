@@ -58,7 +58,7 @@ const AdminProfile = ({onSuccess}:props) => {
         setSrvAccessToken(tokenRes.accessToken);
         setSrvRefreshToken(tokenRes.refreshToken);
       }
-      saveUserData(tokenRes.accessToken);
+      await saveUserData(tokenRes.accessToken);
       onSuccess();
     }catch(err){
       message.error("Failed to create profile");

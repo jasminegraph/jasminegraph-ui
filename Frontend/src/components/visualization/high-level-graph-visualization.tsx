@@ -306,7 +306,7 @@ const TwoLevelGraphVisualization = ({
             }}
           >
             {selectedNode && selectedNode?.length > 0 && (
-              <Card variant="borderless" style={{ maxWidth: 300 }}>
+              <Card style={{ maxWidth: 300 }}>
                 <Descriptions
                   column={1}
                   title={`Partition ${selectedNode}`}
