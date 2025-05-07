@@ -2,6 +2,9 @@ version: '3'
 services:
   # Frontend Service
   frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
     image: jasminegraph-frontend:latest
     ports:
       - "3000:3000"
@@ -12,6 +15,9 @@ services:
 
   # Backend Service
   backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
     image: jasminegraph-backend:latest
     ports:
       - "8080:8080"

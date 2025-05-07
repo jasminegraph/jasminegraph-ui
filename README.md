@@ -83,38 +83,19 @@ Ensure you have the following installed:
    cd jasminegraph-ui
    ```
 
-2. **Build the Frontend Service**
-
-   Navigate to the `Frontend` directory and build the Docker image:
-
-   ```bash
-   cd Frontend
-   docker build -t jasminegraph-frontend .
-   ```
-
-3. **Build the Backend Service**
-
-   Navigate to the `Backend` directory and build the Docker image:
-
-   ```bash
-   cd Backend
-   docker build -t jasminegraph-backend .
-   ```
-
-4. **Start the Services with Docker Compose**
+2. **Start the Services with Docker Compose**
 
    From the root directory of the project, use Docker Compose to start both the frontend and backend services:
 
    ```bash
-   cd ..
    docker compose up
    ```
 
    This command will start all the services defined in your `docker-compose.yml` file.
 
-5. **Access the Application**
+3. **Access the Application**
 
-   Once the containers are running, you can access JasmineGraph through the specified frontend and backend endpoints.
+Open your browser and navigate to http://localhost:3000 to access the application.
 
 ## Stopping the Services
 
