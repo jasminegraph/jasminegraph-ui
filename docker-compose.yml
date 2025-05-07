@@ -1,49 +1,37 @@
 version: '3'
 services:
-  
-  # # Frontend Service
+  # Frontend Service
   frontend:
-    image: jasminegraph-frontend:latest  # Replace with your frontend image
+    image: jasminegraph-frontend:latest
     ports:
       - "3000:3000"
-    networks:
-      - next-node
+    network_mode: host # Use host network mode
     environment:
       - BACKEND=http://backend:8080 # Pointing to the backend service
       - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
 
   # Backend Service
   backend:
-    image: jasminegraph-backend:latest  # Replace with your backend image
+    image: jasminegraph-backend:latest
     ports:
       - "8080:8080"
-    networks:
-      - node-mongo
-      - next-node
+    network_mode: host # Use host network mode
     depends_on:
-      - mongoCont  # Ensure MongoDB starts before backend
+      - mongoCont
     volumes:
-      - /var/tmp/jasminegraph-ui-backend:/app/caches 
+      - /var/tmp/jasminegraph-ui-backend:/app/caches
     environment:
-      - MONGO_URL=mongodb://mongoCont:27017/jasminegraph # MongoDB connection string pointing to the mongo service
+      - MONGO_URL=mongodb://localhost:27017/jasminegraph # Update to use localhost since mongoCont is on host network
 
   # MongoDB Service
   mongoCont:
     image: mongo:latest
     ports:
       - "27017:27017"
-    networks:
-      - node-mongo
+    network_mode: host
     volumes:
-      - ./mongodb-data:/data/db  # Persist MongoDB data locally
+      - ./mongodb-data:/data/db
 
 volumes:
   mongodb-data:
     driver: local
-    
-networks:
-  node-mongo:
-    driver: bridge
-  next-node:
-    driver: bridge
-    
