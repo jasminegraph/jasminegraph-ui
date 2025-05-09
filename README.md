@@ -17,7 +17,7 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 
 - Node.js (>= 12.x.x)
 - npm (>= 6.x.x)
-- mongoDB (>=v7.0.14)
+- mongoDB (>=v7.0.14) (follow this [guide](https://www.mongodb.com/docs/manual/administration/install-community/))
 - Docker (optional, if you prefer to run using Docker)
 
 
@@ -45,19 +45,21 @@ npm install
 Run Frontend Application:
 
 ```bash
-cd Frontend
+cd ../Frontend
 npm run dev
 ```
 
-Run Backend Application
+Run Backend Application in a new terminal
 
 ```bash
-cd ../Backend
+cd Backend
 npm run nodemon
 ```
 
 Open your browser and navigate to http://localhost:3000 to access the application.
 
+info:
+To shutdown close both Frontend and Backend terminals
 
 # JasmineGraph Docker Deployment
 
@@ -68,6 +70,7 @@ This guide will help you set up and deploy JasmineGraph using Docker. We’ll bu
 Ensure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
+- Start Jasminegraph Server in Docker mode
 
 ## Deployment Instructions
 
@@ -77,41 +80,22 @@ Ensure you have the following installed:
 
    ```bash
    git clone https://github.com/jasminegraph/jasminegraph-ui.git
-   cd jasminegraph
+   cd jasminegraph-ui
    ```
 
-2. **Build the Frontend Service**
-
-   Navigate to the `Frontend` directory and build the Docker image:
-
-   ```bash
-   cd Frontend
-   docker build -t jasminegraph-frontend .
-   ```
-
-3. **Build the Backend Service**
-
-   Navigate to the `Backend` directory and build the Docker image:
-
-   ```bash
-   cd ../Backend
-   docker build -t jasminegraph-backend .
-   ```
-
-4. **Start the Services with Docker Compose**
+2. **Start the Services with Docker Compose**
 
    From the root directory of the project, use Docker Compose to start both the frontend and backend services:
 
    ```bash
-   cd ..
    docker compose up
    ```
 
    This command will start all the services defined in your `docker-compose.yml` file.
 
-5. **Access the Application**
+3. **Access the Application**
 
-   Once the containers are running, you can access JasmineGraph through the specified frontend and backend endpoints.
+Open your browser and navigate to http://localhost:3000 to access the application.
 
 ## Stopping the Services
 
