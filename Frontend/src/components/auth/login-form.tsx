@@ -59,9 +59,9 @@ const LoginForm = () => {
     autoComplete="off"
   >
     <Form.Item<FieldType>
-      label="Username"
+      label="Email"
       name="username"
-      rules={[{ required: true, message: 'Please input your username!' }]}
+      rules={[{ required: true, message: 'Please input your email address!' }]}
     >
       <Input />
     </Form.Item>
