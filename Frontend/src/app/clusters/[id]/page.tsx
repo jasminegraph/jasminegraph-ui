@@ -138,7 +138,7 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
     <div className="">
       <Row style={{justifyContent: "space-between", marginTop: "20px"}}>
         <Col span={10}>
-        <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5", marginBottom: "20px"}}>Default Cluster</h1>
+        <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5", marginBottom: "20px"}}>{clusterDetails?.name}</h1>
         <TextArea rows={4} placeholder="cluster description" maxLength={6} value={clusterDetails?.description} />
         </Col>
         <Col span={12}>

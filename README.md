@@ -13,15 +13,15 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 - Efficient querying and manipulation of graph data.
 - Integration with JasmineGraph backend services.
 
+# Running the Application Locally
+
 ## Prerequisites
 
 - Node.js (>= 12.x.x)
 - npm (>= 6.x.x)
 - mongoDB (>=v7.0.14) (follow this [guide](https://www.mongodb.com/docs/manual/administration/install-community/))
-- Docker (optional, if you prefer to run using Docker)
 
-
-### Running the Application Locally
+## Instructions
 
 To run the application locally, use the following command:
 
@@ -70,7 +70,7 @@ This guide will help you set up and deploy JasmineGraph using Docker. We’ll bu
 Ensure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
-- Start Jasminegraph Server in Docker mode
+- Start JasmineGraph Server in Docker mode
 
 ## Deployment Instructions
 
@@ -99,7 +99,7 @@ Open your browser and navigate to http://localhost:3000 to access the applicatio
 
 ## Stopping the Services
 
-To stop the services, press `Ctrl+C` in the terminal running `docker compose up`, or run:
+To stop the services, press `Ctrl+C` in the terminal which is occupied by `docker compose up`, or in a new terminal run:
 
 ```bash
 docker compose down
