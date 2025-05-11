@@ -63,7 +63,7 @@ const clusterSchema = new Schema(
   },
 );
 
-clusterSchema.index({ host: 1 }, { unique: true });
+clusterSchema.index({ host: 1, port: 1 }, { unique: true });
 
 const Cluster : Model<ClusterDocument> = mongoose.model<ClusterDocument>('Cluster', clusterSchema);
 

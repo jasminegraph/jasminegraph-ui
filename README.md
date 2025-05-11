@@ -70,6 +70,7 @@ This guide will help you set up and deploy JasmineGraph using Docker. We’ll bu
 Ensure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
+- Docker-compose (>= 2.36.0)
 - Start JasmineGraph Server in Docker mode
 
 ## Deployment Instructions

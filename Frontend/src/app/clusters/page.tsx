@@ -86,7 +86,6 @@ export default function Clusters() {
   }
 
   const handleOnClusterClick = (cluster: IClusterDetails) => {
-    handleOnClusterSelect(cluster);
     router.push(`/clusters/${cluster._id}`)
   }
 
