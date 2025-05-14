@@ -19,14 +19,11 @@ import {
   GRAPH_UPLOAD_COMMAND, 
   GRAPH_DATA_COMMAND,
   LIST_COMMAND, 
-  TRIANGLE_COUNT_COMMAND } from './../constants/frontend.server.constants';
+  TRIANGLE_COUNT_COMMAND, 
+  PROPERTIES_COMMAND} from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { Cluster } from '../models/cluster.model';
 import { HTTP, TIMEOUT } from '../constants/constants';
-import { v4 as uuidv4 } from 'uuid';
-import fs from 'fs';
-import readline from 'readline';
-import WebSocket from 'ws';
 import { parseGraphFile } from '../utils/graph';
 
 export let socket;
@@ -103,6 +100,36 @@ const getGraphList = async (req: Request, res: Response) => {
         setTimeout(() => {
           if (commandOutput) {
             console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
+            res.status(HTTP[200]).send(JSON.parse(commandOutput));
+          } else {
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+          }
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
+      });
+    });
+  } catch (err) {
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
+};
+
+const getClusterProperties = async (req: Request, res: Response) => {
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
+  try {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
+      let commandOutput = '';
+
+      tSocket.on('data', (buffer) => {
+        commandOutput += buffer.toString('utf8');
+      });
+
+      // Write the command to the Telnet server
+      tSocket.write(PROPERTIES_COMMAND + '\n', 'utf8', () => {
+        setTimeout(() => {
+          if (commandOutput) {
+            console.log(new Date().toLocaleString() + ' - ' + PROPERTIES_COMMAND + ' - ' + commandOutput);
             res.status(HTTP[200]).send(JSON.parse(commandOutput));
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
@@ -256,4 +283,4 @@ const getGraphData = async (req, res) => {
   }
 }
 
-export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData };
+export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData, getClusterProperties };
