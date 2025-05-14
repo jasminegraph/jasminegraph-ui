@@ -73,8 +73,6 @@ const columns: TableProps<DataType>['columns'] = [
   }
 ];
 
-const { TextArea } = Input;
-
 export default function ClusterDetails({ params }: { params: { id: string } }) {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
@@ -95,12 +93,12 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
     {
       key: '3',
       label: 'JasmineGraph Version',
-      children: '1.21.101',
+      children: 'v0.1.x',
     },
     {
       key: '4',
       label: 'Platform',
-      children: '-',
+      children: 'docker',
     },
   ];
 
@@ -117,10 +115,9 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
   }
 
   useEffect(()=> {
-    if (clusterDetails == null || selectedCluster == null){
-      fetchClusterDetails()
-    }
-  }, [params])
+    fetchClusterDetails()
+    
+  }, [])
 
   const getNodeData = () => {
     return undefined;
@@ -139,7 +136,7 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
       <Row style={{justifyContent: "space-between", marginTop: "20px"}}>
         <Col span={10}>
         <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5", marginBottom: "20px"}}>{clusterDetails?.name}</h1>
-        <TextArea rows={4} placeholder="cluster description" maxLength={6} value={clusterDetails?.description} />
+        <p><strong>Description: </strong>{clusterDetails?.description}</p>
         </Col>
         <Col span={12}>
           <Descriptions title="Cluster Information" items={items} column={1} />

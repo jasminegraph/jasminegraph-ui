@@ -152,6 +152,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.home);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.clusterPage,
@@ -178,12 +179,22 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       },
     },
     {
+      key: Routes.SIDE_MENU_ROUTES.performance,
+      icon: <SlidersOutlined />,
+      label: "Performance",
+      onClick: () => {
+        onMenuClick(Routes.SIDE_MENU_ROUTES.performance);
+      },
+      disabled: true,
+    },
+    {
       key: Routes.SIDE_MENU_ROUTES.queryExecution,
       icon: <PartitionOutlined />,
       label: "Query Execution",
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.queryExecution);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.querySubmission,
@@ -192,6 +203,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.querySubmission);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.notebook,
@@ -199,6 +211,15 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       label: "Notebook",
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.notebook);
+      },
+      disabled: true,
+    },
+    {
+      key: Routes.SIDE_MENU_ROUTES.userManagemnt,
+      icon: <UsergroupAddOutlined />,
+      label: "User Management",
+      onClick: () => {
+        onMenuClick(Routes.SIDE_MENU_ROUTES.userManagemnt);
       },
     },
     {
@@ -216,6 +237,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.settings);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.about,
@@ -224,6 +246,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.about);
       },
+      disabled: true,
     },
   ];
 };
