@@ -17,11 +17,11 @@ import { Descriptions, Input, Row, Col, Divider } from 'antd';
 import type { DescriptionsProps } from 'antd';
 import { Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
-import { IClusterDetails } from "@/types/cluster-types";
+import { IClusterDetails, IClusterProperties } from "@/types/cluster-types";
 import { useAppSelector } from "@/redux/hook";
 import { useDispatch } from "react-redux";
 import { set_Selected_Cluster } from "@/redux/features/clusterData";
-import { getCluster } from "@/services/cluster-service";
+import { getCluster, getClusterProperties } from "@/services/cluster-service";
 
 interface DataType {
   key: string;
@@ -73,34 +73,42 @@ const columns: TableProps<DataType>['columns'] = [
   }
 ];
 
-const { TextArea } = Input;
-
 export default function ClusterDetails({ params }: { params: { id: string } }) {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState<boolean>(true);
   const { selectedCluster } = useAppSelector(state => state.clusterData)
   const [clusterDetails, setClusterDetails] = useState<IClusterDetails | null>(selectedCluster);
+  const [clusterProperties, setClusterProperties] = useState<IClusterProperties | null>(selectedCluster);
 
   const items: DescriptionsProps['items'] = [
     {
       key: '1',
       label: 'Cluster ID',
-      children: clusterDetails?._id || "",
+      children: clusterDetails?._id || "-",
     },
     {
       key: '2',
       label: 'Host',
-      children: clusterDetails?.host || "",
+      children: clusterDetails?.host || "-",
     },
     {
       key: '3',
       label: 'JasmineGraph Version',
-      children: '1.21.101',
+      children: clusterProperties?.version || "-",
     },
     {
       key: '4',
       label: 'Platform',
-      children: '-',
+      children: 'docker',
+    },
+    {
+      key: '5',
+      label: 'Number of Workers',
+      children: clusterProperties?.workersCount || "-",
+    },{
+      key: '6',
+      label: 'Number of Partitions',
+      children: clusterProperties?.partitionCount || "-",
     },
   ];
 
@@ -116,11 +124,21 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
     }
   }
 
-  useEffect(()=> {
-    if (clusterDetails == null || selectedCluster == null){
-      fetchClusterDetails()
+   const fetchClusterProperties = async () => {
+    try{
+      const res = await getClusterProperties(params.id);
+      if(res.data){
+        setClusterProperties(res.data)
+      }
+    }catch(err){
+      console.log("Failed to fetch cluster properties: ", err)
     }
-  }, [params])
+  }
+
+  useEffect(()=> {
+    fetchClusterDetails()
+    fetchClusterProperties()
+  }, [])
 
   const getNodeData = () => {
     return undefined;
@@ -139,7 +157,7 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
       <Row style={{justifyContent: "space-between", marginTop: "20px"}}>
         <Col span={10}>
         <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5", marginBottom: "20px"}}>{clusterDetails?.name}</h1>
-        <TextArea rows={4} placeholder="cluster description" maxLength={6} value={clusterDetails?.description} />
+        <p><strong>Description: </strong>{clusterDetails?.description}</p>
         </Col>
         <Col span={12}>
           <Descriptions title="Cluster Information" items={items} column={1} />

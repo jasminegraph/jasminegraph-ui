@@ -37,7 +37,9 @@ Install dependencies:
 ```bash
 cd Frontend
 npm install
+```
 
+```bash
 cd ../Backend
 npm install
 ```

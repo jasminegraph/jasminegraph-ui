@@ -20,3 +20,4 @@ export const CYPHER_AST_COMMAND = "cypher-ast";
 export const CYPHER_COMMAND = "cypher";
 export const INDEGREE_COMMAND = "idd";
 export const OUTDEGREE_COMMAND = "odd";
+export const PROPERTIES_COMMAND = "prp";

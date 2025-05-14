@@ -245,6 +245,7 @@ export default function Clusters() {
 
   const afterUserRegistration = () => {
     setOpenModal(false);
+    fetchUserData();
   }
 
   return (
