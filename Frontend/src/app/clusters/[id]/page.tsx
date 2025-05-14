@@ -17,11 +17,11 @@ import { Descriptions, Input, Row, Col, Divider } from 'antd';
 import type { DescriptionsProps } from 'antd';
 import { Table, Tag } from 'antd';
 import type { TableProps } from 'antd';
-import { IClusterDetails } from "@/types/cluster-types";
+import { IClusterDetails, IClusterProperties } from "@/types/cluster-types";
 import { useAppSelector } from "@/redux/hook";
 import { useDispatch } from "react-redux";
 import { set_Selected_Cluster } from "@/redux/features/clusterData";
-import { getCluster } from "@/services/cluster-service";
+import { getCluster, getClusterProperties } from "@/services/cluster-service";
 
 interface DataType {
   key: string;
@@ -78,27 +78,37 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const { selectedCluster } = useAppSelector(state => state.clusterData)
   const [clusterDetails, setClusterDetails] = useState<IClusterDetails | null>(selectedCluster);
+  const [clusterProperties, setClusterProperties] = useState<IClusterProperties | null>(selectedCluster);
 
   const items: DescriptionsProps['items'] = [
     {
       key: '1',
       label: 'Cluster ID',
-      children: clusterDetails?._id || "",
+      children: clusterDetails?._id || "-",
     },
     {
       key: '2',
       label: 'Host',
-      children: clusterDetails?.host || "",
+      children: clusterDetails?.host || "-",
     },
     {
       key: '3',
       label: 'JasmineGraph Version',
-      children: 'v0.1.x',
+      children: clusterProperties?.version || "-",
     },
     {
       key: '4',
       label: 'Platform',
       children: 'docker',
+    },
+    {
+      key: '5',
+      label: 'Number of Workers',
+      children: clusterProperties?.workersCount || "-",
+    },{
+      key: '6',
+      label: 'Number of Partitions',
+      children: clusterProperties?.partitionCount || "-",
     },
   ];
 
@@ -114,9 +124,20 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
     }
   }
 
+   const fetchClusterProperties = async () => {
+    try{
+      const res = await getClusterProperties(params.id);
+      if(res.data){
+        setClusterProperties(res.data)
+      }
+    }catch(err){
+      console.log("Failed to fetch cluster properties: ", err)
+    }
+  }
+
   useEffect(()=> {
     fetchClusterDetails()
-    
+    fetchClusterProperties()
   }, [])
 
   const getNodeData = () => {
