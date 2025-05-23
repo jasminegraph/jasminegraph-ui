@@ -129,7 +129,6 @@ const getClusterProperties = async (req: Request, res: Response) => {
       tSocket.write(PROPERTIES_COMMAND + '\n', 'utf8', () => {
         setTimeout(() => {
           if (commandOutput) {
-            console.log(new Date().toLocaleString() + ' - ' + PROPERTIES_COMMAND + ' - ' + commandOutput);
             res.status(HTTP[200]).send(JSON.parse(commandOutput));
           } else {
             res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
