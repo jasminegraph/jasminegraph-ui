@@ -22,3 +22,9 @@ export interface IClusterDetails {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface IClusterProperties {
+  partitionCount: number;
+  version: string;
+  workersCount: number;
+}

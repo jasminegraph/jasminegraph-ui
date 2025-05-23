@@ -25,6 +25,7 @@ import { set_Selected_Cluster } from "@/redux/features/clusterData";
 import { getAllClusters } from "@/services/cluster-service";
 import { useAppSelector } from "@/redux/hook";
 import ClusterRegistrationForm from "@/components/cluster-details/cluster-registration-form";
+import useAccessToken from '@/hooks/useAccessToken';
 
 const { Search } = Input;
 const { Content } = Layout;
@@ -42,10 +43,12 @@ export default function Clusters() {
   const { selectedCluster } = useAppSelector((state) => state.clusterData);
 
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const { getSrvAccessToken } = useAccessToken();
 
   const getAllCluster = async () => {
     try{
-    const res = await getAllClusters(userData._id);
+      const token = getSrvAccessToken() || "";
+      const res = await getAllClusters(userData._id, token);
     if(res.data){
       setClusters(res.data)
     }

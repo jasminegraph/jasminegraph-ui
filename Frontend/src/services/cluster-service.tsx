@@ -14,7 +14,7 @@ limitations under the License.
 'use client';
 import { AxiosResponse } from "axios";
 import {authApi} from "./axios";
-
+import { IClusterProperties } from "@/types/cluster-types"
 interface ApiResponse<T> {
   data: T;
 }
@@ -54,11 +54,15 @@ export async function addNewCluster(name: string, description: string, host: str
   }
 }
 
-export async function getAllClusters(userID: string) {
+export async function getAllClusters(userID: string, token: string) {
   try {
     const result = await authApi({
       method: "get",
       url: `/backend/clusters/myClusters/${userID}`,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
     }).then((res) => res.data);
     return {
       data: result.data,
@@ -115,5 +119,23 @@ export async function removeUserFromCluster(userID: string, clusterID: string){
     };
   } catch (err) {
     return Promise.reject(err);
+  }
+}
+
+export async function getClusterProperties(param: string): Promise<{data: IClusterProperties}> {
+  try {
+    const result = await authApi({
+      method: "get",
+      url: `/backend/graph/info`,
+      headers: {
+        "Cluster-ID": param,
+      },
+    }).then((res) => res.data);
+
+    return {
+      data: result,
+    };
+  } catch (err) {
+    return Promise.reject();
   }
 }
