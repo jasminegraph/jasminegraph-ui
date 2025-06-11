@@ -107,6 +107,9 @@ To stop the services, press `Ctrl+C` in the terminal which is occupied by `docke
 ```bash
 docker compose down
 ```
+## Deployment Instructions
+
+JasmineGraph UI documentation: [documentation](https://github.com/jasminegraph/jasminegraph-ui/blob/feature/graph_visualization2/JasmineGraph-UI-Documentation.pdf)
 
 ## Additional Notes
 
