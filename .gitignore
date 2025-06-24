@@ -21,6 +21,11 @@ mongodb-data/*
 # testing
 /coverage
 
+# Playwright generated files
+*.last-run.json
+playwright-report/
+test-results/
+
 # next.js
 Frontend/.next/
 /out/
