@@ -1,4 +1,4 @@
-name: Playwright Tests
+name: Playwright E2E Tests
 
 on:
   pull_request:
@@ -6,27 +6,16 @@ on:
       - main
 
 jobs:
-  test:
-    name: Run Playwright tests
+  e2e-tests:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+      - name: Run all containers with tests
+        run: docker-compose up --build --abort-on-container-exit
 
-      - name: Install dependencies
-        working-directory: Frontend
-        run: npm install
-
-      - name: Install Playwright Browsers
-        working-directory: Frontend
-        run: npx playwright install --with-deps
-
-      - name: Run Playwright tests
-        working-directory: Frontend
-        run: npx playwright test
+      - name: Show logs if failure
+        if: failure()
+        run: docker logs playwright || true
