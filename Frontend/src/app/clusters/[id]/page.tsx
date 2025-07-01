@@ -78,7 +78,7 @@ export default function ClusterDetails({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState<boolean>(true);
   const { selectedCluster } = useAppSelector(state => state.clusterData)
   const [clusterDetails, setClusterDetails] = useState<IClusterDetails | null>(selectedCluster);
-  const [clusterProperties, setClusterProperties] = useState<IClusterProperties | null>(selectedCluster);
+  const [clusterProperties, setClusterProperties] = useState<IClusterProperties | null>(null);
 
   const items: DescriptionsProps['items'] = [
     {
