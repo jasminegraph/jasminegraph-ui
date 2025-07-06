@@ -1,20 +1,10 @@
-# Base image used  
-FROM node:18-alpine
+# Use the prebuilt backend prerequisites image
+FROM pavanikarunarathna21/jasminegraph-ui-backend-prerequisites:latest
 
-# Set the working directory inside the container  
-WORKDIR /app  
+WORKDIR /app
 
-# Copy package.json and package-lock.json to the container  
-COPY package*.json ./  
+# Copy only the source code (not package.json again)
+COPY . .
 
-# Install dependencies  
-RUN npm ci  
-
-# Copy the app source code to the container  
-COPY . .  
-
-# Install project dependencies
-RUN npm install
-
-# Running default command
+# Run the app
 CMD ["npm", "start"]
