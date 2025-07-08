@@ -7,7 +7,7 @@ on:
 
 jobs:
   e2e-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout code
@@ -19,3 +19,4 @@ jobs:
       - name: Show logs if failure
         if: failure()
         run: docker logs playwright || true
+        
