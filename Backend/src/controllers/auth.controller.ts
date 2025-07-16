@@ -65,8 +65,8 @@ const login = async (req: Request, res: Response) => {
     // delete other tokens that belogs to this user
     await Token.deleteMany({ userId: user._id });
 
-    const accessToken = generateToken(user.id, 'access_token_secret', '1d');
-    const refreshToken = generateToken(user.id, 'refresh_token_secret', '7d');
+    const accessToken = generateToken(user.id, process.env.ACCESS_TOKEN_SECRET!, '1d');
+    const refreshToken = generateToken(user.id, process.env.REFRESH_TOKEN_SECRET!, '7d');
 
     const tokenDoc = new Token({
       userId: user._id,
@@ -100,9 +100,9 @@ const refreshToken = async (req: Request, res: Response) => {
       return res.status(HTTP[401]).send('Token expired');
     }
 
-    const user = jwt.verify(token, 'refresh_token_secret');
-    const accessToken = generateToken((user as any).id, 'access_token_secret', '15m');
-    const newRefreshToken = generateToken((user as any).id, 'refresh_token_secret', '7d');
+    const user = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
+    const accessToken = generateToken((user as any).id, process.env.ACCESS_TOKEN_SECRET!, '15m');
+    const newRefreshToken = generateToken((user as any).id, process.env.REFRESH_TOKEN_SECRET!, '7d');
 
     tokenDoc.accessToken = accessToken;
     tokenDoc.refreshToken = newRefreshToken;
