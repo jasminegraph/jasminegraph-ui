@@ -1,5 +1,5 @@
 # Use the prebuilt prerequisites image instead of rebuilding from node:18-alpine
-FROM pavanikarunarathna21/jasminegraph-ui-frontend-prerequisites:latest
+FROM jasminegraph/jasminegraph-ui-frontend-prerequisites:latest
 
 WORKDIR /app
 
