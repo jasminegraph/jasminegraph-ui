@@ -18,5 +18,5 @@ jobs:
 
       - name: Show logs if failure
         if: failure()
-        run: docker logs playwright || true
+        run: docker compose logs playwright || true
         
