@@ -38,6 +38,17 @@ services:
     volumes:
       - ./mongodb-data:/data/db
 
+  # Playwright Test Service
+  playwright:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    network_mode: host
+    depends_on:
+      - frontend
+    environment:
+      - BASE_URL=http://localhost:3000
+
 volumes:
   mongodb-data:
     driver: local

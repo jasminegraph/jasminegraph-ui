@@ -1,0 +1,22 @@
+name: Playwright E2E Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Run all containers with tests
+        run: docker compose up --build --abort-on-container-exit
+
+      - name: Show logs if failure
+        if: failure()
+        run: docker compose logs playwright || true
+        
