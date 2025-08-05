@@ -44,6 +44,27 @@ cd ../Backend
 npm install
 ```
 
+Configure Environment Variables for Backend:
+
+- Navigate to the `Backend` directory:
+
+```bash
+cd Backend
+```
+
+- Create a .env file by copying the provided .env.example file:
+
+```bash
+cp .env.example .env
+```
+
+- Open the .env file and update the following values:
+
+```bash
+ACCESS_TOKEN_SECRET=your_secure_access_token_here
+REFRESH_TOKEN_SECRET=your_secure_refresh_token_here
+```
+
 Run Frontend Application:
 
 ```bash
