@@ -27,7 +27,8 @@ import { setupWebSocket } from './controllers/socket.controller';
 
 dotenv.config();
 
-const HOST = process.env.HOST || 'http://localhost';
+const HOST = process.env.HOST || 'http://backend';
+const LOCAL_HOST = 'http://localhost';
 const PORT = parseInt(process.env.PORT || '8080');
 
 console.log('MONGO:', process.env.MONGO_URL);
@@ -46,7 +47,7 @@ app.use(express.json());
 
 app.use('/auth', authRoute());
 app.use('/users', userRoute());
-app.use('/clusters', authMiddleware,  clusterRoute());
+app.use('/clusters', authMiddleware, clusterRoute());
 app.use('/graph', clusterMiddleware, graphRoute());
 app.use('/query', clusterMiddleware, queryRoute());
 
@@ -55,9 +56,25 @@ app.get('/ping', (req, res) => {
   return res.json({ message: 'pong' });
 });
 
-server.listen(PORT, async () => {
+app.get('/health', async (req, res) => {
+  try {
+    // Check DB connection state using mongoose
+    const dbState = require('mongoose').connection.readyState;
+    // 1 = connected, 2 = connecting, 0 = disconnected, 3 = disconnecting
+    if (dbState === 1) {
+      return res.status(200).json({ status: 'ok', db: 'connected' });
+    } else {
+      return res.status(503).json({ status: 'error', db: 'not connected' });
+    }
+  } catch (err: any) {
+    return res.status(500).json({ status: 'error', error: err.message });
+  }
+});
+
+server.listen(PORT, '0.0.0.0', async () => {
   await connectToDatabase();
 
-  console.log(`Application started on URL ${HOST}:${PORT} 🎉`);
-  console.log(`WebSocket server is also available at ws://localhost:${PORT}`);
+  console.log(`Application started on URL ${HOST}:${PORT} (for Docker containers) 🎉`);
+  console.log(`Access backend on your machine at ${LOCAL_HOST}:${PORT}`);
+  console.log(`WebSocket server is available at ws://${LOCAL_HOST}:${PORT} (host) and ws://${HOST}:${PORT} (containers)`);
 });

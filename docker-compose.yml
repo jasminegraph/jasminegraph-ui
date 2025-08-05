@@ -1,4 +1,4 @@
-version: '3'
+version: '3.9'
 services:
   # Frontend Service
   frontend:
@@ -8,10 +8,14 @@ services:
     image: jasminegraph-frontend:latest
     ports:
       - "3000:3000"
-    network_mode: host # Use host network mode
     environment:
       - BACKEND=http://backend:8080 # Pointing to the backend service
       - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   # Backend Service
   backend:
@@ -21,33 +25,46 @@ services:
     image: jasminegraph-backend:latest
     ports:
       - "8080:8080"
-    network_mode: host # Use host network mode
     depends_on:
-      - mongoCont
+      mongoCont:
+        condition: service_healthy
     volumes:
       - /var/tmp/jasminegraph-ui-backend:/app/caches
     environment:
-      - MONGO_URL=mongodb://localhost:27017/jasminegraph # Update to use localhost since mongoCont is on host network
+      - MONGO_URL=mongodb://mongoCont:27017/jasminegraph  
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
 
   # MongoDB Service
   mongoCont:
     image: mongo:latest
     ports:
       - "27017:27017"
-    network_mode: host
     volumes:
       - ./mongodb-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   # Playwright Test Service
   playwright:
     build:
       context: ./tests
       dockerfile: Dockerfile
-    network_mode: host
     depends_on:
-      - frontend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
     environment:
-      - BASE_URL=http://localhost:3000
+      - BASE_URL=http://frontend:3000   
 
 volumes:
   mongodb-data:
