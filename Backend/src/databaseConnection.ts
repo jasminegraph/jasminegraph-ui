@@ -19,8 +19,23 @@ dotenv.config();
 
 const { MONGO_URL } = process.env;
 
-const connectToDatabase = async (): Promise<void> => {
-  await mongoose.connect(MONGO_URL ? MONGO_URL : 'mongodb://localhost:27017/jasmine')
- };
+const connectToDatabase = async () => {
+  const maxRetries = 10;
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    try {
+      await mongoose.connect(MONGO_URL ? MONGO_URL : 'mongodb://mongoCont:27017/jasmine');
+      console.log('MongoDB connected');
+      return;
+    } catch (error) {
+      console.log(`MongoDB connection failed (attempt ${retries + 1}). Retrying...`);
+      await new Promise(res => setTimeout(res, 3000)); // wait 3 sec
+      retries++;
+    }
+  }
+
+  throw new Error("MongoDB connection failed after several retries");
+};
 
 export { connectToDatabase };
