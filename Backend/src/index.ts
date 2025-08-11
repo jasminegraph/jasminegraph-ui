@@ -14,6 +14,7 @@ limitations under the License.
 import express from 'express';
 import dotenv from 'dotenv';
 import http from 'http';
+import mongoose from 'mongoose';
 
 import { connectToDatabase } from './databaseConnection';
 import { userRoute } from './routes/user.routes';
@@ -59,7 +60,7 @@ app.get('/ping', (req, res) => {
 app.get('/health', async (req, res) => {
   try {
     // Check DB connection state using mongoose
-    const dbState = require('mongoose').connection.readyState;
+    const dbState = mongoose.connection.readyState;
     // 1 = connected, 2 = connecting, 0 = disconnected, 3 = disconnecting
     if (dbState === 1) {
       return res.status(200).json({ status: 'ok', db: 'connected' });
@@ -71,6 +72,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Bind to '0.0.0.0' to make the service accessible from all network interfaces.
 server.listen(PORT, '0.0.0.0', async () => {
   await connectToDatabase();
 

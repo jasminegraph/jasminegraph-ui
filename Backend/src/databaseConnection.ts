@@ -13,6 +13,7 @@ limitations under the License.
 
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import { TIMEOUT } from './constants/constants';
 
 mongoose.Promise = global.Promise;
 dotenv.config();
@@ -30,7 +31,7 @@ const connectToDatabase = async () => {
       return;
     } catch (error) {
       console.log(`MongoDB connection failed (attempt ${retries + 1}). Retrying...`);
-      await new Promise(res => setTimeout(res, 3000)); // wait 3 sec
+      await new Promise(res => setTimeout(res, TIMEOUT.retryDelayMs));
       retries++;
     }
   }
