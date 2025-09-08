@@ -12,114 +12,156 @@ limitations under the License.
  */
 
 import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
 
-import { User, UserInput } from '../models/user.model';
-import { Token } from '../models/token.model';
 import { HTTP } from '../constants/constants';
+import axios from 'axios';
+import { getAdminToken } from '../utils/keycloak-admin-token';
 
 const registerAdminUser = async (req: Request, res: Response) => {
   const { email, password, fullName } = req.body;
+
   if (!email || !fullName || !password) {
-    return res.status(HTTP[422]).json({ message: 'The fields email, full name and password are required' });
+    return res.status(HTTP[422]).json({ message: 'Email, full name, and password are required' });
   }
 
   try {
-    const user = await User.findOne({ email });
-    if (user) {
-      return res.status(HTTP[400]).send('User already exists');
-    }
+    const adminToken = await getAdminToken();
+    const keycloakResponse = await axios.post(
+      `http://keycloak:8080/admin/realms/jasminegraph/users`,
+      {
+        username: email,
+        email,
+        firstName: fullName,
+        lastName: fullName,
+        enabled: true,
+        credentials: [{ type: 'password', value: password, temporary: false }],
+        attributes: { role: ['admin'] }
+      },
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser: UserInput = {
-      email,
-      password: hashedPassword,
-      enabled: true,
-      fullName,
-      role: 'admin',
-    };
-    const userCreated = await User.create(newUser);
-    res.status(HTTP[201]).json({ name: userCreated.fullName, email: userCreated.email, _id: userCreated.id });
-  } catch (err) {
-    res.status(HTTP[500]).send('Server error');
+    if (keycloakResponse.status === 201) {
+      console.log(`[REGISTER ADMIN USER] Admin user ${email} created successfully`);
+      return res.status(HTTP[200]).json({ name: fullName, email, role: 'admin' });
+    } else {
+      console.error('[REGISTER ADMIN USERr] Failed to create user', keycloakResponse.data);
+      return res.status(400).json({ message: 'Failed to create admin user in Keycloak' });
+    }
+  } catch (err: any) {
+    console.error('[REGISTER ADMIN USER] Error:', err.response?.data || err.message);
+    return res.status(500).send('Server error');
   }
 };
 
-const getAllUsers = async (req: Request, res: Response) => {
-  const users = await User.find().sort('-createdAt').exec();
-
-  return res.status(HTTP[200]).json({ data: users });
+const getAllUsers = async (_req: Request, res: Response) => {
+  try {
+    const adminToken = await getAdminToken();
+    const response = await axios.get(`http://keycloak:8080/admin/realms/jasminegraph/users`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    return res.status(HTTP[200]).json({ data: response.data });
+  } catch (err: any) {
+    console.error('[GET ALL USERS] Error:', err.response?.data || err.message);
+    return res.status(HTTP[500]).json({ message: 'Server error' });
+  }
 };
 
 const getUser = async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  const user = await User.findOne({ _id: id }).exec();
+  try {
+    const adminToken = await getAdminToken();
+    const response = await axios.get(
+      `http://keycloak:8080/admin/realms/jasminegraph/users/${id}`,
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
 
-  if (!user) {
-    return res.status(HTTP[404]).json({ message: `User with id "${id}" not found.` });
+    if (!response.data) {
+      return res.status(HTTP[404]).json({ message: `User with id "${id}" not found.` });
+    }
+
+    return res.status(HTTP[200]).json({ data: response.data });
+  } catch (err: any) {
+    console.error('[GET USER] Error:', err.response?.data || err.message);
+    return res.status(HTTP[500]).json({ message: 'Server error' });
   }
-
-  return res.status(HTTP[200]).json({ data: user });
 };
 
 const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { enabled, fullName, role } = req.body;
 
-  const user = await User.findOne({ _id: id });
-
-  if (!user) {
-    return res.status(HTTP[404]).json({ message: `User with id "${id}" not found.` });
-  }
-
   if (!fullName || !role) {
     return res.status(HTTP[422]).json({ message: 'The fields full name and role are required' });
   }
 
-  await User.updateOne({ _id: id }, { enabled, fullName, role });
+  try {
+    const adminToken = await getAdminToken();
 
-  const userUpdated = await User.findById(id);
+    const updatePayload: any = {
+      enabled,
+      firstName: fullName,
+      lastName: fullName,
+      attributes: { role: [role] }
+    };
 
-  return res.status(HTTP[200]).json({ data: userUpdated });
+    await axios.put(
+      `http://keycloak:8080/admin/realms/jasminegraph/users/${id}`,
+      updatePayload,
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
+
+    const updatedUserResponse = await axios.get(
+      `http://keycloak:8080/admin/realms/jasminegraph/users/${id}`,
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
+
+    return res.status(HTTP[200]).json({ data: updatedUserResponse.data });
+  } catch (err: any) {
+    console.error('[UPDATE USER] Error:', err.response?.data || err.message);
+    return res.status(HTTP[500]).json({ message: 'Server error' });
+  }
 };
 
-// getUserByToken will return user by accessToken in the authorization header
 const getUserByToken = async (req: Request, res: Response) => {
-  const accessToken = req.headers.authorization?.split(' ')[1];
-  const token = await Token.findOne({ accessToken });
-  if (!token) {
-    return res.status(HTTP[401]).json({ message: 'Unauthorized' });
-  }
-  const user = await User.findOne({ _id: token.userId });
-  if (!user) {
-    return res.status(HTTP[404]).json({ message: 'User not found' });
-  }
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(HTTP[401]).json({ message: 'Authorization header missing' });
+    }
 
-  return res.status(HTTP[200]).json({ data: {
-    _id: user._id,
-    email: user.email,
-    fullName: user.fullName,
-    role: user.role,
-    enabled: user.enabled,
-  }});  
+    const token = authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(HTTP[401]).json({ message: 'Bearer token missing' });
+    }
+
+    const response = await axios.get(
+      'http://keycloak:8080/realms/jasminegraph/protocol/openid-connect/userinfo',
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return res.status(HTTP[200]).json({ data: response.data });
+  } catch (err: any) {
+    console.error('[GET USER BY TOKEN] Error:', err.response?.data || err.message);
+    return res.status(HTTP[401]).json({ message: 'Invalid or expired token' });
+  }
 };
 
 const deleteUser = async (req: Request, res: Response) => {
   const { id } = req.params;
 
-  await User.findByIdAndDelete(id);
+  try {
+    const adminToken = await getAdminToken();
+    await axios.delete(
+      `http://keycloak:8080/admin/realms/jasminegraph/users/${id}`,
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
 
-  return res.status(HTTP[200]).json({ message: `User deleted successfully. ID: ${id}` });
+    return res.status(HTTP[200]).json({ message: `User deleted successfully. ID: ${id}` });
+  } catch (err: any) {
+    console.error('[DELETE USER] Error:', err.response?.data || err.message);
+    return res.status(HTTP[500]).json({ message: 'Server error' });
+  }
 };
 
-// get ids from array and return users array
-const getUsersFromIDs = async (req: Request, res: Response) => {
-  const { ids } = req.body;
-
-  const users = await User.find({ _id: { $in: ids } }).exec();
-
-  return res.status(HTTP[200]).json({ data: users });
-}
-
-export { registerAdminUser, deleteUser, getAllUsers, getUser, updateUser, getUserByToken, getUsersFromIDs };
+export { registerAdminUser, deleteUser, getAllUsers, getUser, updateUser, getUserByToken };
