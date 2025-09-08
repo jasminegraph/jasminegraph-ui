@@ -1,0 +1,17 @@
+{
+    "id": "jasminegraph",
+    "realm": "jasminegraph",
+    "enabled": true,
+    "clients": [
+        {
+            "clientId": "jasminegraph-api",
+            "enabled": true,
+            "protocol": "openid-connect",
+            "publicClient": false,
+            "redirectUris": [
+                "*"
+            ],
+            "directAccessGrantsEnabled": true
+        }
+    ]
+}
