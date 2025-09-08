@@ -229,8 +229,15 @@ export default function Clusters() {
     try{
       const res = await getAllUsers();
       if(res.data){
-        setUserData(res.data)
-        dispatch(set_Users_Cache(res.data))
+        const mappedUsers: IUserAccessData[] = res.data.map((user: any) => ({
+          _id: user.id,
+          fullName: `${user.firstName}`,
+          email: user.email,
+          role: user.attributes?.role?.[0] || "viewer",
+          enabled: user.enabled,
+        }));
+        setUserData(mappedUsers)
+        dispatch(set_Users_Cache(mappedUsers))
       }
     }catch(err){
       message.error("Failed to fetch user data")
