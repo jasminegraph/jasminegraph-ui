@@ -114,7 +114,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
     const user = userData.find((user) => user._id == userID)
     setClusterUsers([...clusterUsers, user!])
     try{
-      const res = await addUserToCluster(userID, clusterDetails!._id);
+      const res = await addUserToCluster(userID, String(clusterDetails!.id));
       if(res.data){
         console.log("User added successfully")
       }
@@ -126,7 +126,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
   const handleUserRemove = async (userID: string) => {
     setClusterUsers(clusterUsers.filter((user) => user._id !== userID))
     try{
-      const res = await removeUserFromCluster(userID, clusterDetails!._id);
+      const res = await removeUserFromCluster(userID, String(clusterDetails!.id));
       if(res.data){
         console.log("User removed successfully (id: ", userID, ")")
       }
@@ -196,13 +196,13 @@ export default function AccessManagement({ params }: { params: { id: string } })
 
   useEffect(()=>{
     if(clusterDetails){
-      const clusterOwner = userData.find((user) => user._id === clusterDetails.clusterOwner);
+      const clusterOwner = userData.find((user) => user._id === clusterDetails.cluster_owner);
       let users: IUserAccessData[] = [];
       if(clusterOwner){
         users.push(clusterOwner);
       }
       userData.forEach((user) => {
-        if(clusterDetails.userIDs.includes(user._id)){
+        if(clusterDetails.user_ids.includes(user._id)){
           users.push(user);
         }
       })
