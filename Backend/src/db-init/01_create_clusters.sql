@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS clusters (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    host VARCHAR(255),
+    port INTEGER,
+    user_ids TEXT[],
+    cluster_owner VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
