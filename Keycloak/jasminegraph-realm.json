@@ -7,7 +7,7 @@
             "clientId": "jasminegraph-api",
             "enabled": true,
             "protocol": "openid-connect",
-            "publicClient": false,
+            "publicClient": true,
             "redirectUris": [
                 "*"
             ],
