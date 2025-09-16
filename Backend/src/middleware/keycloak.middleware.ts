@@ -13,7 +13,7 @@ limitations under the License.
 
 import { expressjwt as jwt } from 'express-jwt';
 import jwksRsa from 'jwks-rsa';
-import { RequestHandler } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 
 const keycloakIssuer = 'http://keycloak:8080/realms/jasminegraph';
 
@@ -29,4 +29,13 @@ const rawMiddleware = jwt({
   algorithms: ['RS256'],
 });
 
-export const keycloakAuthMiddleware: RequestHandler = rawMiddleware as unknown as RequestHandler;
+export const keycloakAuthMiddleware: RequestHandler = (req: Request, res: Response, next: NextFunction) => {
+  console.log('[Keycloak Middleware] Called for path:', req.path);
+  rawMiddleware(req, res, (err?: any) => {
+    if (err) {
+      console.error('[Keycloak Middleware] JWT error:', err);
+      return next(err);
+    }
+    next();
+  });
+};
