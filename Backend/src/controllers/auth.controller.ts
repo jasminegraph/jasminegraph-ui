@@ -17,10 +17,10 @@ import axios from 'axios';
 import { getAdminToken } from '../utils/keycloak-admin-token';
 
 const register = async (req: Request, res: Response) => {
-  const { email, password, fullName, role } = req.body;
+  const { email, password, firstName, lastName, role } = req.body;
 
-  if (!email || !fullName || !password) {
-    return res.status(422).json({ message: 'Email, full name, and password are required' });
+  if (!email || !firstName || !lastName || !password) {
+    return res.status(422).json({ message: 'Email, first name, last name, and password are required' });
   }
 
   try {
@@ -31,8 +31,8 @@ const register = async (req: Request, res: Response) => {
       {
         username: email,
         email: email,
-        firstName: fullName,
-        lastName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         enabled: true,
         credentials: [{ type: 'password', value: password, temporary: false }],
         attributes: { role: [role] }
@@ -42,7 +42,7 @@ const register = async (req: Request, res: Response) => {
 
     if (response.status === 201) {
       console.log(`[REGISTER] User ${email} created successfully`);
-      return res.status(HTTP[200]).json({ name: fullName, email, role });
+      return res.status(HTTP[200]).json({ firstName: firstName, lastName: lastName, email, role });
     } else {
       console.error('[REGISTER] Failed to create user', response.data);
       return res.status(400).json({ message: 'Failed to create user in Keycloak' });

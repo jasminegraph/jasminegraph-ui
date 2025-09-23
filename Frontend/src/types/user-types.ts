@@ -13,7 +13,8 @@ limitations under the License.
 
 export interface IUserAccessData {
   _id: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: string;
   enabled: boolean;

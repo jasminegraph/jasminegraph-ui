@@ -83,7 +83,7 @@ export default function Clusters() {
       return {
         key: data._id,
         userID: data._id,
-        name: data.fullName,
+        name: data.firstName + " " + data.lastName,
         email: data.email,
         role: data.role,
         status: data.enabled,
@@ -231,9 +231,10 @@ export default function Clusters() {
       if(res.data){
         const mappedUsers: IUserAccessData[] = res.data.map((user: any) => ({
           _id: user.id,
-          fullName: `${user.firstName}`,
+          firstName: user.firstName,
+          lastName: user.lastName,
           email: user.email,
-          role: user.attributes?.role?.[0] || "viewer",
+          role: user.attributes?.role?.[0] || "undefined",
           enabled: user.enabled,
         }));
         setUserData(mappedUsers)

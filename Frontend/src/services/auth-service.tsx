@@ -70,7 +70,7 @@ export async function userLogin(username: string, password: string){
   }
 }
 
-export async function registerAdmin(name: string, email: string, password: string): Promise<ApiResponse<string> | ApiErrorResponse> {
+export async function registerAdmin(firstName: string, lastName: string, email: string, password: string): Promise<ApiResponse<string> | ApiErrorResponse> {
   try {
     const result: AxiosResponse<any> = await axios({
       method: "post",
@@ -79,7 +79,8 @@ export async function registerAdmin(name: string, email: string, password: strin
         "Content-Type": "application/json",
       },
       data: {
-        fullName: name,
+        firstName: firstName,
+        lastName: lastName,
         email,
         password,
       },
@@ -99,7 +100,7 @@ export async function registerAdmin(name: string, email: string, password: strin
   }
 }
 
-export async function registerUser(name: string, email: string, password: string, role: string): Promise<ApiResponse<string> | ApiErrorResponse> {
+export async function registerUser(firstName: string, lastName: string, email: string, password: string, role: string): Promise<ApiResponse<string> | ApiErrorResponse> {
   try {
     const result: AxiosResponse<any> = await axios({
       method: "post",
@@ -108,7 +109,8 @@ export async function registerUser(name: string, email: string, password: string
         "Content-Type": "application/json",
       },
       data: {
-        fullName: name,
+        firstName: firstName,
+        lastName: lastName,
         email,
         password,
         role

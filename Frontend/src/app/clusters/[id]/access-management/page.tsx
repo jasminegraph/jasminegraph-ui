@@ -102,7 +102,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
       return {
         key: data._id,
         userID: data._id,
-        Name: data.fullName,
+        Name: data.firstName + " " + data.lastName,
         Email: data.email,
         Role: data.role,
         Status: data.enabled,
@@ -156,8 +156,9 @@ export default function AccessManagement({ params }: { params: { id: string } })
 
   const handleSearch = (value: string) => {
     setOptions(() => {
-      const filteredUsers = userData.filter((user) => 
-                        user.fullName.toLowerCase().includes(value.toLowerCase()) || 
+      const filteredUsers = userData.filter((user) =>
+                        user.firstName.toLowerCase().includes(value.toLowerCase()) ||
+                        user.lastName.toLowerCase().includes(value.toLowerCase()) ||
                         user.email.toLowerCase().includes(value.toLowerCase()));
       return filteredUsers.map((user) => (renderItem(user.email, user._id)));
     });

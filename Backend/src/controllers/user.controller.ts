@@ -18,10 +18,10 @@ import axios from 'axios';
 import { getAdminToken } from '../utils/keycloak-admin-token';
 
 const registerAdminUser = async (req: Request, res: Response) => {
-  const { email, password, fullName } = req.body;
+  const { email, password, firstName, lastName } = req.body;
 
-  if (!email || !fullName || !password) {
-    return res.status(HTTP[422]).json({ message: 'Email, full name, and password are required' });
+  if (!email || !firstName || !lastName || !password) {
+    return res.status(HTTP[422]).json({ message: 'Email, first name, last name, and password are required' });
   }
 
   try {
@@ -31,8 +31,8 @@ const registerAdminUser = async (req: Request, res: Response) => {
       {
         username: email,
         email,
-        firstName: fullName,
-        lastName: fullName,
+        firstName: firstName,
+        lastName: lastName,
         enabled: true,
         credentials: [{ type: 'password', value: password, temporary: false }],
         attributes: { role: ['admin'] }
@@ -42,7 +42,7 @@ const registerAdminUser = async (req: Request, res: Response) => {
 
     if (keycloakResponse.status === 201) {
       console.log(`[REGISTER ADMIN USER] Admin user ${email} created successfully`);
-      return res.status(HTTP[200]).json({ name: fullName, email, role: 'admin' });
+      return res.status(HTTP[200]).json({ firstName: firstName, lastName: lastName, email, role: 'admin' });
     } else {
       console.error('[REGISTER ADMIN USERr] Failed to create user', keycloakResponse.data);
       return res.status(400).json({ message: 'Failed to create admin user in Keycloak' });
@@ -89,10 +89,10 @@ const getUser = async (req: Request, res: Response) => {
 
 const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { enabled, fullName, role } = req.body;
+  const { enabled, firstName, lastName, role } = req.body;
 
-  if (!fullName || !role) {
-    return res.status(HTTP[422]).json({ message: 'The fields full name and role are required' });
+  if (!firstName || !lastName || !role) {
+    return res.status(HTTP[422]).json({ message: 'The fields first name, last name, and role are required' });
   }
 
   try {
@@ -100,8 +100,8 @@ const updateUser = async (req: Request, res: Response) => {
 
     const updatePayload: any = {
       enabled,
-      firstName: fullName,
-      lastName: fullName,
+      firstName: firstName,
+      lastName: lastName,
       attributes: { role: [role] }
     };
 
