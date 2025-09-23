@@ -66,7 +66,7 @@ const UserRegistrationForm = ({onSuccess}: props) => {
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
-      const res = await registerUser(values.username, values.email, values.password, values.role);
+      const res = await registerUser(values.firstName, values.lastName, values.email, values.password, values.role);
       message.loading("Creating profile", 2);
       onSuccess();
     }catch(err){
@@ -85,10 +85,19 @@ const UserRegistrationForm = ({onSuccess}: props) => {
       scrollToFirstError
     >
       <Form.Item
-        name="username"
-        label="Username"
-        tooltip="Enter your username. Keep it simple and recognizable."
-        rules={[{ required: true, message: 'Please input your username!', whitespace: true }]}
+        name="firstName"
+        label="First Name"
+        tooltip="Enter your first name."
+        rules={[{ required: true, message: 'Please input your first name!', whitespace: true }]}
+      >
+        <Input />
+      </Form.Item>
+
+      <Form.Item
+        name="lastName"
+        label="Last Name"
+        tooltip="Enter your last name."
+        rules={[{ required: true, message: 'Please input your last name!', whitespace: true }]}
       >
         <Input />
       </Form.Item>
