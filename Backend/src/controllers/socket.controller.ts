@@ -19,7 +19,7 @@ import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { CYPHER_AST_COMMAND, CYPHER_COMMAND, INDEGREE_COMMAND, OUTDEGREE_COMMAND } from '../constants/frontend.server.constants';
 import { getClusterDetails, IConnection, telnetConnection } from "./graph.controller";
-import { Cluster } from '../models/cluster.model';
+import { getClusterByIdRepo } from '../repository/cluster.repository';
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
 
@@ -105,11 +105,11 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
   }
 };
 
-const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {  
-  const cluster = await Cluster.findOne({ _id: clusterId });
-  if (!(cluster?.host || cluster?.port)) {
-    sendToClient(clientId, { Error: "cluster not found"})
-    return
+const streamQueryResult = async (clientId: string, clusterId: string, graphId: string, query: string) => {  
+  const cluster = await getClusterByIdRepo(Number(clusterId));
+  if (!cluster || !cluster.host || !cluster.port) {
+    sendToClient(clientId, { Error: "cluster not found" });
+    return;
   }
 
   const connection: IConnection = {
@@ -187,10 +187,10 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
 const getDegreeData = async (clientId: string, clusterId:string, graphId:string, type: string) => {
   const COMMAND = type == "in_degree" ? INDEGREE_COMMAND : type == "out_degree" ? OUTDEGREE_COMMAND : INDEGREE_COMMAND;   
   
-  const cluster = await Cluster.findOne({ _id: clusterId });
-  if (!(cluster?.host || cluster?.port)) {
-    sendToClient(clientId, { Error: "cluster not found"})
-    return
+  const cluster = await getClusterByIdRepo(Number(clusterId));
+  if (!cluster || !cluster.host || !cluster.port) {
+    sendToClient(clientId, { Error: "cluster not found" })
+    return;
   }
 
   const connection: IConnection = {
