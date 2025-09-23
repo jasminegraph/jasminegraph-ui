@@ -13,6 +13,7 @@ limitations under the License.
 
 import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { TIMEOUT } from './constants/constants';
 
 dotenv.config();
 
@@ -39,7 +40,7 @@ const connectToDatabase = async () => {
       return;
     } catch (error) {
       console.log(`Postgres connection failed (attempt ${retries + 1}). Retrying...`);
-      await new Promise(res => setTimeout(res, 3000)); // wait 3 sec
+      await new Promise(res => setTimeout(res, TIMEOUT.retryDelayMs)); // wait 3 sec
       retries++;
     }
   }

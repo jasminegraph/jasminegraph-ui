@@ -14,6 +14,7 @@ limitations under the License.
 import { Request, Response } from 'express';
 
 import { HTTP } from '../constants/constants';
+import { extractErrorDetails } from '../utils/error-handler';
 import axios from 'axios';
 import { getAdminToken } from '../utils/keycloak-admin-token';
 
@@ -21,7 +22,7 @@ const registerAdminUser = async (req: Request, res: Response) => {
   const { email, password, firstName, lastName } = req.body;
 
   if (!email || !firstName || !lastName || !password) {
-    return res.status(HTTP[422]).json({ message: 'Email, first name, last name, and password are required' });
+    return res.status(HTTP[422]).json({ message: 'Email address, first name, last name, and password are required' });
   }
 
   try {
@@ -48,8 +49,11 @@ const registerAdminUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Failed to create admin user in Keycloak' });
     }
   } catch (err: any) {
-    console.error('[REGISTER ADMIN USER] Error:', err.response?.data || err.message);
-    return res.status(500).send('Server error');
+    const errorDetails = extractErrorDetails(err, 'REGISTER ADMIN USER');
+    return res.status(500).json({
+      message: 'Failed to register admin user.',
+      error: errorDetails
+    });
   }
 };
 
@@ -61,8 +65,11 @@ const getAllUsers = async (_req: Request, res: Response) => {
     });
     return res.status(HTTP[200]).json({ data: response.data });
   } catch (err: any) {
-    console.error('[GET ALL USERS] Error:', err.response?.data || err.message);
-    return res.status(HTTP[500]).json({ message: 'Server error' });
+    const errorDetails = extractErrorDetails(err, 'GET ALL USERS');
+    return res.status(HTTP[500]).json({
+      message: 'Failed to fetch users.',
+      error: errorDetails
+    });
   }
 };
 
@@ -82,8 +89,11 @@ const getUser = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: response.data });
   } catch (err: any) {
-    console.error('[GET USER] Error:', err.response?.data || err.message);
-    return res.status(HTTP[500]).json({ message: 'Server error' });
+    const errorDetails = extractErrorDetails(err, 'GET USER');
+    return res.status(HTTP[500]).json({
+      message: `Unable to fetch user with id "${id}". Please check if the user exists or try again later.`,
+      error: errorDetails
+    });
   }
 };
 
@@ -118,8 +128,11 @@ const updateUser = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ data: updatedUserResponse.data });
   } catch (err: any) {
-    console.error('[UPDATE USER] Error:', err.response?.data || err.message);
-    return res.status(HTTP[500]).json({ message: 'Server error' });
+    const errorDetails = extractErrorDetails(err, 'UPDATE USER');
+    return res.status(HTTP[500]).json({
+      message: `Failed to update user with id "${id}".`,
+      error: errorDetails
+    });
   }
 };
 
@@ -159,8 +172,11 @@ const deleteUser = async (req: Request, res: Response) => {
 
     return res.status(HTTP[200]).json({ message: `User deleted successfully. ID: ${id}` });
   } catch (err: any) {
-    console.error('[DELETE USER] Error:', err.response?.data || err.message);
-    return res.status(HTTP[500]).json({ message: 'Server error' });
+    const errorDetails = extractErrorDetails(err, 'DELETE USER');
+    return res.status(HTTP[500]).json({
+      message: `Failed to delete user with id "${id}".`,
+      error: errorDetails
+    });
   }
 };
 

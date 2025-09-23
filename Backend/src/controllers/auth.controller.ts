@@ -20,7 +20,7 @@ const register = async (req: Request, res: Response) => {
   const { email, password, firstName, lastName, role } = req.body;
 
   if (!email || !firstName || !lastName || !password) {
-    return res.status(422).json({ message: 'Email, first name, last name, and password are required' });
+    return res.status(422).json({ message: 'Email address, first name, last name, and password are required' });
   }
 
   try {
@@ -44,8 +44,8 @@ const register = async (req: Request, res: Response) => {
       console.log(`[REGISTER] User ${email} created successfully`);
       return res.status(HTTP[200]).json({ firstName: firstName, lastName: lastName, email, role });
     } else {
-      console.error('[REGISTER] Failed to create user', response.data);
-      return res.status(400).json({ message: 'Failed to create user in Keycloak' });
+      console.error(`[REGISTER] Failed to create user ${email}`, response.data);
+      return res.status(400).json({ message: `Failed to create user ${email} in Keycloak` });
     }
   } catch (err: any) {
     console.error('[REGISTER] Error:', err.response?.data || err.message);
