@@ -22,7 +22,7 @@ import {
   TRIANGLE_COUNT_COMMAND, 
   PROPERTIES_COMMAND} from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
-import { Cluster } from '../models/cluster.model';
+import { getClusterByIdRepo } from '../repository/cluster.repository';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { parseGraphFile } from '../utils/graph';
 
@@ -38,7 +38,7 @@ const DEV_MODE = process.env.DEV_MODE === 'true';
 
 export const getClusterDetails = async (req: Request) => {
   const clusterID = req.header('Cluster-ID');
-  const cluster = await Cluster.findOne({ _id: clusterID });
+  const cluster = await getClusterByIdRepo(Number(clusterID));
   if (!cluster) {
     return { code: ErrorCode.ClusterNotFound, message: ErrorMsg.ClusterNotFound, errorDetails: '' };
   }else{
@@ -46,9 +46,9 @@ export const getClusterDetails = async (req: Request) => {
     return {
       port: cluster.port,
       host: cluster.host
-    }
+    };
   }
-}
+};
 
 export const telnetConnection = (connection: IConnection) => (callback: any) => {
   // If the global connection is undefined or closed, create a new connection
