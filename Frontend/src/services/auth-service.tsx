@@ -41,6 +41,21 @@ export async function pingBackend(){
   }
 }
 
+export async function checkBackendHealth() {
+  try {
+    const result: AxiosResponse<any> = await axios({
+      method: "get",
+      url: "/backend/health",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return result.status === 200 && result.data.status === "ok";
+  } catch (err: any) {
+    return false;
+  }
+}
+
 export async function userLogin(username: string, password: string){
   try {
     const result: AxiosResponse<any> = await axios({
