@@ -60,15 +60,31 @@ const registerAdminUser = async (req: Request, res: Response) => {
 const getAllUsers = async (_req: Request, res: Response) => {
   try {
     const adminToken = await getAdminToken();
-    const response = await axios.get(`http://keycloak:8080/admin/realms/jasminegraph/users`, {
-      headers: { Authorization: `Bearer ${adminToken}` },
+    const response = await axios.get(
+      `http://keycloak:8080/admin/realms/jasminegraph/users`,
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
+
+    const users = response.data;
+
+    const usersDetails = users.map((user: any) => {
+      return {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        enabled: user.enabled,
+        role: user.attributes?.role?.[0],
+      };
     });
-    return res.status(HTTP[200]).json({ data: response.data });
+
+    return res.status(HTTP[200]).json({ data: usersDetails });
   } catch (err: any) {
     const errorDetails = extractErrorDetails(err, 'GET ALL USERS');
     return res.status(HTTP[500]).json({
       message: 'Failed to fetch users.',
-      error: errorDetails
+      error: errorDetails,
     });
   }
 };
@@ -148,12 +164,33 @@ const getUserByToken = async (req: Request, res: Response) => {
       return res.status(HTTP[401]).json({ message: 'Bearer token missing' });
     }
 
-    const response = await axios.get(
+    const userInfoResponse = await axios.get(
       'http://keycloak:8080/realms/jasminegraph/protocol/openid-connect/userinfo',
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    return res.status(HTTP[200]).json({ data: response.data });
+    const userInfo = userInfoResponse.data;
+    const userId = userInfo.sub;
+
+    const adminToken = await getAdminToken();
+    const userDetailsResponse = await axios.get(
+      `http://keycloak:8080/admin/realms/jasminegraph/users/${userId}`,
+      { headers: { Authorization: `Bearer ${adminToken}` } }
+    );
+
+    const userDetails = userDetailsResponse.data;
+
+    return res.status(HTTP[200]).json({
+      data: {
+        id: userDetails.id,
+        username: userDetails.username,
+        email: userDetails.email,
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        enabled: userDetails.enabled,
+        role: userDetails.attributes.role[0],
+      }
+    });
   } catch (err: any) {
     console.error('[GET USER BY TOKEN] Error:', err.response?.data || err.message);
     return res.status(HTTP[401]).json({ message: 'Invalid or expired token' });
