@@ -18,11 +18,11 @@ const clusterRoute = () => {
   const router = Router();
 
   router.get('/', getAllClusters);
+  router.get('/myClusters', getMyClusters); 
   router.get('/:id', getCluster);
   router.post('/', addNewCluster);
   router.post('/addUser', addUserToCluster);
   router.post('/removeUser', removeUserFromCluster);
-  router.get('/myClusters/:id', getMyClusters);
 
   return router;
 };

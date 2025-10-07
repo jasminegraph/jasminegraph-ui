@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasmineGraph Team
+Copyright 2025 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -11,20 +11,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-export interface IClusterDetails {
-  id: number;
-  name: string;
-  description: string;
-  host: string;
-  port: number;
-  user_ids: string[];
-  cluster_owner: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface IClusterProperties {
-  partitionCount: number;
-  version: string;
-  workersCount: number;
+declare namespace JSX {
+  interface IntrinsicElements {
+    'dotlottie-player': React.DetailedHTMLProps<
+      React.HTMLAttributes<HTMLElement>,
+      HTMLElement
+    > & {
+      src?: string;
+      background?: string;
+      speed?: number;
+      loop?: boolean;
+      autoplay?: boolean;
+    };
+  }
 }

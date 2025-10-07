@@ -54,11 +54,11 @@ export async function addNewCluster(name: string, description: string, host: str
   }
 }
 
-export async function getAllClusters(userID: string, token: string) {
+export async function getAllClusters(token: string) {
   try {
     const result = await authApi({
       method: "get",
-      url: `/backend/clusters/myClusters/${userID}`,
+      url: `/backend/clusters/myClusters`,
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${token}`,

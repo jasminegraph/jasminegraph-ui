@@ -81,9 +81,9 @@ export default function Clusters() {
   const getTableData = () => {
     return userData.map((data) => {
       return {
-        key: data._id,
-        userID: data._id,
-        name: data.fullName,
+        key: data.id,
+        userID: data.id,
+        name: data.firstName + " " + data.lastName,
         email: data.email,
         role: data.role,
         status: data.enabled,
@@ -229,8 +229,16 @@ export default function Clusters() {
     try{
       const res = await getAllUsers();
       if(res.data){
-        setUserData(res.data)
-        dispatch(set_Users_Cache(res.data))
+        const mappedUsers: IUserAccessData[] = res.data.map((user: any) => ({
+          _id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          enabled: user.enabled,
+        }));
+        setUserData(mappedUsers)
+        dispatch(set_Users_Cache(mappedUsers))
       }
     }catch(err){
       message.error("Failed to fetch user data")

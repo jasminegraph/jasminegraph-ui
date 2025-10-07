@@ -46,35 +46,40 @@ export default function Clusters() {
   const { getSrvAccessToken } = useAccessToken();
 
   const getAllCluster = async () => {
-    try{
+    try {
       const token = getSrvAccessToken() || "";
-      const res = await getAllClusters(userData._id, token);
-    if(res.data){
-      setClusters(res.data)
-    }
-    }catch(err){
+      const res = await getAllClusters(token);
+      if (res.data){
+        setClusters(res.data);
+      }
+    } catch(err){
       message.error("Failed to fetch JasmineGraph clusters");
     }
-  }
+  };
 
-  const setSelecterCluster = () => {
-    if(localStorage.getItem("selectedCluster")){
-      const selectedCluster = clusters.find((cluster) => cluster._id == localStorage.getItem("selectedCluster"));
-      if(selectedCluster)
-      dispatch(set_Selected_Cluster(selectedCluster));
+  const setSelectedCluster = () => {
+  const selectedClusterId = localStorage.getItem("selectedCluster");
+  if (selectedClusterId) {
+    const foundCluster = clusters.find((cluster) => String(cluster.id) === selectedClusterId);
+    if (foundCluster && foundCluster.id === selectedCluster?.id) {
+      return;
+    }
+    if (foundCluster) {
+      dispatch(set_Selected_Cluster(foundCluster));
     }
   }
-
+}
   useEffect(() => {
-    setSelecterCluster();
+    setSelectedCluster();
   }, [clusters])
 
 
   useEffect(() => {
-    if(userData._id){
+    if(userData.email){
       getAllCluster();
     }
   }, [])
+
 
   const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
     const filteredClusters = clusters.filter((cluster) => {
@@ -84,12 +89,12 @@ export default function Clusters() {
   }
 
   const handleOnClusterSelect = (cluster: IClusterDetails) => {
-    dispatch(set_Selected_Cluster(cluster))
-    localStorage.setItem("selectedCluster", cluster._id);
+    dispatch(set_Selected_Cluster(cluster));
+    localStorage.setItem("selectedCluster", String(cluster.id));
   }
 
   const handleOnClusterClick = (cluster: IClusterDetails) => {
-    router.push(`/clusters/${cluster._id}`)
+    router.push(`/clusters/${cluster.id}`);
   }
 
   const showModal = () => {
@@ -141,7 +146,7 @@ export default function Clusters() {
             <>
               <Divider>Selected Cluster</Divider>
               <Col>
-                  <Row key={selectedCluster._id}>
+                  <Row key={selectedCluster.id}>
                     <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
                     onClick={() => handleOnClusterClick(selectedCluster)}
                     >
@@ -149,9 +154,9 @@ export default function Clusters() {
                         <Title level={3}>{selectedCluster.name}</Title>
                         <div style={{display: "flex", justifyContent: "space-between"}}>
                           <Text>
-                            Cluster ID: {selectedCluster._id}
+                            Cluster ID: {selectedCluster.id}
                           </Text>
-                          <Text>Creation Date: {selectedCluster.createdAt}</Text> 
+                          <Text>Creation Date: {selectedCluster.created_at}</Text> 
                         </div>
                       </Typography>
                     </Card>
@@ -159,13 +164,13 @@ export default function Clusters() {
               </Col>  
             </>
           )}
-          {clusters.filter((item) => selectedCluster == null || (item._id !== selectedCluster?._id)).length > 0 && (
+          {clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).length > 0 && (
             <>
               <Divider>All Clusters</Divider>
               <Col>
                 {clusters.length > 0 ? 
-                clusters.filter((item) => selectedCluster == null || (item._id !== selectedCluster?._id)).map((cluster, index) => (
-                  <Row key={index}>
+                clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).map((cluster) => (
+                  <Row key={cluster.id}>
                     <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
                     >
                       <Typography>
@@ -177,9 +182,9 @@ export default function Clusters() {
                         </div>
                         <div style={{display: "flex", justifyContent: "space-between"}}>
                           <Text>
-                            Cluster ID: {cluster._id}
+                            Cluster ID: {cluster.id}
                           </Text>
-                          <Text>Creation Date: {cluster.createdAt}</Text> 
+                          <Text>Creation Date: {cluster.created_at}</Text> 
                         </div>
                       </Typography>
                     </Card>
