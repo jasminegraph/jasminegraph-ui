@@ -169,7 +169,7 @@ export default function Clusters() {
               <Divider>All Clusters</Divider>
               <Col>
                 {clusters.length > 0 ? 
-                clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).map((cluster, index) => (
+                clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).map((cluster) => (
                   <Row key={cluster.id}>
                     <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
                     >

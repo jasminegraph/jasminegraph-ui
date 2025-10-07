@@ -45,7 +45,7 @@ const registerAdminUser = async (req: Request, res: Response) => {
       console.log(`[REGISTER ADMIN USER] Admin user ${email} created successfully`);
       return res.status(HTTP[200]).json({ firstName: firstName, lastName: lastName, email, role: 'admin' });
     } else {
-      console.error('[REGISTER ADMIN USERr] Failed to create user', keycloakResponse.data);
+      console.error('[REGISTER ADMIN USER] Failed to create user', keycloakResponse.data);
       return res.status(400).json({ message: 'Failed to create admin user in Keycloak' });
     }
   } catch (err: any) {
