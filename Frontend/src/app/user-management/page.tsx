@@ -81,8 +81,8 @@ export default function Clusters() {
   const getTableData = () => {
     return userData.map((data) => {
       return {
-        key: data._id,
-        userID: data._id,
+        key: data.id,
+        userID: data.id,
         name: data.firstName + " " + data.lastName,
         email: data.email,
         role: data.role,
@@ -234,7 +234,7 @@ export default function Clusters() {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
-          role: user.attributes?.role?.[0] || "undefined",
+          role: user.role,
           enabled: user.enabled,
         }));
         setUserData(mappedUsers)

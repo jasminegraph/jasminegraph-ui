@@ -76,7 +76,7 @@ const AdminProfile = ({onSuccess}:props) => {
         lastName: res.data.lastName,
         role: res.data.role,
         enabled: res.data.enabled,
-        _id: res.data._id,
+        id: res.data.id,
       }
       dispatch(set_User_Data(userData));
     }catch(err){

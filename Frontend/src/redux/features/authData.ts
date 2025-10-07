@@ -24,7 +24,7 @@ const initialData: IAuthenticationData = {
   isUserAuthenticated: false,
   isUserDataFetched: false,
   userData: {
-    _id: "",
+    id: "",
     firstName: "",
     lastName: "",
     email: "",

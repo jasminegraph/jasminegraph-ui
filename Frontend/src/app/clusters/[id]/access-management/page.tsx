@@ -100,8 +100,8 @@ export default function AccessManagement({ params }: { params: { id: string } })
   const getTableData = () => {
     return clusterUsers.map((data) => {
       return {
-        key: data._id,
-        userID: data._id,
+        key: data.id,
+        userID: data.id,
         Name: data.firstName + " " + data.lastName,
         Email: data.email,
         Role: data.role,
@@ -111,7 +111,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
   }
 
   const handleUserAdd = async (userID: string) => {
-    const user = userData.find((user) => user._id == userID)
+    const user = userData.find((user) => user.id == userID)
     setClusterUsers([...clusterUsers, user!])
     try{
       const res = await addUserToCluster(userID, String(clusterDetails!.id));
@@ -124,7 +124,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
   }
 
   const handleUserRemove = async (userID: string) => {
-    setClusterUsers(clusterUsers.filter((user) => user._id !== userID))
+    setClusterUsers(clusterUsers.filter((user) => user.id !== userID))
     try{
       const res = await removeUserFromCluster(userID, String(clusterDetails!.id));
       if(res.data){
@@ -160,7 +160,7 @@ export default function AccessManagement({ params }: { params: { id: string } })
                         user.firstName.toLowerCase().includes(value.toLowerCase()) ||
                         user.lastName.toLowerCase().includes(value.toLowerCase()) ||
                         user.email.toLowerCase().includes(value.toLowerCase()));
-      return filteredUsers.map((user) => (renderItem(user.email, user._id)));
+      return filteredUsers.map((user) => (renderItem(user.email, user.id)));
     });
   };
 
@@ -197,13 +197,13 @@ export default function AccessManagement({ params }: { params: { id: string } })
 
   useEffect(()=>{
     if(clusterDetails){
-      const clusterOwner = userData.find((user) => user._id === clusterDetails.cluster_owner);
+      const clusterOwner = userData.find((user) => user.id === clusterDetails.cluster_owner);
       let users: IUserAccessData[] = [];
       if(clusterOwner){
         users.push(clusterOwner);
       }
       userData.forEach((user) => {
-        if(clusterDetails.user_ids.includes(user._id)){
+        if(clusterDetails.user_ids.includes(user.id)){
           users.push(user);
         }
       })
