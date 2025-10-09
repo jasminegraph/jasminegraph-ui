@@ -53,6 +53,11 @@ export const GraphPanelMenu: MenuItem[] = [
     key: Routes.GRAPH_PANEL_ROUTES.upload,
     icon: <ContainerOutlined />,
   },
+    {
+        label: 'Extract',
+        key: Routes.GRAPH_PANEL_ROUTES.extract,
+        icon: <ContainerOutlined />,
+    },
   {
     label: 'Graph',
     key: Routes.GRAPH_PANEL_ROUTES.graph,

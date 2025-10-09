@@ -100,7 +100,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
         });
 
         if (validatedNodes.length === 0) {
-          message.warning('No valid nodes found for low-level view.');
+          message.warning('No valid nodes found for low-level view. 103');
         }
 
         edgesRef.current.add(validatedEdges);
@@ -189,49 +189,93 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
   }
 
   return (
-    <div>
-      <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
-      <div 
-        style={{
-          position: 'relative',
-          border: '1px solid red',
-          height: '600px',
-          aspectRatio: "16/9"
-        }}
-      >
-        <div
-          ref={networkContainerRef}
-          style={{
-            // width: '100%',
-            height: '600px',
-            border: '1px solid lightgray',
-            backgroundColor: '#ffffff',
-            aspectRatio: "16/9"
-          }}
-        />
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          right: '10px'
-        }}>
-          {selectedNode && selectedNode?.length > 0 && (
-            <Card 
-              style={{ maxWidth: 300 }}
-            >
-              <Descriptions column={1} title={`Node ${selectedNode}`}  items={getDetails()} />
-            </Card>
+      <div style={{ width: "100%", height: "100%" }}>
+          <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
+
+          <div
+              style={{
+                  position: "relative",
+                  width: "150%",
+                  maxWidth: "1400px",
+                  height: "calc(100vh - 150px)",
+                  margin: "0 auto",
+                  border: "1px solid #e0e0e0",
+                  borderRadius: "12px",
+                  backgroundColor: "#ffffff",
+                  boxShadow: "0 2px 10px rgba(0, 0, 0, 0.08)",
+                  overflow: "hidden",
+              }}
+          >
+              <div
+                  ref={networkContainerRef}
+                  style={{
+                      width: "100%",
+                      height: "100%",
+                      backgroundColor: "#fafafa",
+                  }}
+              />
+
+              {/* Node Details Card (Top Right) */}
+              {selectedNode && selectedNode?.length > 0 && (
+                  <div
+                      style={{
+                          position: "absolute",
+                          top: "16px",
+                          right: "16px",
+                          zIndex: 10,
+                      }}
+                  >
+                      <Card
+                          size="small"
+                          style={{
+                              maxWidth: 320,
+                              borderRadius: "10px",
+                              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+                          }}
+                      >
+                          <Descriptions
+                              column={1}
+                              title={`Node ${selectedNode}`}
+                              items={getDetails()}
+                          />
+                      </Card>
+                  </div>
+              )}
+
+              {/* Back Button (Top Left) */}
+              <div
+                  style={{
+                      position: "absolute",
+                      top: "16px",
+                      left: "16px",
+                      zIndex: 10,
+                  }}
+              >
+                  <Button
+                      type="primary"
+                      icon={<LeftOutlined />}
+                      size="large"
+                      shape="circle"
+                      onClick={onHighLevelViewClick}
+                  />
+              </div>
+          </div>
+
+          {/* Progress Bar */}
+          {progressing && (
+              <div style={{ marginTop: "12px", maxWidth: "1400px", marginInline: "auto" }}>
+                  <Progress
+                      percent={percent}
+                      showInfo={false}
+                      strokeColor={{
+                          from: "#108ee9",
+                          to: "#87d068",
+                      }}
+                  />
+              </div>
           )}
-        </div>
-        <div style={{
-          position: 'absolute',
-          top: '10px',
-          left: '10px'
-        }}>
-          <Button type="primary" icon={<LeftOutlined />} size={'large'} onClick={onHighLevelViewClick} />
-        </div>
       </div>
-      {progressing && <Progress percent={percent} showInfo={false} />}
-    </div>
+
   );
 };
 

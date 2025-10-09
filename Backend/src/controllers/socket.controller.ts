@@ -51,6 +51,13 @@ export const setupWebSocket = (server: any) => {
         streamQueryResult(data.clientId, data.clusterId, data.graphId, data.query);
       }
 
+        if (data.type === 'UPBYTES') {
+            streamUploadBytes(data.clientId, data.clusterId, data.graphIds);
+        }
+
+        if (data.type === 'STOP') {
+            stopStream(data.clientId, data.clusterId);
+        }
       if (data.type === "GRAPH_DEGREE") {
         getDegreeData(data.clientId, data.clusterId, data.graphId, data.degree_type)
       }
@@ -61,6 +68,8 @@ export const setupWebSocket = (server: any) => {
 export const sendToClient = (clientId, data) => {
   const client = clients.get(clientId);
   if (client && client.readyState === WebSocket.OPEN) {
+      console.log(`trying to send data to client ${clientId}:`, data);
+
     client.send(JSON.stringify(data));
     console.log(`Sent data to client ${clientId}:`, data);
   } else {
@@ -105,7 +114,7 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
   }
 };
 
-const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {  
+const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {
   const cluster = await Cluster.findOne({ _id: clusterId });
   if (!(cluster?.host || cluster?.port)) {
     sendToClient(clientId, { Error: "cluster not found"})
@@ -125,25 +134,25 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
     while(true){
       if(sharedBuffer.length > 0){
         remaining += sharedBuffer.shift()!
-        
+
         let splitIndex;
 
         if(remaining.trim() == '-1'){
           console.log("Termination signal received. Closing Telnet connection.");
           return
         }
-        
+
         // Extract complete JSON objects from the buffer
         while ((splitIndex = remaining.indexOf('\n')) !== -1) {
           const jsonString = remaining.slice(0, splitIndex).trim(); // Extract a complete object
           remaining = remaining.slice(splitIndex + 1); // Remove processed part
-          
+
           if (jsonString) {
             if (jsonString == "-1") {
               console.log("Termination signal received. Closing Telnet connection.");
               return; // Exit the producer loop
             }
-            
+
             try {
               const parsed = JSON.parse(jsonString); // Parse the JSON
               sendToClient(clientId, parsed)
@@ -169,13 +178,16 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
       producer();
 
       tSocket.on('data', (buffer) => {
-        sharedBuffer.push(buffer.toString('utf8'))
+          console.log( buffer.toString('utf8') );
+
+          sharedBuffer.push(buffer.toString('utf8'))
       });
 
       tSocket.on('end', () => {
         console.log('Telnet connection ended');
       });
 
+      console.log("185 stream query sending" +CYPHER_COMMAND + '|' + graphId + '|' + query + '\n');
       // Write the command to the Telnet server
       tSocket.write(CYPHER_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
     });
@@ -183,6 +195,122 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
     return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
   }
 }
+
+
+const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: string[]) => {
+    const cluster = await Cluster.findOne({ _id: clusterId });
+    if (!(cluster?.host || cluster?.port)) {
+        sendToClient(clientId, { Error: "cluster not found"});
+        return;
+    }
+
+    const connection: IConnection = {
+        host: cluster.host,
+        port: cluster.port
+    };
+
+    let sharedBuffer: string[] = [];
+
+    const producer = async () => {
+        let remaining = '';
+
+        while (true) {
+            if (sharedBuffer.length > 0) {
+                remaining += sharedBuffer.shift()!;
+                let splitIndex;
+
+                while ((splitIndex = remaining.indexOf('\n')) !== -1) {
+                    const line = remaining.slice(0, splitIndex).trim();
+                    remaining = remaining.slice(splitIndex + 1);
+
+                    if (!line) continue;
+                    if (line === "-1") {
+                        console.log("Termination signal received. Closing Telnet connection.");
+                        return;
+                    }
+                    console.log(line)
+
+                    if (line.startsWith("UPBYTES")) {
+                        const parts = line.split('|');
+                        const formatted: string[] = ["UPBYTES"];
+
+                        const updates: { graphId: string; uploaded: number; total: number; percentage: number ; bytesPerSecond: number; triplesPerSecond , startTime: string}[] = [];
+
+                        for (let i = 1; i < parts.length; i += 7) {
+                            const graphId = parts[i];
+                            const uploaded = parseFloat(parts[i + 1] || "0");
+                            const total = parseFloat(parts[i + 2] || "0");
+                            const percentage = parseFloat(total > 0 ? ((uploaded / total) * 100).toFixed(5) : "0.00");
+                            const bytesPerSecond = parseFloat(parts[i + 4] || "0");
+                            const triplesPerSecond = parseFloat(parts[i + 5] || "0");
+                            const startTime = parts[i + 6];
+
+                            updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond , startTime});
+                        }
+
+                        sendToClient(clientId, {
+                            type: "UPBYTES",
+                            updates,
+                            timestamp: Date.now(),
+                        });
+                    }
+                }
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+    };
+
+    try {
+        telnetConnection({ host: connection.host, port: connection.port })((tSocket: any) => {
+            producer();
+
+            tSocket.on('data', (buffer) => {
+                sharedBuffer.push(buffer.toString('utf8'));
+            });
+
+            tSocket.on('end', () => {
+                console.log('Telnet connection ended');
+            });
+
+            // Build subscription command
+            const command = ['UPBYTES', ...graphIds].join('|');
+            tSocket.write(command + '\n', 'utf8');
+        });
+    } catch (err) {
+        console.error({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    }
+};
+
+const stopStream = async (clientId: string, clusterId: string) => {
+    const cluster = await Cluster.findOne({ _id: clusterId });
+    if (!(cluster?.host || cluster?.port)) {
+        sendToClient(clientId, { Error: "cluster not found"});
+        return;
+    }
+
+    const connection: IConnection = {
+        host: cluster.host,
+        port: cluster.port
+    };
+
+
+    try {
+        telnetConnection({ host: connection.host, port: connection.port })((tSocket: any) => {
+
+            tSocket.on('end', () => {
+                console.log('Telnet connection ended');
+            });
+
+            // Build subscription command
+            const command = 'STOP'
+            tSocket.write(command + '\n', 'utf8');
+        });
+    } catch (err) {
+        console.error({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    }
+};
+
 
 const getDegreeData = async (clientId: string, clusterId:string, graphId:string, type: string) => {
   const COMMAND = type == "in_degree" ? INDEGREE_COMMAND : type == "out_degree" ? OUTDEGREE_COMMAND : INDEGREE_COMMAND;   

@@ -33,6 +33,36 @@ export async function getGraphList(): Promise<{data: IGraphDetails[]}> {
   }
 }
 
+export async function constructKG(
+    hdfsIp: string,
+    hdfsPort: string,
+    hdfsFilePath: string,
+    llmRunnerString: string,
+    inferenceEngine: string,
+    model: string,
+    chunkSize: number
+): Promise<{ data: IGraphDetails[] }> {
+    try {
+        const result = await authApi({
+            method: "post",
+            url: `/backend/graph/hadoop/construct-kg`,
+            data: {
+                hdfsIp,
+                hdfsPort,
+                hdfsFilePath,
+                llmRunnerString,
+                inferenceEngine,
+                model,
+                chunkSize,
+            },
+        }).then((res) => res.data);
+
+        return result;
+    } catch (err) {
+        return Promise.reject(err);
+    }
+}
+
 export async function deleteGraph(id: string) {
   try {
     const result = await authApi({

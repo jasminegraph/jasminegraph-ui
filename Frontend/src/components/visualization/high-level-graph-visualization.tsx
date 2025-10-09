@@ -116,7 +116,7 @@ const TwoLevelGraphVisualization = ({
         });
 
         if (validatedNodes.length === 0) {
-          message.warning('No valid nodes found for low-level view.');
+          message.warning('No valid nodes found for high-level view. ');
         }
 
         edgesRef.current.add(validatedEdges);
@@ -261,6 +261,7 @@ const TwoLevelGraphVisualization = ({
     } else {
       setVertexCountExceed(false);
     }
+    console.log("selectedNode :" , selectedNode);
     if(selectedNode && selectedNode.length > 0){
       onPartitionClick(selectedNode[0])
     }

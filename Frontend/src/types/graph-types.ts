@@ -22,6 +22,8 @@ export interface IGraphDetails {
   partitions: IGraphPartitionDetails[],
 }
 
+
+
 export interface IGraphPartitionDetails {
   central_edgecount: number;
   central_edgecount_with_dups: number;

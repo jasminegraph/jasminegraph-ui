@@ -13,15 +13,23 @@ limitations under the License.
 
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+// import jwt from 'jsonwebtoken';
 import { User, UserInput } from '../models/user.model';
 import { Token } from '../models/token.model';
 import { HTTP } from '../constants/constants';
 
-const generateToken = (userId: string, secret: string, expiresIn: string) => {
-  return jwt.sign({ id: userId }, secret, { expiresIn });
-};
 
+import jwt, { Secret , SignOptions } from 'jsonwebtoken';
+//
+// const generateToken = (userId: string, secret: string, expiresIn: string) => {
+//   return jwt.sign({ id: userId }, secret, { expiresIn });
+// };
+
+const generateToken = (userId: string, secret: string, expiresIn: string) => {
+
+    const options: { expiresIn: string } = { expiresIn };
+    return jwt.sign({ id: userId }, secret, options);
+};
 const register = async (req: Request, res: Response) => {
   const { email, password, fullName, role } = req.body;
   if (!email || !fullName || !password) {

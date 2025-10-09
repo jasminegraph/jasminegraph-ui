@@ -13,7 +13,7 @@ limitations under the License.
 
 'use client';
 import React, { useState, useEffect } from "react";
-import { Button, message, Select } from 'antd';
+import {Button, message, Select, Spin} from 'antd';
 import GraphVisualization from "@/components/visualization/graph-visualization";
 import { getGraphList } from "@/services/graph-service";
 import InDegreeVisualization from "@/components/visualization/indegree-visualization";
@@ -24,6 +24,7 @@ import { useAppDispatch } from "@/redux/hook";
 import { IOption } from "@/types/options-types";
 import { IGraphDetails } from "@/types/graph-types";
 import TwoLevelGraphVisualization from "@/components/visualization/two-level-graph-visualization";
+import {LoadingOutlined} from "@ant-design/icons";
 
 const WS_URL = "ws://localhost:8080";
 
@@ -53,10 +54,12 @@ export default function GraphDistribution() {
 
   const getGraphsData = async () => {
     try{
+        setLoading(true);
     const res = await getGraphList();
     if(res.data){
       const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
+            idgraph : graph.id,
           value: graph.idgraph,
           label: graph.name,
         }
@@ -66,6 +69,8 @@ export default function GraphDistribution() {
     }
     }catch(err){
       message.error("Failed to fetch graphs: " + err);
+    }finally {
+        setLoading(false);
     }
   }
 
@@ -120,16 +125,19 @@ export default function GraphDistribution() {
   }
 
   const onPartitionDetailsView = async (partitionID: number | null | undefined) => {
-    if(partitionID){
+      console.log("partitionId",partitionID)
+      console.log("readyState",readyState)
+    if(partitionID!=null||partitionID!=undefined){
       try{
         setLoading(true);
         dispatch(clear_visualize_data());
         if (readyState === ReadyState.OPEN){
+            console.log("134",partitionID);
           sendJsonMessage(
             {
               type: "QUERY",
-              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} return n,m`,
-              graphId: 10,
+              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} return n,m,r`,
+              graphId: selectedGraph,
               clientId: clientId,
               clusterId: localStorage.getItem("selectedCluster"),            
             }
@@ -153,6 +161,8 @@ export default function GraphDistribution() {
   }
 
   return (
+<>
+      <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
     <div className="">
       <div style={{margin: "20px 0px", width: "80%"}}>
         <h1 style={{fontSize: "xx-large", fontWeight: "600", lineHeight: "1.5"}}>Graph Visualization</h1>
@@ -206,5 +216,6 @@ export default function GraphDistribution() {
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>
     </div>
+</>
   );
 }
