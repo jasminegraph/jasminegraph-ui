@@ -57,10 +57,10 @@ const tailFormItemLayout = {
 
 type props = {
   onSuccess: () => void;
+  form: any;
 }
 
-const UserRegistrationForm = ({onSuccess}: props) => {
-  const [form] = Form.useForm();
+const UserRegistrationForm = ({onSuccess, form}: props) => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const onFinish = async (values: any) => {
@@ -69,6 +69,7 @@ const UserRegistrationForm = ({onSuccess}: props) => {
       const res = await registerUser(values.firstName, values.lastName, values.email, values.password, values.role);
       message.loading("Creating profile", 2);
       onSuccess();
+      form.resetFields();
     }catch(err){
       message.error("Failed to create profile");
     }
