@@ -12,7 +12,7 @@ limitations under the License.
  */
 
 import React, { useState } from 'react';
-import type { CascaderProps } from 'antd';
+import type { FormInstance } from 'antd';
 import {
   Button,
   Form,
@@ -57,7 +57,7 @@ const tailFormItemLayout = {
 
 type props = {
   onSuccess: () => void;
-  form: any;
+  form: FormInstance;
 }
 
 const UserRegistrationForm = ({onSuccess, form}: props) => {
