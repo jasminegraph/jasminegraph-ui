@@ -40,6 +40,13 @@ const addNewCluster = async (req: Request, res: Response) => {
     });
     return res.status(HTTP[201]).json({ data: cluster });
   } catch (err) {
+    if (err instanceof Error && (err as any).code === '23505') {
+      console.warn("[addNewCluster] Duplicate host and port combination:", { host, port });
+      return res.status(HTTP[400]).json({
+        errorCode: 'DUPLICATE_HOST_PORT',
+        message: 'A cluster with the same host and port already exists. Please use a different combination.'
+      });
+    }
     console.error("[addNewCluster] Error:", err);
     return res.status(HTTP[500]).json({
       message: 'Internal Server Error: Unable to create the cluster.',
