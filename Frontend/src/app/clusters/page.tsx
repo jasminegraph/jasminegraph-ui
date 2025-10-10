@@ -12,8 +12,8 @@ limitations under the License.
  */
 
 "use client";
-import React, { useState, useEffect, use } from "react";
-import { Button, Divider, Layout, message, Modal, theme, Typography } from "antd";
+import React, { useState, useEffect, useCallback } from "react";
+import { Button, Divider, Layout, message, Modal, theme, Typography, Form } from "antd";
 import PageWrapper from "@/layouts/page-wrapper";
 import { Input } from "antd";
 import type { SearchProps } from "antd/es/input/Search";
@@ -44,8 +44,9 @@ export default function Clusters() {
 
   const [openModal, setOpenModal] = useState<boolean>(false);
   const { getSrvAccessToken } = useAccessToken();
+  const [form] = Form.useForm();
 
-  const getAllCluster = async () => {
+  const getAllCluster = useCallback(async () => {
     try {
       const token = getSrvAccessToken() || "";
       const res = await getAllClusters(token);
@@ -55,30 +56,32 @@ export default function Clusters() {
     } catch(err){
       message.error("Failed to fetch JasmineGraph clusters");
     }
-  };
+  }, [getSrvAccessToken]);
 
-  const setSelectedCluster = () => {
-  const selectedClusterId = localStorage.getItem("selectedCluster");
-  if (selectedClusterId) {
-    const foundCluster = clusters.find((cluster) => String(cluster.id) === selectedClusterId);
-    if (foundCluster && foundCluster.id === selectedCluster?.id) {
-      return;
+  const setSelectedCluster = useCallback(() => {
+    const selectedClusterId = localStorage.getItem("selectedCluster");
+    if (selectedClusterId) {
+      const foundCluster = clusters.find((cluster) => String(cluster.id) === selectedClusterId);
+      if (foundCluster && foundCluster.id === selectedCluster?.id) {
+        return;
+      }
+      if (foundCluster) {
+        dispatch(set_Selected_Cluster(foundCluster));
+      }
     }
-    if (foundCluster) {
-      dispatch(set_Selected_Cluster(foundCluster));
-    }
-  }
-}
+  }, [clusters, selectedCluster, dispatch]);
+
+
   useEffect(() => {
     setSelectedCluster();
-  }, [clusters])
+  }, [clusters, setSelectedCluster]);
 
 
   useEffect(() => {
-    if(userData.email){
+    if (userData.email && clusters.length === 0) {
       getAllCluster();
     }
-  }, [])
+  }, [getAllCluster, userData.email, clusters.length]);
 
 
   const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
@@ -98,6 +101,7 @@ export default function Clusters() {
   }
 
   const showModal = () => {
+    form.resetFields();
     setOpenModal(true);
   }
 
@@ -138,7 +142,7 @@ export default function Clusters() {
                 footer={<></>}
                 onCancel={() => setOpenModal(false)}
               >
-                <ClusterRegistrationForm onSuccess={afterClusterRegistration}/>
+                <ClusterRegistrationForm form={form} onSuccess={afterClusterRegistration} />
               </Modal>
             </div>
           </div>
