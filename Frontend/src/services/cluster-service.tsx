@@ -20,6 +20,7 @@ interface ApiResponse<T> {
 }
 
 interface ApiErrorResponse {
+  errorCode: string;
   message: string;
 }
 
@@ -45,9 +46,9 @@ export async function addNewCluster(name: string, description: string, host: str
     };
   } catch (err: any) {
     if (err.response) {
-      return {
-        message: err.response.data.message,
-      };
+      const errorCode = err.response.data.errorCode;
+      const errorMessage = err.response.data.message;
+      return { errorCode: errorCode, message: errorMessage };
     } else {
       return Promise.reject(err);
     }

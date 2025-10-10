@@ -20,5 +20,6 @@ CREATE TABLE IF NOT EXISTS clusters (
     user_ids TEXT[],
     cluster_owner VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_host_port UNIQUE (host, port)
 );
