@@ -11,8 +11,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import React, { useState } from 'react';
-import type { CascaderProps } from 'antd';
+import React, { useEffect, useState } from 'react';
 import {
   Button,
   Form,
@@ -20,8 +19,6 @@ import {
   message,
   Select,
 } from 'antd';
-import { USER_ROLES } from '@/data/user-data';
-import { registerUser } from '@/services/auth-service';
 import { addNewCluster } from '@/services/cluster-service';
 import useAccessToken from '@/hooks/useAccessToken';
 
@@ -59,24 +56,30 @@ const tailFormItemLayout = {
 
 type props = {
   onSuccess: () => void;
+  form: any;
 }
 
-const ClusterRegistrationForm = ({onSuccess}: props) => {
-  const [form] = Form.useForm();
+const ClusterRegistrationForm = ({onSuccess, form}: props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const { getSrvAccessToken } = useAccessToken();
-  
+
   const onFinish = async (values: any) => {
     setLoading(true);
     try{
       const token = getSrvAccessToken() || "";
-      await addNewCluster(values.name, values.description, values.host, values.port, token);
-      message.loading("Connecting New Cluster", 2);
-      onSuccess();
-    }catch(err){
-      message.error("Failed to add cluster");
+      const response = await addNewCluster(values.name, values.description, values.host, values.port, token);
+      if ('errorCode' in response) {
+        message.error(response.message);
+      } else {
+        message.loading("Connecting New Cluster", 2);
+        onSuccess();
+        form.resetFields();
+      }
+    } catch (err) {
+      message.error("An unexpected error occurred while adding the cluster.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
