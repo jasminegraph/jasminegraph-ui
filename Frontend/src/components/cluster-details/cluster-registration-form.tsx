@@ -15,6 +15,7 @@ import React, { useState } from 'react';
 import {
   Button,
   Form,
+  FormInstance,
   Input,
   message,
   Select,
@@ -56,7 +57,7 @@ const tailFormItemLayout = {
 
 type props = {
   onSuccess: () => void;
-  form: any;
+  form: FormInstance;
 }
 
 const ClusterRegistrationForm = ({onSuccess, form}: props) => {
