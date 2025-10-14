@@ -22,6 +22,7 @@ import {
 } from '../repository/cluster.repository';
 import { ErrorCode } from '../constants/error.constants';
 import { HTTP } from '../constants/constants';
+import net from 'net';
 
 const addNewCluster = async (req: Request, res: Response) => {
   const { name, description, host, port } = req.body;
@@ -146,4 +147,55 @@ const getMyClusters = async (req: Request, res: Response) => {
   }
 };
 
-export { addNewCluster, getAllClusters, getCluster, addUserToCluster, removeUserFromCluster, getMyClusters };
+const getClusterStatus = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const clusterId = Number(id);
+  if (isNaN(clusterId)) {
+    console.error("[getClusterStatus] Invalid cluster ID:", id);
+    return res.status(400).json({ message: 'Invalid cluster ID' });
+  }
+
+  try {
+    const cluster = await getClusterByIdRepo(clusterId);
+    if (!cluster) {
+      console.warn(`[getClusterStatus] Cluster with id "${id}" not found.`);
+      return res.status(HTTP[404]).json({ message: `Cluster with id "${id}" not found.` });
+    }
+
+    // Try to open a plain TCP connection to determine whether the cluster is reachable
+    const timeoutMs = 2000; // small timeout for status check
+    let responded = false;
+
+    const socket = new net.Socket();
+
+    const onceRespond = (payload: any) => {
+      if (responded) return;
+      responded = true;
+      try {
+        socket.destroy();
+      } catch (e) {}
+      return res.status(HTTP[200]).json(payload);
+    };
+
+    socket.setTimeout(timeoutMs, () => {
+      onceRespond({ connected: false, message: 'timeout' });
+    });
+
+    socket.on('error', (err) => {
+      onceRespond({ connected: false, message: err.message });
+    });
+
+    socket.connect(cluster.port, cluster.host, () => {
+      onceRespond({ connected: true });
+    });
+
+  } catch (err) {
+    console.error("[getClusterStatus] Error:", err);
+    return res.status(HTTP[500]).json({
+      message: 'Internal Server Error: Unable to check cluster status.',
+      error: err instanceof Error ? err.message : 'Unknown error occurred'
+    });
+  }
+};
+
+export { addNewCluster, getAllClusters, getCluster, addUserToCluster, removeUserFromCluster, getMyClusters, getClusterStatus };
