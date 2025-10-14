@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { IClusterDetails } from "@/types/cluster-types";
 import { useDispatch } from "react-redux";
 import { set_Selected_Cluster } from "@/redux/features/clusterData";
-import { getAllClusters } from "@/services/cluster-service";
+import { getAllClusters, getClusterStatus } from "@/services/cluster-service";
 import { useAppSelector } from "@/redux/hook";
 import ClusterRegistrationForm from "@/components/cluster-details/cluster-registration-form";
 import useAccessToken from '@/hooks/useAccessToken';
@@ -51,7 +51,18 @@ export default function Clusters() {
       const token = getSrvAccessToken() || "";
       const res = await getAllClusters(token);
       if (res.data){
-        setClusters(res.data);
+        const fetched = res.data;
+        const withStatus = await Promise.all(
+          fetched.map(async (c: any) => {
+            try {
+              const statusRes = await getClusterStatus(String(c.id));
+              return { ...c, status: statusRes.connected ?? false };
+            } catch (e) {
+              return { ...c, status: false };
+            }
+          })
+        );
+        setClusters(withStatus);
       }
     } catch(err){
       message.error("Failed to fetch JasmineGraph clusters");
@@ -184,11 +195,24 @@ export default function Clusters() {
                           Select
                         </Button>
                         </div>
-                        <div style={{display: "flex", justifyContent: "space-between"}}>
-                          <Text>
-                            Cluster ID: {cluster.id}
-                          </Text>
-                          <Text>Creation Date: {cluster.created_at}</Text> 
+                        <div style={{display: "flex", justifyContent: "space-between", alignItems: 'center'}}>
+                          <div>
+                            <Text>Cluster ID: {cluster.id}</Text>
+                            <div style={{marginTop: 4}}>
+                              <Text type="secondary">Creation Date: {cluster.created_at}</Text>
+                            </div>
+                          </div>
+                          <div>
+                            { (cluster as any).status ? (
+                              <Button type="primary" style={{background: '#52c41a', borderColor: '#52c41a'}}>
+                                Connected
+                              </Button>
+                            ) : (
+                              <Button type="default" danger>
+                                Disconnected
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </Typography>
                     </Card>
