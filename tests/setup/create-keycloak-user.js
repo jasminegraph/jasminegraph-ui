@@ -24,6 +24,9 @@ const TEST_USER = {
   enabled: true,
   firstName: 'Playwright',
   lastName: 'Test',
+  attributes: {
+    role: ['admin'] 
+  },
   credentials: [{
     type: 'password',
     value: 'playwrightTest123!',
