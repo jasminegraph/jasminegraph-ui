@@ -162,22 +162,39 @@ export default function Clusters() {
             <>
               <Divider>Selected Cluster</Divider>
               <Col>
-                  <Row key={selectedCluster.id}>
-                    <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
+                <Row key={selectedCluster.id}>
+                  <Card 
+                    hoverable 
+                    style={{ width: "100%", marginBottom: "20px", border: "1px solid gray" }}
                     onClick={() => handleOnClusterClick(selectedCluster)}
-                    >
-                      <Typography>
-                        <Title level={3}>{selectedCluster.name}</Title>
-                        <div style={{display: "flex", justifyContent: "space-between"}}>
-                          <Text>
-                            Cluster ID: {selectedCluster.id}
-                          </Text>
-                          <Text>Creation Date: {selectedCluster.created_at}</Text> 
+                  >
+                    <Typography>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Title level={3} style={{ margin: 0 }}>{selectedCluster.name}</Title>
+                        <div>
+                          {(selectedCluster as any).status ? (
+                            <Button
+                              type="primary"
+                              style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                            >
+                              Connected
+                            </Button>
+                          ) : (
+                            <Button type="default" danger>
+                              Disconnected
+                            </Button>
+                          )}
                         </div>
-                      </Typography>
-                    </Card>
-                  </Row>
-              </Col>  
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                        <Text>Cluster ID: {selectedCluster.id}</Text>
+                        <Text>Creation Date: {selectedCluster.created_at}</Text>
+                      </div>
+                    </Typography>
+                  </Card>
+                </Row>
+              </Col>
             </>
           )}
           {clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).length > 0 && (
