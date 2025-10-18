@@ -12,14 +12,14 @@ limitations under the License.
  */
 
 import { Router } from 'express';
-import { getAllClusters, getCluster, addNewCluster, addUserToCluster, removeUserFromCluster, getMyClusters, getClusterStatus } from '../controllers/cluster.controller';
+import { getAllClusters, getCluster, addNewCluster, addUserToCluster, removeUserFromCluster, getMyClusters, getSelectedClustersStatus } from '../controllers/cluster.controller';
 
 const clusterRoute = () => {
   const router = Router();
 
   router.get('/', getAllClusters);
   router.get('/myClusters', getMyClusters); 
-  router.get('/:id/status', getClusterStatus);
+  router.post('/status', getSelectedClustersStatus);
   router.get('/:id', getCluster);
   router.post('/', addNewCluster);
   router.post('/addUser', addUserToCluster);

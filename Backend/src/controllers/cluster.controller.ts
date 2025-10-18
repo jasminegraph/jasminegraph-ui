@@ -147,55 +147,42 @@ const getMyClusters = async (req: Request, res: Response) => {
   }
 };
 
-const getClusterStatus = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const clusterId = Number(id);
-  if (isNaN(clusterId)) {
-    console.error("[getClusterStatus] Invalid cluster ID:", id);
-    return res.status(400).json({ message: 'Invalid cluster ID' });
-  }
-
+const getSelectedClustersStatus = async (req: Request, res: Response) => {
   try {
-    const cluster = await getClusterByIdRepo(clusterId);
-    if (!cluster) {
-      console.warn(`[getClusterStatus] Cluster with id "${id}" not found.`);
-      return res.status(HTTP[404]).json({ message: `Cluster with id "${id}" not found.` });
+    const { ids } = req.body; 
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(HTTP[400]).json({ message: "Invalid cluster IDs" });
     }
+    
+    const clusters = await getAllClustersRepo();
+    const filteredClusters = clusters.filter(c => ids.includes(c.id));
 
-    // Try to open a plain TCP connection to determine whether the cluster is reachable
-    const timeoutMs = 2000; // small timeout for status check
-    let responded = false;
+    const timeoutMs = 2000;
 
-    const socket = new net.Socket();
+    const statusPromises = filteredClusters.map((cluster: any) => {
+      return new Promise<{ id: number; connected: boolean }>((resolve) => {
+        const socket = new net.Socket();
+        let responded = false;
 
-    const onceRespond = (payload: any) => {
-      if (responded) return;
-      responded = true;
-      try {
-        socket.destroy();
-      } catch (e) {}
-      return res.status(HTTP[200]).json(payload);
-    };
+        const done = (connected: boolean) => {
+          if (responded) return;
+          responded = true;
+          try { socket.destroy(); } catch {}
+          resolve({ id: cluster.id, connected });
+        };
 
-    socket.setTimeout(timeoutMs, () => {
-      onceRespond({ connected: false, message: 'timeout' });
+        socket.setTimeout(timeoutMs, () => done(false));
+        socket.on('error', () => done(false));
+        socket.connect(cluster.port, cluster.host, () => done(true));
+      });
     });
 
-    socket.on('error', (err) => {
-      onceRespond({ connected: false, message: err.message });
-    });
-
-    socket.connect(cluster.port, cluster.host, () => {
-      onceRespond({ connected: true });
-    });
-
+    const statuses = await Promise.all(statusPromises);
+    return res.status(HTTP[200]).json({ clusters: statuses });
   } catch (err) {
-    console.error("[getClusterStatus] Error:", err);
-    return res.status(HTTP[500]).json({
-      message: 'Internal Server Error: Unable to check cluster status.',
-      error: err instanceof Error ? err.message : 'Unknown error occurred'
-    });
+    console.error('[getSelectedClustersStatus] Error:', err);
+    return res.status(HTTP[500]).json({ message: 'Unable to fetch cluster statuses', error: (err as Error).message });
   }
 };
 
-export { addNewCluster, getAllClusters, getCluster, addUserToCluster, removeUserFromCluster, getMyClusters, getClusterStatus };
+export { addNewCluster, getAllClusters, getCluster, addUserToCluster, removeUserFromCluster, getMyClusters, getSelectedClustersStatus };

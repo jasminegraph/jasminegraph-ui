@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { IClusterDetails } from "@/types/cluster-types";
 import { useDispatch } from "react-redux";
 import { set_Selected_Cluster } from "@/redux/features/clusterData";
-import { getAllClusters, getClusterStatus } from "@/services/cluster-service";
+import { getAllClusters, getClustersStatusByIds } from "@/services/cluster-service";
 import { useAppSelector } from "@/redux/hook";
 import ClusterRegistrationForm from "@/components/cluster-details/cluster-registration-form";
 import useAccessToken from '@/hooks/useAccessToken';
@@ -49,23 +49,24 @@ export default function Clusters() {
   const getAllCluster = useCallback(async () => {
     try {
       const token = getSrvAccessToken() || "";
-      const res = await getAllClusters(token);
-      if (res.data){
-        const fetched = res.data;
-        const withStatus = await Promise.all(
-          fetched.map(async (c: any) => {
-            try {
-              const statusRes = await getClusterStatus(String(c.id));
-              return { ...c, status: statusRes.connected ?? false };
-            } catch (e) {
-              return { ...c, status: false };
-            }
-          })
-        );
-        setClusters(withStatus);
-      }
-    } catch(err){
+      const clusterRes = await getAllClusters(token);
+      if (!clusterRes.data) return;
+
+      const clusters = clusterRes.data;
+
+      const clusterIds = clusters.map((c: any) => c.id);
+      const statusRes = await getClustersStatusByIds(token, clusterIds);
+      const statuses = statusRes.clusters || [];
+
+      const clustersWithStatus = clusters.map((c: any) => {
+        const status = statuses.find((s: any) => s.id === c.id)?.connected ?? false;
+        return { ...c, status };
+      });
+
+      setClusters(clustersWithStatus);
+    } catch (err) {
       message.error("Failed to fetch JasmineGraph clusters");
+      console.error(err);
     }
   }, [getSrvAccessToken]);
 
