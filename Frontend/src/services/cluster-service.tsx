@@ -87,6 +87,22 @@ export async function getCluster(clusterID: string) {
   }
 }
 
+export async function getClustersStatusByIds(token: string, ids: number[]) {
+  try {
+    const result = await authApi({
+      method: "post",
+      url: `/backend/clusters/status`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      data: { ids },
+    }).then(res => res.data);
+    return result;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
 export async function addUserToCluster(userID: string, clusterID: string){
   try {
     const result = await authApi({
