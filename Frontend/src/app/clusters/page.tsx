@@ -142,7 +142,7 @@ export default function Clusters() {
                 footer={<></>}
                 onCancel={() => setOpenModal(false)}
               >
-                <ClusterRegistrationForm form={form} onSuccess={afterClusterRegistration} />
+                <ClusterRegistrationForm form={form} onSuccess={afterClusterRegistration} onCancel={() => setOpenModal(false)} />
               </Modal>
             </div>
           </div>
