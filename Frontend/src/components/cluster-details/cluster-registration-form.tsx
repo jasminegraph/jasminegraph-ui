@@ -19,6 +19,7 @@ import {
   Input,
   message,
   Select,
+  Space,
 } from 'antd';
 import { addNewCluster } from '@/services/cluster-service';
 import useAccessToken from '@/hooks/useAccessToken';
@@ -117,6 +118,7 @@ const ClusterRegistrationForm = ({ onSuccess, form, onCancel }: props) => {
       <Form.Item 
         name="host"
         label="Host"
+        rules={[{ required: true, message: 'Please input the host!' }]}
       >
         <Input />
       </Form.Item>
@@ -124,17 +126,20 @@ const ClusterRegistrationForm = ({ onSuccess, form, onCancel }: props) => {
       <Form.Item 
         name="port"
         label="Port"
+        rules={[{ required: true, message: 'Please input the port!' }]}
       >
         <Input />
       </Form.Item>
       
       <Form.Item {...tailFormItemLayout}>
-        <Button type="primary" htmlType="submit" loading={loading}>
-          Add
-        </Button>
-        <Button style={{ marginRight: 8 }} onClick={handleCancel}>
-          Cancel
-        </Button>
+        <Space size="middle">
+          <Button type="primary" htmlType="submit" loading={loading}>
+            Add
+          </Button>
+          <Button htmlType="button" onClick={handleCancel} style={{ marginLeft: 8 }}>
+            Cancel
+          </Button>
+        </Space>
       </Form.Item>
     </Form>
   );
