@@ -94,6 +94,7 @@ services:
       - BASE_URL=http://frontend:3000
       - KEYCLOAK_BASE_URL=http://keycloak:8080
       - KEYCLOAK_REALM=jasminegraph
+      - BACKEND_URL=http://backend:8080
 
 volumes:
   postgres-data:
