@@ -15,7 +15,7 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 
 const KEYCLOAK_BASE_URL = process.env.KEYCLOAK_BASE_URL || 'http://localhost:8080';
-const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'jasminegraph-realm';
+const KEYCLOAK_REALM = process.env.KEYCLOAK_REALM || 'jasminegraph';
 const KEYCLOAK_ADMIN_USER = process.env.KEYCLOAK_ADMIN_USER || 'admin';
 const KEYCLOAK_ADMIN_PASSWORD = process.env.KEYCLOAK_ADMIN_PASSWORD || 'admin';
 const TEST_USER = {
@@ -34,7 +34,31 @@ const TEST_USER = {
   }]
 };
 
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function waitForKeycloak(timeoutMs = 120000) {
+  const start = Date.now();
+  let attempt = 0;
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await fetch(`${KEYCLOAK_BASE_URL}/`);
+      if (res.ok) {
+        console.log('Keycloak HTTP OK');
+        return;
+      }
+    } catch (e) {
+      console.log('Keycloak not ready yet:', e.message || e);
+    }
+    attempt++;
+    // exponential backoff capped at 5s
+    const backoff = Math.min(5000, 100 * Math.pow(2, attempt));
+    await wait(backoff);
+  }
+  throw new Error(`Keycloak did not become ready within ${timeoutMs}ms`);
+}
+
 async function getAdminToken() {
+  await waitForKeycloak();
   const params = new URLSearchParams();
   params.append('grant_type', 'password');
   params.append('client_id', 'admin-cli');
@@ -126,8 +150,12 @@ async function main() {
       body: JSON.stringify(clusterPayload)
     });
     if (!createRes.ok) {
-      const err = await createRes.text();
-      throw new Error('Failed to create cluster: ' + err);
+      const text = await createRes.text();
+      if (text.includes('duplicate key value')) {
+        console.log('Cluster already exists — skipping creation.');
+      } else {
+        throw new Error('Failed to create cluster: ' + text);
+      }
     }
 
     // Fetch all clusters for the user
