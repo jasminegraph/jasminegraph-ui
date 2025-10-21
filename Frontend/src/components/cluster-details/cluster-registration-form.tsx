@@ -58,9 +58,10 @@ const tailFormItemLayout = {
 type props = {
   onSuccess: () => void;
   form: FormInstance;
+  onCancel?: () => void;
 }
 
-const ClusterRegistrationForm = ({onSuccess, form}: props) => {
+const ClusterRegistrationForm = ({ onSuccess, form, onCancel }: props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const { getSrvAccessToken } = useAccessToken();
 
@@ -81,6 +82,11 @@ const ClusterRegistrationForm = ({onSuccess, form}: props) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    form.resetFields();
+    if (onCancel) onCancel();
   };
 
   return (
@@ -123,8 +129,11 @@ const ClusterRegistrationForm = ({onSuccess, form}: props) => {
       </Form.Item>
       
       <Form.Item {...tailFormItemLayout}>
-        <Button type="primary" htmlType="submit">
-          Connect
+        <Button type="primary" htmlType="submit" loading={loading}>
+          Add
+        </Button>
+        <Button style={{ marginRight: 8 }} onClick={handleCancel}>
+          Cancel
         </Button>
       </Form.Item>
     </Form>
