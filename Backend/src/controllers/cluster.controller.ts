@@ -22,6 +22,7 @@ import {
 } from '../repository/cluster.repository';
 import { ErrorCode } from '../constants/error.constants';
 import { HTTP } from '../constants/constants';
+import net from 'net';
 
 const addNewCluster = async (req: Request, res: Response) => {
   const { name, description, host, port } = req.body;
@@ -146,4 +147,42 @@ const getMyClusters = async (req: Request, res: Response) => {
   }
 };
 
-export { addNewCluster, getAllClusters, getCluster, addUserToCluster, removeUserFromCluster, getMyClusters };
+const getSelectedClustersStatus = async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body; 
+    if (!ids || !Array.isArray(ids)) {
+      return res.status(HTTP[400]).json({ message: "Invalid cluster IDs" });
+    }
+    
+    const clusters = await getAllClustersRepo();
+    const filteredClusters = clusters.filter(c => ids.includes(c.id));
+
+    const timeoutMs = 2000;
+
+    const statusPromises = filteredClusters.map((cluster: any) => {
+      return new Promise<{ id: number; connected: boolean }>((resolve) => {
+        const socket = new net.Socket();
+        let responded = false;
+
+        const done = (connected: boolean) => {
+          if (responded) return;
+          responded = true;
+          try { socket.destroy(); } catch {}
+          resolve({ id: cluster.id, connected });
+        };
+
+        socket.setTimeout(timeoutMs, () => done(false));
+        socket.on('error', () => done(false));
+        socket.connect(cluster.port, cluster.host, () => done(true));
+      });
+    });
+
+    const statuses = await Promise.all(statusPromises);
+    return res.status(HTTP[200]).json({ clusters: statuses });
+  } catch (err) {
+    console.error('[getSelectedClustersStatus] Error:', err);
+    return res.status(HTTP[500]).json({ message: 'Unable to fetch cluster statuses', error: (err as Error).message });
+  }
+};
+
+export { addNewCluster, getAllClusters, getCluster, addUserToCluster, removeUserFromCluster, getMyClusters, getSelectedClustersStatus };
