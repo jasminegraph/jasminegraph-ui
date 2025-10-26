@@ -19,6 +19,7 @@ import {
   Input,
   message,
   Select,
+  Space,
 } from 'antd';
 import { addNewCluster } from '@/services/cluster-service';
 import useAccessToken from '@/hooks/useAccessToken';
@@ -58,9 +59,10 @@ const tailFormItemLayout = {
 type props = {
   onSuccess: () => void;
   form: FormInstance;
+  onCancel?: () => void;
 }
 
-const ClusterRegistrationForm = ({onSuccess, form}: props) => {
+const ClusterRegistrationForm = ({ onSuccess, form, onCancel }: props) => {
   const [loading, setLoading] = useState<boolean>(false);
   const { getSrvAccessToken } = useAccessToken();
 
@@ -81,6 +83,11 @@ const ClusterRegistrationForm = ({onSuccess, form}: props) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    form.resetFields();
+    if (onCancel) onCancel();
   };
 
   return (
@@ -111,6 +118,7 @@ const ClusterRegistrationForm = ({onSuccess, form}: props) => {
       <Form.Item 
         name="host"
         label="Host"
+        rules={[{ required: true, message: 'Please input the host!' }]}
       >
         <Input />
       </Form.Item>
@@ -118,14 +126,20 @@ const ClusterRegistrationForm = ({onSuccess, form}: props) => {
       <Form.Item 
         name="port"
         label="Port"
+        rules={[{ required: true, message: 'Please input the port!' }]}
       >
         <Input />
       </Form.Item>
       
       <Form.Item {...tailFormItemLayout}>
-        <Button type="primary" htmlType="submit">
-          Connect
-        </Button>
+        <Space size="middle">
+          <Button type="primary" htmlType="submit" loading={loading}>
+            Add
+          </Button>
+          <Button htmlType="button" onClick={handleCancel} style={{ marginLeft: 8 }}>
+            Cancel
+          </Button>
+        </Space>
       </Form.Item>
     </Form>
   );

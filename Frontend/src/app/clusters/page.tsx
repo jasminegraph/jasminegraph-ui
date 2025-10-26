@@ -149,12 +149,12 @@ export default function Clusters() {
               />
               <Button size="large" onClick={showModal}>Add New Cluster</Button>
               <Modal
-                title="Connect New Cluster"
+                title="Add New Cluster"
                 open={openModal}
                 footer={<></>}
                 onCancel={() => setOpenModal(false)}
               >
-                <ClusterRegistrationForm form={form} onSuccess={afterClusterRegistration} />
+                <ClusterRegistrationForm form={form} onSuccess={afterClusterRegistration} onCancel={() => setOpenModal(false)} />
               </Modal>
             </div>
           </div>
