@@ -6,7 +6,7 @@ interface SegmentedProgressProps {
     segments?: number;  // number of boxes (default 20)
 }
 
-const SegmentedProgress: React.FC<SegmentedProgressProps> = ({ progress, segments = 150 }) => {
+const SegmentedProgress: React.FC<SegmentedProgressProps> = ({ progress, segments = 50 }) => {
     const {
         token: { colorPrimary, colorBorder, colorBgContainer }
     } = theme.useToken();

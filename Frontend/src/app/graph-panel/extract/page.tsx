@@ -13,47 +13,50 @@
 
 "use client";
 import SegmentedProgress from "@/components/extract-panel/progress-bar";
-const { Search } = Input;
-const { Title, Text } = Typography;
 import React, {useEffect, useState} from "react";
 import {InboxOutlined, LoadingOutlined} from "@ant-design/icons";
-import type { UploadProps } from "antd";
-import {
-    Button,
-    Col,
-    Divider,
-    message,
-    Row,
-    Typography,
-    Upload,
-    Modal,
-    Input, Card, Spin,
-} from "antd";
-import kafkaLOGO from "@/assets/images/kafka-logo.jpg";
-import hadoopLOGO from "@/assets/images/hadoop-logo.jpg";
+import type { RcFile } from "antd/es/upload/interface";
+import {Button, Col, Divider, message, Row, Typography, Upload, Modal, Input, Card, Spin} from "antd";
 import Image from "next/image";
 import KafkaUploadModal from "@/components/graph-panel/kafka-upload-modal";
-import HadoopUploadModal from "@/components/graph-panel/hadoop-upload-modal";
-import { RcFile } from "antd/es/upload/interface";
-import { toast } from "react-toastify";
-import axios from "axios";
 import HadoopExtractModal from "@/components/extract-panel/hadoop-extract-modal";
-import ClusterRegistrationForm from "@/components/cluster-details/cluster-registration-form";
-import type {SearchProps} from "antd/es/input/Search";
-import {GRAPH_TYPES, GraphType} from "@/data/graph-data";
-import useWebSocket, {ReadyState} from "react-use-websocket";
-import {IOption} from "@/types/options-types";
-import {getGraphList} from "@/services/graph-service";
-import {add_degree_data, add_query_result, add_upload_bytes, add_visualize_data} from "@/redux/features/queryData";
 import {useAppDispatch, useAppSelector} from "@/redux/hook";
+import {add_upload_bytes} from "@/redux/features/queryData";
+import useWebSocket, {ReadyState} from "react-use-websocket";
+import axios from "axios";
+import kafkaLOGO from "@/assets/images/kafka-logo.jpg";
+import hadoopLOGO from "@/assets/images/hadoop-logo.jpg";
+import {
+    deleteGraph,
+    getKGConstructionMetaData,
+    getOnProgressKGConstructionMetaData,
+    stopConstructKG
+} from "@/services/graph-service";
+import HadoopKgForm from "@/components/extract-panel/haddop-kg-form";
+import {LRUCache} from "lru-cache";
+import Status = LRUCache.Status;
+import { DownOutlined, UpOutlined } from "@ant-design/icons";
 
 const { Dragger } = Upload;
-interface IKnowledgeGraph {
-    _id: string;
-    name: string;
-    createdAt: string;
-    progress: number;
+const { Search } = Input;
+const { Title, Text } = Typography;
+
+export interface IKnowledgeGraph {
+    _id: string,
+    graphId:string,
+    name: string,
+    status: string,
+    "hdfsIp": string,
+    "hdfsPort": string,
+    "hdfsFilePath": string,
+    "llmRunnerString": string,
+    "inferenceEngine": string,
+    "model": string
+    "chunkSize": number,
+
 }
+
+
 
 const WS_URL = "ws://localhost:8080";
 
@@ -62,418 +65,366 @@ interface IUploadBytes {
     uploaded: number;
     total: number;
     percentage: number;
-    triplesPerSecond?: number; // new
-    bytesPerSecond?: number;   // new
-    startTime?: string
+    triplesPerSecond?: number;
+    bytesPerSecond: number;
+    startTime: string;
+    uploadPath: string;
 }
 
 type ISocketResponse = {
     type: string,
     clientId?: string
 }
-export default function GraphUpload() {
-    const [kafkaModalOpen, setKafkaModelOpen] = useState<boolean>(false);
-    const dispatch = useAppDispatch();
-    const [loading, setLoading] = useState<boolean>(false);
 
+export default function GraphUpload() {
+    const dispatch = useAppDispatch();
+    const uploadBytesGraphs  = useAppSelector((state) => state.queryData.uploadBytes);
+
+    const [kafkaModalOpen, setKafkaModelOpen] = useState<boolean>(false);
     const [hadoopModalOpen, setHadoopModelOpen] = useState<boolean>(false);
     const [file, setFile] = useState<File>();
     const [fileUrl, setFileUrl] = useState<string>();
     const [modalOpen, setModalOpen] = useState(false);
     const [graphName, setGraphName] = useState<string>("");
     const [showUploadSection, setShowUploadSection] = useState<boolean>(false);
-    const [graphs, setGraphs] = useState<IKnowledgeGraph[]>([]); // existing graphs
-    const [filteredGraphs, setFilteredGraphs] = useState<IKnowledgeGraph[]>([]); // existing graphs
-    const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, {    share: true, shouldReconnect: (closeEvent) => true });
-    const [clientId, setClientID] = useState<string>('')
-    const uploadBytesGraphs  = useAppSelector((state) => state.queryData.uploadBytes);
+    const [graphs, setGraphs] = useState<IKnowledgeGraph[]>([]);
+    const [initForm, setInitForm] = useState<IKnowledgeGraph[]>([]);
+    const [filteredGraphs, setFilteredGraphs] = useState<IKnowledgeGraph[]>([]);
+    const [loading, setLoading] = useState<boolean>(false);
+    const [clientId, setClientID] = useState<string>('');
+    const [showMeta, setShowMeta] = useState<boolean>(false);
+    const [pausedGraphs, setPausedGraphs] = useState<Record<string, boolean>>({});
 
-    const [searchValue, setSearchValue] = useState<string>("");
+
+    const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, { share: true, shouldReconnect: (closeEvent) => true });
+
     const formatSize = (bytes : number) => {
-        if (bytes < 1024) {
-            return `${bytes.toFixed(0)} Bytes`;
-        } else if (bytes < 1024 * 1024) {
-            return `${(bytes / 1024).toFixed(2)} KB`;
-        } else if (bytes < 1024 * 1024 * 1024) {
-            return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
-        } else {
-            return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-        }
+        if (bytes < 1024) return `${bytes.toFixed(0)} Bytes`;
+        else if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
+        else if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        else return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     };
 
     const handleFileUpload = (file: RcFile) => {
         setModalOpen(true);
         setFile(file);
 
-        if (fileUrl) {
-            URL.revokeObjectURL(fileUrl);
-        }
+        if (fileUrl) URL.revokeObjectURL(fileUrl);
 
-        if (file) {
-            const url = URL.createObjectURL(file);
-            setFileUrl(url);
-        } else {
-            setFileUrl(undefined);
-        }
+        if (file) setFileUrl(URL.createObjectURL(file));
+        else setFileUrl(undefined);
+
         return false;
     };
 
-    const stopUploadBytesStream = async () =>{
-        console.log("stopUploadBytesStream readyState: ", readyState);
-        if (readyState === ReadyState.OPEN) {
-            sendJsonMessage(
-                {
-                    type: "STOP",
-                    clientId: clientId,
-                    clusterId: localStorage.getItem("selectedCluster")
-                }
-            );
-        }
-    }
-
-
     const handleUpload = async () => {
         if (!file) {
-            toast.error("Please select a file to upload");
+            message.error("Please select a file to upload");
             return;
         }
 
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('graphName', graphName); // Append the file name
+        formData.append('graphName', graphName);
 
-        // Send the file and filename with Axios POST request
-        axios.post('/backend/graph/upload', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        })
-            .then(response => {
-                message.success("File uploaded successfully");
-            })
-            .catch(error => {
-                message.error("Failed to upload file");
-            });
+        try {
+            await axios.post('/backend/graph/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+            message.success("File uploaded successfully");
+        } catch (error) {
+            message.error("Failed to upload file");
+        }
 
         setModalOpen(false);
     };
 
-    const handleExtractGraphButtonClick = async () => {
-        // if(!showUploadSection){
-            stopUploadBytesStream()
-        // }
-        setShowUploadSection(true);
+    const pauseKGConstruction = async (graphId: string) => {
+        try {
+            setLoading(true);
+            //
+            // if (pausedGraphs.length > 0) {
+            //
+            // }
+            stopConstructKG(graphId, "paused").then(()=>{
 
-    }
+                getKGConstructionMetaData(graphId).then(kgConstructMeta=>{
+                    setInitForm(kgConstructMeta.data);
+                    console.log(kgConstructMeta);
+                    console.log(kgConstructMeta)
 
-//     useEffect(() => {
-// if(!hadoopModalOpen){
-//     if (showUploadSection){
-//         setShowUploadSection(false);
-//     }
-// }
-// // if (hadoopModalOpen){
-// //     stopUploadBytesStream();
-// // }
-//
-//
-//     }, [hadoopModalOpen]);
 
+                    setHadoopModelOpen(true);
+                    message.success("Graph construction paused");
+                    setPausedGraphs((prev) => ({ ...prev, [graphId]: true }));
+                })
+
+
+            })
+
+        } catch {
+            message.error("Failed to pause graph construction");
+        }finally {
+            // setLoading(false);
+        }
+    };
+
+    const stopKGConstruction = async (graphId: string) => {
+        try {  setLoading(true);
+            stopConstructKG(graphId, "stopped").then(res=>{
+                deleteGraph(graphId).then(()=>{
+                    message.success("Graph construction stopped");
+                    setLoading(false);
+                })
+            })
+
+
+        } catch {
+            message.error("Failed to stop graph construction");
+        }
+    };
 
     useEffect(() => {
         const message = lastJsonMessage as ISocketResponse;
-        console.log("124", message);
         if(!message) return;
-        setLoading(false);
-        if(message?.type == "CONNECTED"){
-            setClientID(message?.clientId || '')
-        }else {
-            console.log(message);
-            dispatch(add_upload_bytes({ ...message}));
-            // stopUploadBytesStream()
+
+
+
+
+        if(message?.type === "CONNECTED"){
+
+            setClientID(message?.clientId || '');
+        } else {
+
+
+            dispatch(add_upload_bytes({ ...message }));
+            setLoading(false);
         }
-    }, [lastJsonMessage])
-    // useEffect(() => {
-    //
-    //     // setLoading(true);
-    //
-    //         if (readyState === ReadyState.OPEN) {
-    //             sendJsonMessage(
-    //                 {
-    //                     type: "UPBYTES",
-    //                     graphIds: [],
-    //                     clientId: clientId,
-    //                     clusterId: localStorage.getItem("selectedCluster")
-    //                 }
-    //             );
-    //         }
-    //
-    //
-    //
-    //     const fetchGraphs = async () => {
-    //         // Replace with your backend API call
-    //         const fetchedGraphs: IKnowledgeGraph[] = [
-    //             { _id: "1", name: "Graph A :/home/textA.txt", createdAt: "2025-10-01", progress: 40 },
-    //             { _id: "2", name: "Graph B :/home/textB.txt", createdAt: "2025-09-25", progress: 75 },
-    //         ];
-    //         setGraphs(fetchedGraphs);
-    //     };
-    //     fetchGraphs();
-    // }, [readyState, clientId, hadoopModalOpen]);
+    }, [lastJsonMessage]);
 
     useEffect(() => {
-        // if(showUploadSection) return;
-        if(hadoopModalOpen) return;
-        if (showUploadSection) return;
+        console.log("called useEffect on change of hadoopModalOpen", hadoopModalOpen);
+
+        if(hadoopModalOpen || showUploadSection) return;
 
         setLoading(true);
+
+        getOnProgressKGConstructionMetaData().then(res=>{
+            setGraphs(res.data);
+            console.log("on progress graphs",res.data);
+
+
+        })
         const interval = setInterval(() => {
-            console.log("Sending periodic UPBYTES");
-            // Send UPBYTES
-            sendJsonMessage({
-                type: "UPBYTES",
-                graphIds: [],
-                clientId: clientId,
-                clusterId: localStorage.getItem("selectedCluster")
-            });
+            if (readyState === ReadyState.OPEN) {
+                // const activeGraphIds = uploadBytesGraphs.updates
+                //     .filter((g: IUploadBytes) => !pausedGraphs[g.graphId])
+                //     .map((g: IUploadBytes) => g.graphId);
 
-            // Then send STOP after a short delay
+                sendJsonMessage({
+                    type: "UPBYTES",
+                    graphIds : [],
+                    clientId: clientId,
+                    clusterId: localStorage.getItem("selectedCluster")
+                });
+            }
+        }, 5000);
+        return () => clearInterval(interval);
+    }, [clientId, readyState, showUploadSection, hadoopModalOpen]);
 
-        }, 1000); // repeat every 5 seconds
-
-        return () => {
-            clearInterval(interval);
-            // stopUploadBytesStream(); // also ensure cleanup
-        };
-
-    }, [clientId, readyState , showUploadSection, hadoopModalOpen]);
-
-//     useEffect(() => {
-//
-//         // setLoading(true);
-// if(showUploadSection) return;
-//         if (readyState === ReadyState.OPEN) {
-//             sendJsonMessage(
-//                 {
-//                     type: "UPBYTES",
-//                     graphIds: [],
-//                     clientId: clientId,
-//                     clusterId: localStorage.getItem("selectedCluster")
-//                 }
-//             );
-//         }
-//
-// // setShowUploadSection(false);
-//
-//         // const fetchGraphs = async () => {
-//         //     // Replace with your backend API call
-//         //     const fetchedGraphs: IKnowledgeGraph[] = [
-//         //         { _id: "1", name: "Graph A :/home/textA.txt", createdAt: "2025-10-01", progress: 40 },
-//         //         { _id: "2", name: "Graph B :/home/textB.txt", createdAt: "2025-09-25", progress: 75 },
-//         //     ];
-//         //     setGraphs(fetchedGraphs);
-//         // };
-//         // fetchGraphs();
-//     },[readyState, clientId , showUploadSection]);
-    const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
-        const filteredClusters = graphs.filter((cluster) => {
-            return cluster.name.toLowerCase().includes(value.toLowerCase());
-        });
+    const onSearch = (value: string) => {
+        const filteredClusters = graphs.filter((cluster) => cluster.name.toLowerCase().includes(value.toLowerCase()));
         setFilteredGraphs(filteredClusters);
-    }
-    // useEffect(() => {
-    //     return () => {
-    //         console.log("un mounting");
-    //         stopUploadBytesStream();
-    //     };
-    // }, []);
-    return (
-        <>      <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
+    };
 
-            {(showUploadSection || (uploadBytesGraphs && uploadBytesGraphs.updates.length==0)) &&  <div className="graph-upload-panel">
-                <Typography.Title level={4} style={{ margin: "20px 0px" }}>
-                    Extract Graph Data:
-                </Typography.Title>
-                <Dragger
-                    multiple={false}
-                    maxCount={1}
-                    beforeUpload={(file: RcFile) => handleFileUpload(file)}
-                >
-                    <p className="ant-upload-drag-icon">
-                        <InboxOutlined />
-                    </p>
-                    <p className="ant-upload-text">
-                        Click or drag file to this area to upload
-                    </p>
-                </Dragger>
-                <Modal
-                    title="Extract Graph"
-                    centered
-                    open={modalOpen}
-                    onOk={() => setModalOpen(false)}
-                    onCancel={() => setModalOpen(false)}
-                    styles={{ footer: { display: "none" } }}
-                >
-                    <div className="flex whitespace-nowrap gap-4 mt-5">
-                        <div>Graph Name:</div>
-                        <Input
-                            value={graphName}
-                            onChange={(event) => setGraphName(event.currentTarget.value)}
-                        />
-                    </div>
-                    <Button
-                        type="primary"
-                        style={{ margin: "20px 0px", width: "100%" }}
-                        onClick={handleUpload}
-                    >
+    return (
+        <>
+            <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
+
+            {(showUploadSection || (uploadBytesGraphs && uploadBytesGraphs.updates.length === 0)) &&
+                <div className="graph-upload-panel">
+                    <Typography.Title level={4} style={{ margin: "20px 0px" }}>
+                        Extract Graph Data:
+                    </Typography.Title>
+                    <Dragger multiple={false} maxCount={1} beforeUpload={(file: RcFile) => handleFileUpload(file)}>
+                        <p className="ant-upload-drag-icon"><InboxOutlined /></p>
+                        <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                    </Dragger>
+
+                    <Modal title="Extract Graph" centered open={modalOpen} onOk={() => setModalOpen(false)} onCancel={() => setModalOpen(false)} footer={null}>
+                        <div className="flex whitespace-nowrap gap-4 mt-5">
+                            <div>Graph Name:</div>
+                            <Input value={graphName} onChange={(event) => setGraphName(event.currentTarget.value)} />
+                        </div>
+                        <Button type="primary" style={{ margin: "20px 0px", width: "100%" }} onClick={handleUpload}>
+                            Upload
+                        </Button>
+                    </Modal>
+
+                    <Button type="primary" style={{ margin: "20px 0px", width: "100%" }} onClick={() => setModalOpen(true)}>
                         Upload
                     </Button>
-                </Modal>
-                <Button
-                    type="primary"
-                    style={{ margin: "20px 0px", width: "100%" }}
-                    onClick={() => setModalOpen(true)}
-                >
-                    Upload
-                </Button>
-                <Divider>or</Divider>
-                <Row className="external-upload">
-                    <Col xs={20} sm={16} md={12} lg={12} xl={12}>
-                        <div className="upload-card" onClick={() => setKafkaModelOpen(true)}>
-                            <Image src={kafkaLOGO} width={200} alt="Apache Kafka" />
-                        </div>
-                    </Col>
-                    <Col xs={20} sm={16} md={12} lg={12} xl={12}>
-                        <div className="upload-card" onClick={() => setHadoopModelOpen(true)}>
-                            <Image src={hadoopLOGO} width={200} alt="Hadoop HDFS" />
-                        </div>
-                    </Col>
-                </Row>
-                <KafkaUploadModal
-                    open={kafkaModalOpen}
-                    setOpen={(state: boolean) => setKafkaModelOpen(state)}
-                />
-                <HadoopExtractModal
-                    open={hadoopModalOpen}
-                    setOpen={(state: boolean) => {
-                        setShowUploadSection(state);
-                        setHadoopModelOpen(state)}}
-                />
+                    <Divider>or</Divider>
 
-            </div>}
-            { !showUploadSection && uploadBytesGraphs.updates.length > 0 &&  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px" }}>
-                <Typography>
-                    <Title level={2}> On Progress Extraction</Title>
-                </Typography>
-                <div style={{gap: "10px", display: "flex"}}>
-                    <Search
-                        placeholder="search..."
-                        allowClear
-                        size="large"
-                        onSearch={onSearch}
-                        style={{ width: 300 }}
-                    />
-                    <Button size="large" onClick={()=> setShowUploadSection(true)}>Extract New Graph</Button>
-                    {/*<Modal*/}
-                    {/*    title="Connect New Cluster"*/}
-                    {/*    open={openModal}*/}
-                    {/*    footer={<></>}*/}
-                    {/*    onCancel={() => setOpenModal(false)}*/}
-                    {/*>*/}
-                    {/*    <ClusterRegistrationForm onSuccess={afterClusterRegistration}/>*/}
-                    {/*</Modal>*/}
-                </div>
-            </div>}
-            {
-                !showUploadSection && uploadBytesGraphs && uploadBytesGraphs.updates.length > 0 &&
+                    <Row className="external-upload">
+                        <Col xs={20} sm={16} md={12} lg={12} xl={12}>
+                            <div className="upload-card" onClick={() => setKafkaModelOpen(true)}>
+                                <Image src={kafkaLOGO} width={200} alt="Apache Kafka" />
+                            </div>
+                        </Col>
+                        <Col xs={20} sm={16} md={12} lg={12} xl={12}>
+                            <div className="upload-card" onClick={() => setHadoopModelOpen(true)}>
+                                <Image src={hadoopLOGO} width={200} alt="Hadoop HDFS" />
+                            </div>
+                        </Col>
+                    </Row>
 
-                uploadBytesGraphs.updates.map((upload : IUploadBytes, index) => ( upload.percentage !=100?
-                    // <Row key={index}>
-                    //     <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
-                    //     >
-                    //         <Typography>
-                    //             <div style={{display: "flex", justifyContent: "space-between"}}>
-                    //                 {/*<Title level={3} onClick={() => handleOnClusterClick(cluster)}>{cluster.name}</Title>*/}
-                    //                 {/*<Button color="primary" type="default" onClick={() => handleOnClusterSelect(cluster)}>*/}
-                    //                 {/*    Select*/}
-                    //                 {/*</Button>*/}
-                    //             </div>
-                    //             <div style={{display: "flex", justifyContent: "space-between"}}>
-                    //                 <Text>
-                    //                     Cluster ID: {cluster._id}
-                    //                 </Text>
-                    //                 <Text>Creation Date: {cluster.createdAt}</Text>
-                    //             </div>
-                    //         </Typography>
-                    //     </Card>
-                    // </Row>
 
-                        <Card
-                            key={index}
-                            hoverable
-                            style={{
-                                width: "100%",
-                                marginBottom: "20px",
-                                border: "1px solid gray",
-                                borderRadius: "10px",
-                                boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-                            }}
-                        >
-                            <Typography>
-                                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                                    <Text strong> Graph Id: {upload.graphId}</Text>
-                                    <Text type="secondary">{upload.percentage.toFixed(2)}%</Text>
-                                </div>
+                    {/*<HadoopExtractModal initForm={initForm} open={hadoopModalOpen} setOpen={(state: boolean) => { setShowUploadSection(state); setHadoopModelOpen(state); }} />*/}
+                </div>}
+            <KafkaUploadModal open={kafkaModalOpen} setOpen={setKafkaModelOpen} />
+            <Modal title=""   footer={null}     open={hadoopModalOpen} onCancel={()=>setHadoopModelOpen(false)}>
+                {hadoopModalOpen  && <HadoopKgForm  initForm={initForm[0]} onSuccess={()=>  {
+                    setShowUploadSection(false)
+                    setHadoopModelOpen(false)}}/>
+                }
+            </Modal>
+            { !showUploadSection && uploadBytesGraphs.updates.length > 0 &&
+                <div style={{ display: "flex", justifyContent: "space-between", marginTop: "20px" }}>
+                    <Typography><Title level={2}>On Progress Extraction</Title></Typography>
+                    <div style={{ gap: "10px", display: "flex" }}>
+                        <Search placeholder="search..." allowClear size="large" onSearch={onSearch} style={{ width: 300 }} />
+                        <Button size="large" onClick={() => setShowUploadSection(true)}>Extract New Graph</Button>
+                    </div>
+                </div>}
 
-                                <div style={{ marginTop: "10px" }}>
-                                    <SegmentedProgress progress={upload.percentage} segments={50} />
-                                </div>
+            {!showUploadSection && uploadBytesGraphs && uploadBytesGraphs.updates.length > 0 &&
+                uploadBytesGraphs.updates.map((upload: IUploadBytes, index) => upload.percentage !== 100 && (
+                    <Card
+                        key={index}
+                        hoverable
+                        style={{
+                            width: "100%",
+                            marginBottom: "20px",
+                            border: "1px solid gray",
+                            borderRadius: "10px",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                        }}
+                    >
+                        <Typography>
 
-                                {/* Uploaded vs Total Size */}
-                                <div style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    marginTop: "8px",
-                                    fontSize: "14px"
-                                }}>
-                                    <Text type="secondary">
-                                        Uploaded: {formatSize(upload.uploaded)}
-                                    </Text>
-                                    <Text type="secondary">
-                                        Total: {formatSize(upload.total)}
-                                    </Text>
-                                </div>
+                            {/* ✅ Show Metadata */}
+                            {graphs
+                                .filter((g) => g.graphId === upload.graphId)
+                                .map((meta) => (
+                                    <>
 
-                                {/* Triples/sec and Bytes/sec */}
-                                <div style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    marginTop: "4px",
-                                    fontSize: "14px"
-                                }}>
-                                    <Text type="secondary">
-                                        Triples/sec: {upload.triplesPerSecond?.toLocaleString() || 0}
-                                    </Text>
-                                    <Text type="secondary">
-                                        Bytes/sec: {(upload.bytesPerSecond ? (upload.bytesPerSecond / (1024 * 1024)).toFixed(2) : 0)} MB/s
-                                    </Text>
-                                </div>
+                                        <div key={meta.graphId}>
 
-                                {/* Start Time */}
-                                {upload.startTime && (
-                                    <div style={{
-                                        marginTop: "4px",
-                                        fontSize: "14px",
-                                        textAlign: "right"
-                                    }}>
-                                        <Text type="secondary">
-                                            Start Time: {upload.startTime}
-                                        </Text>
-                                    </div>
-                                )}
-                            </Typography>
-                        </Card>
-                        :null
+
+
+
+                                            <div
+                                                onClick={() => setShowMeta(!showMeta)}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "flex-start",
+                                                    cursor: "pointer",
+                                                    color: "#1677ff",
+                                                    fontSize: "14px",
+                                                    marginBottom: "8px"
+                                                }}
+                                            >
+                                                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                                                    <Text strong>Graph Id: {upload.graphId}  </Text>
+                                                    {/*<Text strong> </Text>*/}
+                                                </div>
+                                                {showMeta ? (
+                                                    <>
+                                                        <UpOutlined style={{ marginLeft: 6 }} />
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <DownOutlined style={{ marginLeft: 6 }} />
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            {showMeta && (
+                                                <div
+                                                    style={{
+                                                        display: "grid",
+                                                        gridTemplateColumns: "1fr 1fr 1fr",
+                                                        gap: "6px 6px",
+                                                        fontSize: "14px",
+                                                        marginBottom: "10px"
+                                                    }}
+                                                >
+                                                    <Text type="secondary"><strong>Name:</strong> {meta.name}</Text>
+                                                    <Text type="secondary"><strong>Model:</strong> {meta.model}</Text>
+                                                    <Text type="secondary"><strong>Inference:</strong> {meta.inferenceEngine}</Text>
+                                                    <Text type="secondary"><strong>LLM Runner:</strong> {meta.llmRunnerString}</Text>
+                                                    <Text type="secondary"><strong>Chunk Size:</strong> {meta.chunkSize}</Text>
+                                                    <Text type="secondary"><strong>HDFS Path:</strong> {meta.hdfsFilePath}</Text>
+                                                    <Text type="secondary"><strong>HDFS IP:</strong> {meta.hdfsIp}:{meta.hdfsPort}</Text>
+                                                    <Text type="secondary"><strong>Status:</strong> {meta.status}</Text>
+                                                </div>
+                                            )}
+                                        </div>
+
+
+                                        <div style={{ marginTop: "10px" }}>
+
+                                            <SegmentedProgress progress={upload.percentage}  />
+                                        </div>
+
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px", fontSize: "14px" }}>
+                                            <Text type="secondary">Uploaded: {formatSize(upload.uploaded)} ( {upload.percentage.toFixed(2)}% )</Text>
+                                            <Text type="secondary">Total: {formatSize(upload.total)}</Text>
+                                        </div>
+
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "14px" }}>
+                                            {/*<Text type="secondary">{upload.triplesPerSecond?.toLocaleString() || 0} Triples/sec </Text>*/}
+                                            {/*<Text type="secondary"> {formatSize(upload.bytesPerSecond)}/sec </Text>*/}
+                                        </div>
+
+                                        {upload.startTime && (
+                                            <div style={{ marginTop: "4px", fontSize: "14px", textAlign: "right" }}>
+                                                <Text type="secondary">Start Time: {upload.startTime}</Text>
+                                            </div>
+                                        )}
+
+                                        {/* Pause & Stop buttons */}
+                                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
+                                            <Button
+                                                type={pausedGraphs[upload.graphId] ? "default" : "primary"}
+                                                onClick={() =>{
+                                                    if (meta.status == "paused") {
+                                                        getKGConstructionMetaData(upload.graphId).then(kgConstructMeta=>{
+                                                            setInitForm(kgConstructMeta.data);
+                                                            console.log(kgConstructMeta);
+                                                            console.log(kgConstructMeta)
+
+
+                                                            setHadoopModelOpen(true);
+                                                            message.success("Graph construction paused");
+                                                            setPausedGraphs((prev) => ({ ...prev, [upload.graphId]: true }));
+                                                        })
+                                                    }else {
+                                                        pauseKGConstruction(upload.graphId)
+
+                                                    }
+
+                                                }}
+                                            >
+                                                {meta.status=="paused" ? "Resume" : "Pause"}
+                                            </Button>
+                                            <Button danger onClick={() => stopKGConstruction(upload.graphId)}>Stop</Button>
+                                        </div>
+                                    </>
+                                ))
+                            }
+                        </Typography>
+                    </Card>
+
                 ))
             }
         </>

@@ -10,6 +10,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
+import {Token} from "../models/token.model";
 
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
@@ -23,11 +24,14 @@ import {
     TRIANGLE_COUNT_COMMAND,
     PROPERTIES_COMMAND,
     UPLOAD_FROM_HDFS,
+    STOP_CONSTRUCT_KG_COMMAND,
     CONSTRUCT_KG_COMMAND} from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
-import { Cluster } from '../models/cluster.model';
+import {Cluster, ClusterInput} from '../models/cluster.model';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { parseGraphFile } from '../utils/graph';
+import {User} from "../models/user.model";
+import {KGConstructionMeta, KGConstructionMetaInput} from "../models/kg-constrution-meta";
 
 export let socket;
 export let tSocket;
@@ -85,6 +89,40 @@ export const telnetConnection = (connection: IConnection) => (callback: any) => 
         callback(tSocket); // Use existing connection
     }
 };
+const addKGConstructionMeta = async (req: Request, res: Response) => {
+    const { name, description, host, port, ownerID } = req.body;
+    const accessToken = req.headers.authorization?.split(' ')[1];
+    try {
+        const token = await Token.findOne({ accessToken });
+        if (!token) {
+            return res.status(HTTP[401]).json({ message: 'Unauthorized: Invalid or missing access token.' });
+        }
+        const user = await User.findOne({ _id: token.userId });
+        if (!user) {
+            return res.status(HTTP[HTTP[404]]).json({ message: 'User not found: The token is associated with a non-existent user.' });
+        }
+
+        const newCluster: ClusterInput = {
+            name,
+            description,
+            host,
+            port,
+            userIDs: [],
+            clusterOwner: token.userId,
+        };
+
+        const clusterCreated = await Cluster.create(newCluster);
+
+        return res.status(HTTP[201]).json({ data: clusterCreated });
+    } catch (err) {
+        console.error(err, 'Error creating cluster');
+        return res.status(HTTP[404]).json({
+            message: 'Internal Server Error: Unable to create the cluster.',
+            error: err instanceof Error ? err.message : 'Unknown error occurred'
+        });
+    }
+
+}
 
 const getGraphList = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
@@ -214,7 +252,7 @@ export const constructKG = async (req: Request, res: Response) => {
     if (!(connection.host || connection.port)) {
         return res.status(404).send(connection);
     }
-
+    const clusterId = req.header('Cluster-ID');
     const {
         hdfsIp,
         hdfsPort,
@@ -222,7 +260,9 @@ export const constructKG = async (req: Request, res: Response) => {
         llmRunnerString,         // [{ runner: string, chunks: number }]
         inferenceEngine,
         model,
-        chunkSize
+        chunkSize,
+        status,
+        graphId
     } = req.body;
 
     console.log( req.body)
@@ -230,7 +270,7 @@ export const constructKG = async (req: Request, res: Response) => {
         telnetConnection({ host: connection.host, port: connection.port })(() => {
             let commandOutput = "";
 
-            tSocket.on("data", (buffer) => {
+            tSocket.on("data", async (buffer) => {
                 const msg = buffer.toString("utf8").trim();
                 console.log("Master:", msg);
                 commandOutput += msg + "\n";
@@ -244,26 +284,67 @@ export const constructKG = async (req: Request, res: Response) => {
                     console.log("IP:", hdfsIp);
                     tSocket.write(hdfsIp.toString("utf8").trim() + "\n");
                 } else if (msg.includes("HDFS Server Port:")) {
-                    console.log("port:", hdfsPort.toString("utf8").trim() + "\n");
-                    tSocket.write(hdfsPort.toString("utf8").trim() + "\n");
+                    console.log("port:", hdfsPort.toString().toString("utf8").trim() + "\n");
+                    tSocket.write(hdfsPort.toString().toString("utf8").trim() + "\n");
                 } else if (msg.includes("HDFS file path:")) {
                     tSocket.write(hdfsFilePath.toString("utf8").trim() + "\n");
                 } else if (msg.includes("There exists a graph with the file path")) {
-                    tSocket.write("n\n"); // or "n" depending on user choice
-                }  else if (msg.includes("LLM runner hostname:port:")) {
-                tSocket.write(llmRunnerString.toString("utf8").trim() + "\n");
-                }else if (msg.includes("LLM inference engine?")) {
+                    if (status == "paused") {
+                        tSocket.write("y\n"); // or "n" depending on user choice
+
+                    } else {
+                        tSocket.write("n\n"); // or "n" depending on user choice
+
+                    }
+                } else if (msg.includes("Graph Id to resume?")) {
+
+                    tSocket.write(graphId.toString("utf8").trim() + "\n");
+                } else if (msg.includes("LLM runner hostname:port:")) {
+                    tSocket.write(llmRunnerString.toString("utf8").trim() + "\n");
+                } else if (msg.includes("LLM inference engine?")) {
                     tSocket.write(inferenceEngine.toString("utf8").trim() + "\n");
                 } else if (msg.includes("What is the LLM you want to use?")) {
                     tSocket.write(model.toString("utf8").trim() + "\n");
-                }else if (msg.includes("The provided HDFS path is invalid") ||msg.includes("not available on") || msg.includes("Could not connect to") ) {
+                } else if (msg.includes("The provided HDFS path is invalid") || msg.includes("not available on") || msg.includes("Could not connect to")) {
                     tSocket.write("exit\n");
-                    return res.status(HTTP[400]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: {errorMsg:msg} });
+                    return res.status(HTTP[400]).send({
+                        code: ErrorCode.ServerError,
+                        message: ErrorMsg.ServerError,
+                        errorDetails: {errorMsg: msg}
+                    });
 
-                }
-
-                else if (msg.includes("chunk size")) {
+                } else if (msg.includes("chunk size")) {
                     tSocket.write(chunkSize.toString().toString("utf8").trim() + "\n");
+
+                    // console.log("✅ KG extraction completed");
+                    // res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
+                    // tSocket.end();
+                } else if (msg.includes("Graph Id")) {
+                    const graphId = msg.split(":")[1].trim()
+                    tSocket.write("exit\n");
+                    if (status == "paused") {
+                        await KGConstructionMeta.updateOne({graphId, clusterId}, {
+                            $set: {
+                                ...req.body,
+                                status: 'running'
+                            }
+                        });
+                    } else {
+                        const meta = KGConstructionMeta.create({
+                            graphId,
+                            hdfsIp,
+                            hdfsPort,
+                            hdfsFilePath,
+                            llmRunnerString,
+                            inferenceEngine,
+                            model,
+                            chunkSize,
+                            status: "running",
+                            message: "Knowledge Graph construction initiated",
+                            clusterId
+                        });
+                    }
+
 
                     console.log("✅ KG extraction completed");
                     res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
@@ -280,6 +361,158 @@ export const constructKG = async (req: Request, res: Response) => {
         return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
     }
 };
+
+export const stopConstructKG = async (req: Request, res: Response) => {
+    const connection = await getClusterDetails(req);
+    if (!(connection.host || connection.port)) {
+        return res.status(404).send(connection);
+    }
+    const clusterId = req.header('Cluster-ID');
+
+    const {
+        graphId, status
+    } = req.body;
+
+    console.log( req.body)
+    try {
+        telnetConnection({ host: connection.host, port: connection.port })(() => {
+            let commandOutput = "";
+            req.setTimeout(0); // 0 = no timeout, or use 10 * 60 * 1000 for 10 minutes
+            res.setTimeout(0); // optional, for some reverse proxies
+            tSocket.on("data", async (buffer) => {
+                const msg = buffer.toString("utf8").trim();
+                console.log("Master:", msg);
+                commandOutput += msg + "\n";
+
+                if (msg.includes("Graph ID?")) {
+
+                    console.log("sending graphId")
+                    tSocket.write(graphId.toString("utf8").trim() + "\n");
+
+                } else if (msg.includes("Graph Id not Found") || msg.includes("not available on") || msg.includes("Could not connect to")) {
+                    tSocket.write("exit\n");
+                    return res.status(HTTP[400]).send({
+                        code: ErrorCode.ServerError,
+                        message: ErrorMsg.ServerError,
+                        errorDetails: {errorMsg: msg}
+                    });
+
+                } else if (msg.includes("done")) {
+                    tSocket.write("exit\n");
+                    console.log("graphId:", graphId, "clusterId:", clusterId, "status:", status);
+                    if (status== "stopped") {
+                        await KGConstructionMeta.deleteOne({ graphId , clusterId });
+                    }else {
+                        await KGConstructionMeta.updateOne({graphId, clusterId}, {$set: {status}});
+
+                    }
+                    console.log("✅ KG extraction stopped sucessfully");
+                    res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
+                    // tSocket.end();
+                }
+            });
+
+
+
+            tSocket.write(STOP_CONSTRUCT_KG_COMMAND + "\n") ;
+        });
+    } catch (err) {
+        console.error("❌ Error in constructKG:", err);
+        return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    }
+};
+
+
+export const getKGConstructionMetaByGraphId= async (req: Request, res: Response) => {
+    // console.log(req);
+    const { graphId } = req.query;
+    const clusterId = req.header('Cluster-ID');
+    try {
+        console.log( clusterId );
+        console.log( graphId );
+        // Fetch all metadata entries for a specific cluster and HDFS file path
+        const metaData = await KGConstructionMeta.find({ clusterId, graphId }).sort({ createdAt: -1 });
+
+        if (!metaData ) {
+            return res.status(HTTP[404]).json({
+                message: `No KG construction metadata found for clusterId: ${clusterId} and graphId: ${graphId}`,
+            });
+        }
+
+        return res.status(HTTP[200]).json({
+            data: metaData,
+        });
+    } catch (err) {
+        console.error(err, "❌ Error fetching KGConstructionMeta for cluster and file path");
+        return res.status(HTTP[500]).json({
+            message:
+                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path. Please try again later.",
+            error: err instanceof Error ? err.message : "Unknown error occurred",
+        });
+    }
+};
+
+export const getOnProgressKGConstructionMeta= async (req: Request, res: Response) => {
+    // console.log(req);
+
+    const clusterId = req.header('Cluster-ID');
+    try {
+        console.log( clusterId );
+        // Fetch all metadata entries for a specific cluster and HDFS file path
+        const metaData = await KGConstructionMeta.find({ clusterId, status:"running" }).sort({ createdAt: -1 });
+
+        if (!metaData ) {
+            return res.status(HTTP[404]).json({
+                message: `No progress KG construction metadata found for clusterId: ${clusterId} `,
+            });
+        }
+
+        return res.status(HTTP[200]).json({
+            data: metaData,
+        });
+    } catch (err) {
+        console.error(err, "❌ Error fetching KGConstructionMeta for cluster and file path");
+        return res.status(HTTP[500]).json({
+            message:
+                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path. Please try again later.",
+            error: err instanceof Error ? err.message : "Unknown error occurred",
+        });
+    }
+};
+
+export const updateKGConstructionMetaByClusterId = async (req: Request, res: Response) => {
+    const { clusterId, hdfsFilePath } = req.params;
+    const updateData = req.body;
+
+    try {
+        // Find and update metadata entry for given clusterId and hdfsFilePath
+        const updatedMeta = await KGConstructionMeta.findOneAndUpdate(
+            { clusterId, hdfsFilePath },
+            { $set: updateData },
+            { new: true } // Return the updated document
+        );
+
+        if (!updatedMeta) {
+            return res.status(HTTP[404]).json({
+                message: `No KG construction metadata found for clusterId: ${clusterId} and hdfsFilePath: ${hdfsFilePath}`,
+            });
+        }
+
+        return res.status(HTTP[200]).json({
+            message: "KGConstructionMeta updated successfully",
+            data: updatedMeta,
+        });
+    } catch (err) {
+        console.error(err, "❌ Error updating KGConstructionMeta for cluster and file path");
+        return res.status(HTTP[500]).json({
+            message:
+                "Internal Server Error: Unable to update KGConstructionMeta for the given cluster and file path. Please try again later.",
+            error: err instanceof Error ? err.message : "Unknown error occurred",
+        });
+    }
+};
+
+
 const removeGraph = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
     if (!(connection.host || connection.port)) {
@@ -332,6 +565,38 @@ const getDataFromHadoop = async (req: Request, res: Response) => {
         console.log(data);
     } catch (err) {
         res.status(500).json({ error: 'Error connecting to Hadoop', details: err });
+    }
+};
+
+const validateHDFS = async (req: Request, res: Response) => {
+    const { ip, port, filePath } = req.body; // POST body
+    if (!ip || !port || !filePath) {
+        return res.status(400).json({ error: 'Missing ip, port, or filePath' });
+    }
+
+    try {
+        // Encode path for URL
+        const encodedPath = encodeURIComponent(filePath);
+        const hadoopUrl = `http://${ip}:9870/webhdfs/v1${filePath}?op=GETFILESTATUS`;
+
+        const response = await fetch(hadoopUrl);
+
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data?.FileStatus) {
+                return res.status(200).json({ exists: true, fileStatus: data.FileStatus });
+            } else {
+                return res.status(404).json({ exists: false, message: 'File not found' });
+            }
+        } else if (response.status === 404) {
+            return res.status(404).json({ exists: false, message: 'File not found' });
+        } else {
+            return res.status(response.status).json({ exists: false, message: 'Error fetching file' });
+        }
+
+    } catch (err) {
+        console.error('HDFS validation error:', err);
+        return res.status(500).json({ exists: false, error: 'Error connecting to HDFS', details: err });
     }
 };
 
@@ -518,4 +783,4 @@ const getGraphData = async (req, res) => {
 
 
 
-export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData, getClusterProperties, getDataFromHadoop ,constructKGHadoop};
+export { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData, getClusterProperties, getDataFromHadoop ,constructKGHadoop , validateHDFS};

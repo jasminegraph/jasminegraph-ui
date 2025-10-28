@@ -17,9 +17,16 @@ import readline from 'readline';
 import WebSocket from 'ws';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
-import { CYPHER_AST_COMMAND, CYPHER_COMMAND, INDEGREE_COMMAND, OUTDEGREE_COMMAND } from '../constants/frontend.server.constants';
+import {
+    CYPHER_AST_COMMAND,
+    CYPHER_COMMAND,
+    INDEGREE_COMMAND,
+    OUTDEGREE_COMMAND,
+    SEMANTIC_BEAM_SEARCH_COMMAND
+} from '../constants/frontend.server.constants';
 import { getClusterDetails, IConnection, telnetConnection } from "./graph.controller";
 import { Cluster } from '../models/cluster.model';
+import {KGConstructionMeta} from "../models/kg-constrution-meta";
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
 
@@ -50,6 +57,9 @@ export const setupWebSocket = (server: any) => {
       if (data.type === 'QUERY') {
         streamQueryResult(data.clientId, data.clusterId, data.graphId, data.query);
       }
+        if (data.type === 'SBS') {
+            semanticBeamSearch(data.clientId, data.clusterId, data.graphId, data.query);
+        }
 
         if (data.type === 'UPBYTES') {
             streamUploadBytes(data.clientId, data.clusterId, data.graphIds);
@@ -68,11 +78,12 @@ export const setupWebSocket = (server: any) => {
 export const sendToClient = (clientId, data) => {
   const client = clients.get(clientId);
   if (client && client.readyState === WebSocket.OPEN) {
-      console.log(`trying to send data to client ${clientId}:`, data);
+      // console.log(`trying to send data to client ${clientId}:`, data);
 
     client.send(JSON.stringify(data));
-    console.log(`Sent data to client ${clientId}:`, data);
+    // console.log(`Sent data to client ${clientId}:`, data);
   } else {
+      clients.delete(clientId);
     console.error(`Client ${clientId} not connected or WebSocket not open.`);
   }
 };
@@ -195,12 +206,93 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
     return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
   }
 }
+const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:string, query: string) => {
+    const cluster = await Cluster.findOne({ _id: clusterId });
+    if (!(cluster?.host || cluster?.port)) {
+        sendToClient(clientId, { Error: "cluster not found"})
+        return
+    }
+
+    const connection: IConnection = {
+        host: cluster.host,
+        port: cluster.port
+    }
+
+    let sharedBuffer: string[] = [];
+
+    const producer = async () => {
+        var remaining: string = '';
+
+        while(true){
+            if(sharedBuffer.length > 0){
+                remaining += sharedBuffer.shift()!
+
+                let splitIndex;
+
+                if(remaining.trim() == '-1'){
+                    console.log("Termination signal received. Closing Telnet connection.");
+                    return
+                }
+
+                // Extract complete JSON objects from the buffer
+                while ((splitIndex = remaining.indexOf('\n')) !== -1) {
+                    const jsonString = remaining.slice(0, splitIndex).trim(); // Extract a complete object
+                    remaining = remaining.slice(splitIndex + 1); // Remove processed part
+
+                    if (jsonString) {
+                        if (jsonString == "-1") {
+                            console.log("Termination signal received. Closing Telnet connection.");
+                            return; // Exit the producer loop
+                        }
+
+                        try {
+                            const parsed = JSON.parse(jsonString); // Parse the JSON
+                            sendToClient(clientId, parsed)
+                        } catch (error) {
+                            console.error('Error parsing JSON:', error, 'Data:', jsonString);
+                        }
+                    }
+
+
+                    if(remaining.trim() == '-1' || jsonString == '-1'){
+                        console.log("Termination signal received. Closing Telnet connection.");
+                        return
+                    }
+                }
+            }
+
+            await new Promise((resolve) => setTimeout(resolve, TIMEOUT.hundred));
+        }
+    }
+
+    try {
+        telnetConnection({host: connection.host, port: connection.port})((tSocket: any) => {
+            producer();
+
+            tSocket.on('data', (buffer) => {
+                console.log( buffer.toString('utf8') );
+
+                sharedBuffer.push(buffer.toString('utf8'))
+            });
+
+            tSocket.on('end', () => {
+                console.log('Telnet connection ended');
+            });
+
+            console.log("185 stream query sending" +CYPHER_COMMAND + '|' + graphId + '|' + query + '\n');
+            // Write the command to the Telnet server
+            tSocket.write(SEMANTIC_BEAM_SEARCH_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
+        });
+    } catch (err) {
+        return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    }
+}
 
 
 const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: string[]) => {
     const cluster = await Cluster.findOne({ _id: clusterId });
     if (!(cluster?.host || cluster?.port)) {
-        sendToClient(clientId, { Error: "cluster not found"});
+        sendToClient(clientId, { Error: "cluster not found" });
         return;
     }
 
@@ -210,11 +302,19 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
     };
 
     let sharedBuffer: string[] = [];
+    let stopRequested = false; // flag to stop producer when client disconnects
 
     const producer = async () => {
         let remaining = '';
 
         while (true) {
+            // 🛑 Check if client still connected
+            const client = clients.get(clientId);
+            if (!client || client.readyState !== WebSocket.OPEN || stopRequested) {
+                console.log(`Stopping UPBYTES producer for disconnected client: ${clientId}`);
+                return;
+            }
+
             if (sharedBuffer.length > 0) {
                 remaining += sharedBuffer.shift()!;
                 let splitIndex;
@@ -224,19 +324,26 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
                     remaining = remaining.slice(splitIndex + 1);
 
                     if (!line) continue;
+
                     if (line === "-1") {
-                        console.log("Termination signal received. Closing Telnet connection.");
+                        console.log(`Termination signal received. Closing Telnet connection for ${clientId}.`);
                         return;
                     }
-                    console.log(line)
 
                     if (line.startsWith("UPBYTES")) {
                         const parts = line.split('|');
-                        const formatted: string[] = ["UPBYTES"];
+                        const updates: {
+                            graphId: string;
+                            uploaded: number;
+                            total: number;
+                            percentage: number;
+                            bytesPerSecond: number;
+                            triplesPerSecond: number;
+                            startTime: string;
+                            uploadPath: string;
+                        }[] = [];
 
-                        const updates: { graphId: string; uploaded: number; total: number; percentage: number ; bytesPerSecond: number; triplesPerSecond , startTime: string}[] = [];
-
-                        for (let i = 1; i < parts.length; i += 7) {
+                        for (let i = 1; i < parts.length; i += 8) { // fixed increment (you used 7, but you read 8 fields)
                             const graphId = parts[i];
                             const uploaded = parseFloat(parts[i + 1] || "0");
                             const total = parseFloat(parts[i + 2] || "0");
@@ -244,15 +351,19 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
                             const bytesPerSecond = parseFloat(parts[i + 4] || "0");
                             const triplesPerSecond = parseFloat(parts[i + 5] || "0");
                             const startTime = parts[i + 6];
+                            const uploadPath = parts[i + 7];
 
-                            updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond , startTime});
+                            updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond, startTime, uploadPath });
                         }
 
-                        sendToClient(clientId, {
-                            type: "UPBYTES",
-                            updates,
-                            timestamp: Date.now(),
-                        });
+                        // Send updates only if still connected
+                        if (client.readyState === WebSocket.OPEN) {
+                            sendToClient(clientId, {
+                                type: "UPBYTES",
+                                updates,
+                                timestamp: Date.now(),
+                            });
+                        }
                     }
                 }
             }
@@ -270,8 +381,23 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
             });
 
             tSocket.on('end', () => {
-                console.log('Telnet connection ended');
+                console.log(`Telnet connection ended for ${clientId}`);
             });
+
+            // Handle cleanup if client disconnects
+            const client = clients.get(clientId);
+            if (client) {
+                client.on('close', () => {
+                    console.log(`Client ${clientId} disconnected — stopping UPBYTES stream.`);
+                    stopRequested = true;
+                    tSocket.end();
+                });
+                client.on('error', () => {
+                    console.log(`Client ${clientId} errored — stopping UPBYTES stream.`);
+                    stopRequested = true;
+                    tSocket.end();
+                });
+            }
 
             // Build subscription command
             const command = ['UPBYTES', ...graphIds].join('|');
@@ -281,6 +407,7 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
         console.error({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
     }
 };
+
 
 const stopStream = async (clientId: string, clusterId: string) => {
     const cluster = await Cluster.findOne({ _id: clusterId });

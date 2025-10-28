@@ -17,7 +17,7 @@ import { Input, message, Table, Tabs } from 'antd';
 import type { TabsProps } from "antd";
 import { DownloadOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
-import { add_query_result, clear_result } from "@/redux/features/queryData";
+import {add_query_result, add_semantic_result, clear_result} from "@/redux/features/queryData";
 import { Select, Space } from 'antd';
 import { getGraphList } from "@/services/graph-service";
 import QueryVisualization from "@/components/visualization/query-visualization";
@@ -30,13 +30,13 @@ const { TextArea } = Input;
 
 const WS_URL = "ws://localhost:8080";
 
-export default function Query() {
+export default function SemanticBeamSearchPage() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
   const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
   const [clientId, setClientID] = useState<string>('')
-  
+
   const { messagePool } = useAppSelector((state) => state.queryData);
 
   const [selectedGraph, setSelectedGraph] = React.useState<any>();
@@ -47,25 +47,23 @@ export default function Query() {
         setLoading(true);
     const res = await getGraphList();
     if(res.data){
-
+        setLoading(false);
       const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
           value: graph.idgraph,
           label: graph.name,
         }
       })
-        setLoading(false);
-
-        setGraphs(filteredData);
+      setGraphs(filteredData);
     }
     }catch(err){
-        setLoading(false);
-
-        message.error("Failed to fetch graphs: " + err);
+      message.error("Failed to fetch graphs: " + err);
+      setLoading(false);
     }
   }
 
   useEffect(() => {
+
     getGraphsData();
   }, [])
 
@@ -79,7 +77,7 @@ export default function Query() {
     if(message?.type == "CONNECTED"){
       setClientID(message?.clientId || '')
     } else {
-      dispatch(add_query_result(message));
+      dispatch(add_semantic_result(message));
     }
   }, [lastJsonMessage])
 
@@ -89,7 +87,7 @@ export default function Query() {
       dispatch(clear_result());
       if(readyState === ReadyState.OPEN){
         sendJsonMessage({
-          type: "QUERY",
+          type: "SBS",
           query,
           graphId: selectedGraph,
           clientId: clientId,
@@ -168,7 +166,7 @@ export default function Query() {
           />
         <div style={{width: "90%"}}>
           <TextArea 
-            placeholder="Query ..." 
+            placeholder="Semantic Search ..."
             onChange={(e) => setQuery(e.target.value)}
             autoSize={{ minRows: 1, maxRows: 7 }}
             size="large"

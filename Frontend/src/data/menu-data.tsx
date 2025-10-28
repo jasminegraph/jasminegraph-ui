@@ -76,6 +76,11 @@ export const QueryInterfaceMenu: MenuItem[] = [
     key: Routes.QUERY_PANEL_ROUTES.query,
     icon: <ContainerOutlined />,
   },
+    {
+        label: 'Semantic Beam Search',
+        key: Routes.QUERY_PANEL_ROUTES.semantic_beam_search,
+        icon: <ContainerOutlined />,
+    },
   {
     label: 'Graph Properties',
     key: Routes.QUERY_PANEL_ROUTES.properties,

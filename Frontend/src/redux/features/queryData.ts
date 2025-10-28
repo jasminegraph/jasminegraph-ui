@@ -62,6 +62,53 @@ export const queryDataSlice = createSlice({
         state.messagePool[key].push(node);
       }
     },
+      add_semantic_result: (state, {payload}: {payload: any}) => {
+          const keys = Object.keys(payload);
+          keys.forEach((key) => {
+              const row = payload[key];
+
+              if (!state.messagePool[key]) {
+                  state.messagePool[key] = [];
+              }
+
+              if (row) {
+                  state.messagePool[key].push(row);
+              }
+          })
+      },
+      // add_semantic_beam_search_results: (state, {payload}: {payload: any}) => {
+      //     // === Handle pathNodes and pathRelations (for multi-hop paths) ===
+      //     if (Array.isArray(payload.pathNodes) && Array.isArray(payload.pathRelations)) {
+      //         const { pathNodes, pathRelations } = payload;
+      //
+      //         // Add path nodes (avoid duplicates)
+      //         pathNodes.forEach((node) => {
+      //             if (node && node.id) {
+      //                 const exists = state.visualizeData.node.some(
+      //                     (n) => n.id === node.id
+      //                 );
+      //                 if (!exists) {
+      //                     state.visualizeData.node.push(node);
+      //                 }
+      //             }
+      //         });
+      //
+      //         // Add edges between path nodes based on pathRelations
+      //         for (let i = 0; i < pathRelations.length; i++) {
+      //             const rel = pathRelations[i];
+      //             const fromNode = pathNodes[i];
+      //             const toNode = pathNodes[i + 1];
+      //
+      //             if (fromNode && toNode && rel && fromNode.id && toNode.id) {
+      //                 state.visualizeData.edge.push({
+      //                     from: fromNode.id,
+      //                     to: toNode.id,
+      //                     label: rel.type,
+      //                 });
+      //             }
+      //         }
+      //     }
+      // },
       add_upload_bytes: (state, {payload}: {payload: any}) => {
         console.log("Upload Bytes: ", payload);
           const key = Object.keys(payload)[0];
@@ -137,6 +184,7 @@ export const queryDataSlice = createSlice({
 
 export const {
   add_query_result,
+    add_semantic_result,
     add_upload_bytes,
   clear_result,
   add_visualize_data,

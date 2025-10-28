@@ -1,202 +1,401 @@
 /**
- * HDFS Knowledge Graph Construction Form
- * Collects only HDFS + LLM details
+ * HDFS Knowledge Graph Construction Stepper Form
+ * With HDFS validation, LLM runner check, and model fetching
  */
-
-import React, { useState } from 'react';
-import { Button, Form, Input, InputNumber, Select, message, Alert } from 'antd';
-import useAccessToken from '@/hooks/useAccessToken';
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import {
+    Button,
+    Form,
+    Input,
+    InputNumber,
+    Select,
+    message,
+    Steps,
+    Alert,
+    Card,
+} from "antd";
+import useAccessToken from "@/hooks/useAccessToken";
 import { constructKG } from "@/services/graph-service";
+import { IKnowledgeGraph } from "@/app/graph-panel/extract/page";
+import {authApi} from "@/services/axios";
 
 const { Option } = Select;
+const { Step } = Steps;
 
-const HadoopKgForm = ({ onSuccess }: { onSuccess: () => void }) => {
+const HadoopKgForm = ({
+                          onSuccess,
+                          initForm,
+                      }: {
+    onSuccess: () => void;
+    initForm: IKnowledgeGraph;
+}) => {
     const [form] = Form.useForm();
-    const [loading, setLoading] = useState<boolean>(false);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [loading, setLoading] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
+    const [models, setModels] = useState<string[]>([]);
+    const [savedValues, setSavedValues] = useState<Record<string, any>>({});
     const { getSrvAccessToken } = useAccessToken();
+
+    // Persist form changes
+    const handleValuesChange = (_: any, allValues: any) => {
+        setSavedValues(allValues);
+    };
+
+    // Load initial form values
+    useEffect(() => {
+        if (initForm && Object.keys(initForm).length > 0) {
+            const newValues: any = { ...initForm };
+            if (initForm.llmRunnerString) {
+                const counts: Record<string, number> = {};
+                initForm.llmRunnerString.split(",").forEach((r) => {
+                    counts[r] = (counts[r] || 0) + 1;
+                });
+                newValues.llmAllocations = Object.entries(counts).map(([runner, chunks]) => ({
+                    runner,
+                    chunks,
+                }));
+            }
+            form.setFieldsValue(newValues);
+            setSavedValues(newValues);
+        }
+    }, [initForm, form]);
+    useEffect(() => {
+        // Determine initial step
+        if (initForm?.status === "paused") {
+            setCurrentStep(1); // Skip HDFS step
+        } else {
+            setCurrentStep(0);
+        }
+    }, [initForm]);
+    const validateHDFS = async () => {
+        try {
+            await form.validateFields(["hdfsIp", "hdfsPort", "hdfsFilePath"]);
+            const { hdfsIp, hdfsPort, hdfsFilePath } = form.getFieldsValue([
+                "hdfsIp", "hdfsPort", "hdfsFilePath"
+            ]);
+
+            message.loading("🔍 Validating HDFS file...", 0);
+            const response = await authApi({
+                method: "post",
+                url: `/backend/graph/hadoop/validate-file`,
+                headers: {
+                    "Cluster-ID": localStorage.getItem("selectedCluster"),
+                },
+                data: {
+                    ip: hdfsIp,
+                    port: hdfsPort,
+                    filePath: hdfsFilePath
+                },
+            })
+            message.destroy();
+
+            if (response.data.exists) {
+                message.success("✅ File found and HDFS validated successfully");
+                setCurrentStep(1);
+            } else {
+                message.error("❌ File not found in HDFS");
+            }
+
+        } catch (err: any) {
+            message.destroy();
+            console.error(err);
+            message.error("⚠️ Failed to validate HDFS configuration");
+        }
+    };
+
+
+    const validateLLM = async () => {
+        try {
+            const values = await form.validateFields(["llmAllocations", "inferenceEngine"]);
+            const engine = values.inferenceEngine;
+            const allocations = values.llmAllocations;
+            const runners = allocations.map((a: any) => a.runner);
+
+            message.loading("Fetching models from engine...", 0);
+
+            let modelsFetched: string[] = [];
+
+            for (const runner of runners) {
+                try {
+                    let url = "";
+                    if (engine === "ollama") url = `http://${runner}/api/tags`;
+                    else if (engine === "vllm") url = `http://${runner}/models`;
+                    if (!url) continue;
+
+                    const res = await axios.get(url, { timeout: 8000 });
+
+                    const data = res.data;
+                    if (engine === "ollama" && data.models) {
+                        modelsFetched = data.models.map((m: any) => m.name);
+                    } else if (engine === "vllm" && data.data) {
+                        modelsFetched = data.data.map((m: any) => m.id || m.name);
+                    }
+
+                    if (modelsFetched.length > 0) break;
+                } catch (err: any) {
+                    console.warn(`Failed to fetch from ${runner}:`, err.message || err);
+                }
+            }
+
+            message.destroy();
+
+            if (modelsFetched.length === 0) {
+                message.warning("⚠️ Could not fetch models. Please verify runner URLs or network.");
+            } else {
+                setModels(modelsFetched);
+
+                message.success(`✅ Successfully fetched ${modelsFetched.length} models`);
+                setCurrentStep(2);
+            }
+
+
+        } catch (err) {
+            console.error("LLM validation error:", err);
+            message.error("Please fix LLM configuration errors");
+        }
+    };
 
     const onFinish = async (values: any) => {
         setLoading(true);
-        setFormError(null); // clear previous error
+        setFormError(null);
+
+        const finalValues = { ...savedValues, ...values };
+        const allocations = finalValues.llmAllocations || [];
+        if (allocations.length === 0) {
+            setFormError("Please add at least one LLM runner.");
+            setLoading(false);
+            return;
+        }
+
         try {
             const token = getSrvAccessToken() || "";
-
-            // Flatten runners by chunks
-            const llmRunnerString = values.llmAllocations
+            const llmRunnerString = allocations
                 .map((r: { runner: string; chunks: number }) => Array(r.chunks).fill(r.runner))
                 .flat()
-                .join(',');
+                .join(",");
 
             await constructKG(
-                values.hdfsIp,
-                values.hdfsPort,
-                values.hdfsFilePath,
+                finalValues.hdfsIp,
+                finalValues.hdfsPort,
+                finalValues.hdfsFilePath,
                 llmRunnerString,
-                values.inferenceEngine,
-                values.model,
-                values.chunkSize
+                finalValues.inferenceEngine,
+                finalValues.model,
+                finalValues.chunkSize,
+                initForm?.status,
+                initForm?.graphId
             );
 
             message.success("Knowledge Graph construction started");
             onSuccess();
-        } catch (err: any) {
-            console.error(err);
-
-            // Detect HTTP 400 and show inline form error
-            if (err.response?.status === 400) {
-                const msg = err.response?.data?.errorDetails.errorMsg || "Bad request. Please check your inputs.";
-                setFormError(msg);
-            } else {
-                // For other errors, show global toast
-                message.error("Failed to start HDFS Knowledge Graph");
-            }
+        } catch (err) {
+            console.log(err);
+            setFormError("Failed to start graph. Check inputs or network.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Form
-            layout="vertical"
-            form={form}
-            name="hdfs-kg-form"
-            onFinish={onFinish}
-            style={{ maxWidth: 600, margin: "0 auto" }}
-        >
-            {/* 🔴 Inline Error Alert */}
-
-
-            {/* HDFS Config */}
-            <Form.Item
-                name="hdfsIp"
-                label="HDFS Server IP"
-                rules={[{ required: true, message: "Please enter HDFS server IP" }]}
+        <>
+            <Steps
+                current={currentStep}
+                style={{ marginBottom: 50 }}
+                labelPlacement="vertical"
             >
-                <Input />
-            </Form.Item>
+                <Step title="HDFS Configuration" />
+                <Step title="LLM Runner Setup" />
+                <Step title="Start Construction" />
+            </Steps>
+            <Form
+                layout="vertical"
+                form={form}
+                onFinish={onFinish}
+                style={{ gap: 16, display: "flex", flexDirection: "column" }} // 👈 Add this line
 
-            <Form.Item
-                name="hdfsPort"
-                label="HDFS Server Port"
-                rules={[{ required: true, message: "Please enter HDFS server port" }]}
+                onValuesChange={handleValuesChange}
             >
-                <Input />
-            </Form.Item>
 
-            <Form.Item
-                name="hdfsFilePath"
-                label="HDFS File Path"
-                rules={[{ required: true, message: "Please enter HDFS file path" }]}
-            >
-                <Input placeholder="/path/to/hdfs/file" />
-            </Form.Item>
+                    <div style={{ display: currentStep === 0 && initForm?.status !== "paused" ? "block" : "none" }}>
 
-            {/* LLM Config */}
-            <Form.Item label="LLM Inference Engine Location">
-                <Form.List
-                    name="llmAllocations"
-                    initialValue={[{ runner: '', chunks: 1 }]} // <-- Add default one row
-                >
-                    {(fields, { add, remove }) => (
-                        <>
-                            {fields.map(({ key, name, ...restField }) => (
-                                <div key={key} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                                    <Form.Item
-                                        {...restField}
-                                        name={[name, 'runner']}
-                                        rules={[{ required: true, message: 'Enter LLM Runner IP:PORT' }]}
-                                        style={{ flex: 2 }}
-                                    >
-                                        <Input placeholder="LLM Runner IP:PORT" />
-                                    </Form.Item>
+                    <Form.Item
+                            name="hdfsIp"
+                            label="HDFS Server IP"
+                            rules={[
+                                { required: true, message: "Enter HDFS IP" },
+                                {
+                                    pattern:
+                                        /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/,
+                                    message: "Invalid IPv4 address",
+                                },
+                            ]}
+                        >
+                            <Input placeholder="e.g., 192.168.1.10" />
+                        </Form.Item>
 
-                                    <Form.Item
-                                        {...restField}
-                                        name={[name, 'chunks']}
-                                        rules={[{ required: true, message: 'Enter number of chunks' }]}
-                                        style={{ flex: 1 }}
-                                    >
-                                        <InputNumber
-                                            min={1}
-                                            step={1}
-                                            placeholder="Chunks"
-                                            style={{ width: '100%' }}
-                                            onKeyDown={(e) => {
-                                                if (
-                                                    ['e', 'E', '+', '-', '.', ',', ' '].includes(e.key) ||
-                                                    ((e.key < '0' || e.key > '9') &&
-                                                        !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key))
-                                                ) {
-                                                    e.preventDefault();
-                                                }
-                                            }}
-                                        />
-                                    </Form.Item>
+                        <Form.Item
+                            name="hdfsPort"
+                            label="HDFS Port"
+                            rules={[
+                                { required: true, message: "Enter HDFS port" },
+                                { pattern: /^([1-9][0-9]{0,4})$/, message: "Port 1–65535" },
+                            ]}
+                        >
+                            <Input placeholder="e.g., 9000" />
+                        </Form.Item>
 
-                                    <Button type="link" danger onClick={() => remove(name)}>
-                                        Remove
+                        <Form.Item
+                            name="hdfsFilePath"
+                            label="HDFS File Path"
+                            rules={[
+                                { required: true, message: "Enter file path" },
+                                {
+                                    pattern: /^\/(?:[a-zA-Z0-9._-]+\/)*[a-zA-Z0-9._-]*$/,
+                                    message: "Invalid path format",
+                                },
+                            ]}
+                        >
+                            <Input placeholder="/path/to/file" />
+                        </Form.Item>
+
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <Button type="primary" onClick={validateHDFS}>
+                                Next: Validate HDFS
+                            </Button>
+                        </div>
+                    </div>
+
+
+                    <div style={{ display: currentStep === 1 ? "block" : "none" }}>
+                        <Form.List name="llmAllocations" initialValue={[{ runner: "", chunks: 1 }]}>
+                            {(fields, { add, remove }) => (
+                                <>
+                                    {fields.map(({ key, name, ...rest }) => (
+                                        <div
+                                            key={key}
+                                            style={{ display: "flex", gap: 8, marginBottom: 8 }}
+                                        >
+                                            <Form.Item
+                                                {...rest}
+                                                name={[name, "runner"]}
+                                                rules={[
+                                                    { required: true, message: "Enter LLM Runner" },
+                                                    {
+                                                        pattern:
+                                                            /^(?:(?:https?:\/\/)?(?:localhost|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|(?:\d{1,3}\.){3}\d{1,3}))(?::\d{1,5})?$/,
+                                                        message: "Enter valid URL or IP",
+                                                    },
+                                                ]}
+                                                label="LLM Engine Location"
+                                                style={{ flex: 2 }}
+                                            >
+                                                <Input placeholder="http://localhost:11434" />
+                                            </Form.Item>
+                                            <Form.Item
+                                                label="Chunk(s)"
+                                                {...rest}
+                                                name={[name, "chunks"]}
+                                                rules={[{ required: true, message: "Enter chunks" }]}
+                                                style={{ flex: 1 }}
+                                            >
+                                                <InputNumber min={1} placeholder="Chunks" />
+                                            </Form.Item>
+                                            <Button danger type="link" onClick={() => remove(name)}>
+                                                Remove
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button type="dashed" onClick={() => add()} block>
+                                        Add LLM Runner
                                     </Button>
-                                </div>
-                            ))}
+                                </>
+                            )}
+                        </Form.List>
 
-                            <Form.Item>
-                                <Button type="dashed" onClick={() => add()} block>
-                                    Add LLM Engine Location
-                                </Button>
-                            </Form.Item>
-                        </>
-                    )}
-                </Form.List>
-            </Form.Item>
+                        <div>
+                            <br/>
+                            <br/>
+                        </div>
+                        <Form.Item
+                            name="inferenceEngine"
+                            label="Inference Engine"
+                            rules={[{ required: true, message: "Select engine" }]}
+                        >
+                            <Select placeholder="Select engine">
+                                <Option value="ollama">Ollama</Option>
+                                <Option value="vllm">vLLM</Option>
+                                <Option value="transformers">Transformers</Option>
+                            </Select>
+                        </Form.Item>
 
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            {/* Keep a placeholder div to preserve spacing */}
+                            <div style={{ visibility: currentStep === 1 && initForm?.status !== "paused" ? "visible" : "hidden" }}>
+                                <Button onClick={() => setCurrentStep(0)}>Back</Button>
+                            </div>
 
-            <Form.Item
-                name="inferenceEngine"
-                label="LLM Inference Engine Category"
-                rules={[{ required: true, message: "Please select inference engine" }]}
-            >
-                <Select>
-                    <Option value="ollama">Ollama</Option>
-                    <Option value="vllm">vLLM</Option>
-                    <Option value="transformers">HuggingFace Transformers</Option>
-                </Select>
-            </Form.Item>
+                            <Button type="primary" onClick={validateLLM}>
+                                Next: Fetch Models
+                            </Button>
+                        </div>
+                    </div>
 
-            <Form.Item
-                name="model"
-                label="Model Name"
-                rules={[{ required: true, message: "Please enter LLM model" }]}
-            >
-                <Input placeholder="e.g., gemma3:12b-it, nomic-embed-text" />
-            </Form.Item>
+                {currentStep === 2 && (
+                    <>
+                        <Form.Item
+                            name="model"
+                            label="Model Name"
+                            rules={[{ required: true, message: "Select a model" }]}
+                        >
+                            {models.length > 0 ? (
+                                <Select placeholder="Select model">
+                                    {models.map((m) => (
+                                        <Option key={m} value={m}>
+                                            {m}
+                                        </Option>
+                                    ))}
+                                </Select>
+                            ) : (
+                                <Input placeholder="Enter model manually" />
+                            )}
+                        </Form.Item>
 
-            <Form.Item
-                name="chunkSize"
-                label="Chunk Size"
-                rules={[{ required: true, message: "Please enter chunk size" }]}
-            >
-                <InputNumber min={128} max={8192} style={{ width: "100%" }} />
-            </Form.Item>
-            {formError && (
-                <Form.Item>
-                    <Alert
-                        message={formError}
-                        // description={formError}
-                        type="error"
-                        showIcon
-                        closable
-                        onClose={() => setFormError(null)}
-                    />
-                </Form.Item>
-            )}
-            {/* Submit */}
-            <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
-                    Start Graph Construction
-                </Button>
-            </Form.Item>
-        </Form>
+                        <Form.Item
+                            name="chunkSize"
+                            label="Chunk Size (Bytes)"
+                            rules={[
+                                { required: true, message: "Enter chunk size" },
+                                { pattern: /^[0-9]+$/, message: "Must be numeric" },
+                            ]}
+                        >
+                            <Input />
+                        </Form.Item>
+
+                        {formError && (
+                            <Alert
+                                message={formError}
+                                type="error"
+                                showIcon
+                                closable
+                                onClose={() => setFormError(null)}
+                                style={{ marginBottom: 16 }}
+                            />
+                        )}
+
+                        <div style={{ display: "flex", justifyContent: "space-between" }}>
+                            <Button onClick={() => setCurrentStep(1)}>Back</Button>
+                            <Button type="primary" htmlType="submit" loading={loading}>
+                                {initForm?.status === "paused"
+                                    ? "Resume Construction"
+                                    : "Start Construction"}
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </Form>
+        </>
     );
 };
 

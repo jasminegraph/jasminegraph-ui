@@ -52,7 +52,7 @@ const HadoopExtractModal = ({ open, setOpen }: Props) => {
             <Button key="cancel" onClick={handleCancel}>Cancel</Button>,
             // <Button key="ok" type="primary" onClick={handleOk}>OK</Button>
         ]}>
-            <HadoopKgForm onSuccess={()=>  setOpen(false)}/>
+            {/*<HadoopKgForm onSuccess={()=>  setOpen(false)}/>*/}
 
         </Modal>
     );

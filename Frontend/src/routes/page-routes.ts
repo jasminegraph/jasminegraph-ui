@@ -43,6 +43,7 @@ export const GRAPH_PANEL_ROUTES = {
 
 export const QUERY_PANEL_ROUTES = {
   query: "/",
+    semantic_beam_search: "/semantic-beam-search",
   properties: "/properties",
   console: "/console"
 };
