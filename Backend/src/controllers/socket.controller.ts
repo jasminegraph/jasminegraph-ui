@@ -25,8 +25,7 @@ import {
     SEMANTIC_BEAM_SEARCH_COMMAND
 } from '../constants/frontend.server.constants';
 import { getClusterDetails, IConnection, telnetConnection } from "./graph.controller";
-import { Cluster } from '../models/cluster.model';
-import {KGConstructionMeta} from "../models/kg-constrution-meta";
+import { getClusterByIdRepo } from '../repository/cluster.repository';
 
 let clients: Map<string, WebSocket> = new Map(); // Map of client IDs to WebSocket connections
 
@@ -189,16 +188,13 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
       producer();
 
       tSocket.on('data', (buffer) => {
-          console.log( buffer.toString('utf8') );
-
-          sharedBuffer.push(buffer.toString('utf8'))
+        sharedBuffer.push(buffer.toString('utf8'))
       });
 
       tSocket.on('end', () => {
         console.log('Telnet connection ended');
       });
 
-      console.log("185 stream query sending" +CYPHER_COMMAND + '|' + graphId + '|' + query + '\n');
       // Write the command to the Telnet server
       tSocket.write(CYPHER_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
     });
@@ -442,10 +438,10 @@ const stopStream = async (clientId: string, clusterId: string) => {
 const getDegreeData = async (clientId: string, clusterId:string, graphId:string, type: string) => {
   const COMMAND = type == "in_degree" ? INDEGREE_COMMAND : type == "out_degree" ? OUTDEGREE_COMMAND : INDEGREE_COMMAND;   
   
-  const cluster = await Cluster.findOne({ _id: clusterId });
-  if (!(cluster?.host || cluster?.port)) {
-    sendToClient(clientId, { Error: "cluster not found"})
-    return
+  const cluster = await getClusterByIdRepo(Number(clusterId));
+  if (!cluster || !cluster.host || !cluster.port) {
+    sendToClient(clientId, { Error: "cluster not found" })
+    return;
   }
 
   const connection: IConnection = {

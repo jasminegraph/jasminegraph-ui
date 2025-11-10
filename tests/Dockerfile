@@ -6,6 +6,9 @@ WORKDIR /app
 # Copy in your test suite
 COPY . .
 
-# All dependencies & browsers are already in the base image
+# Ensure Playwright browsers are installed
+RUN npx playwright install
+
+# Run tests
 CMD ["npx", "playwright", "test"]
 

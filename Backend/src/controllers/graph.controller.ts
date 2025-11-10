@@ -10,7 +10,6 @@
  See the License for the specific language governing permissions and
  limitations under the License.
  */
-import {Token} from "../models/token.model";
 
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
@@ -27,7 +26,7 @@ import {
     STOP_CONSTRUCT_KG_COMMAND,
     CONSTRUCT_KG_COMMAND} from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
-import {Cluster, ClusterInput} from '../models/cluster.model';
+import { getClusterByIdRepo } from '../repository/cluster.repository';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { parseGraphFile } from '../utils/graph';
 import {User} from "../models/user.model";
@@ -44,19 +43,18 @@ export type IConnection = {
 const DEV_MODE = process.env.DEV_MODE === 'true';
 
 export const getClusterDetails = async (req: Request) => {
-    // console.log("hello");
-    const clusterID = req.header('Cluster-ID');
-    const cluster = await Cluster.findOne({ _id: clusterID });
-    if (!cluster) {
-        return { code: ErrorCode.ClusterNotFound, message: ErrorMsg.ClusterNotFound, errorDetails: '' };
-    }else{
-        console.log("Cluster Connection Details: ", cluster);
-        return {
-            port: cluster.port,
-            host: cluster.host
-        }
-    }
-}
+  const clusterID = req.header('Cluster-ID');
+  const cluster = await getClusterByIdRepo(Number(clusterID));
+  if (!cluster) {
+    return { code: ErrorCode.ClusterNotFound, message: ErrorMsg.ClusterNotFound, errorDetails: '' };
+  }else{
+    console.log("Cluster Connection Details: ", cluster);
+    return {
+      port: cluster.port,
+      host: cluster.host
+    };
+  }
+};
 
 export const telnetConnection = (connection: IConnection) => (callback: any) => {
     // If the global connection is undefined or closed, create a new connection
@@ -137,55 +135,53 @@ const getGraphList = async (req: Request, res: Response) => {
                 commandOutput += buffer.toString('utf8');
             });
 
-            // Write the command to the Telnet server
-            tSocket.write(LIST_COMMAND + '\n', 'utf8', () => {
-                setTimeout(() => {
-                    if (commandOutput) {
-                        console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
-                        // tSocket.write("exit\n");
-                        res.status(HTTP[200]).send(JSON.parse(commandOutput));
-                    } else {
-                        res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
-                    }
-                }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-            });
-        });
-    } catch (err) {
-        return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
-    }
+      // Write the command to the Telnet server
+      tSocket.write(LIST_COMMAND + '\n', 'utf8', () => {
+        setTimeout(() => {
+          if (commandOutput) {
+            console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
+            res.status(HTTP[200]).send(JSON.parse(commandOutput));
+          } else {
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+          }
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
+      });
+    });
+  } catch (err) {
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
 };
 
 
 
 
 const getClusterProperties = async (req: Request, res: Response) => {
-    const connection = await getClusterDetails(req);
-    if (!(connection.host || connection.port)) {
-        return res.status(404).send(connection);
-    }
-    try {
-        telnetConnection({host: connection.host, port: connection.port})(() => {
-            let commandOutput = '';
+  const connection = await getClusterDetails(req);
+  if (!(connection.host || connection.port)) {
+    return res.status(404).send(connection);
+  }
+  try {
+    telnetConnection({host: connection.host, port: connection.port})(() => {
+      let commandOutput = '';
 
-            tSocket.on('data', (buffer) => {
-                commandOutput += buffer.toString('utf8');
-            });
+      tSocket.on('data', (buffer) => {
+        commandOutput += buffer.toString('utf8');
+      });
 
-            // Write the command to the Telnet server
-            tSocket.write(PROPERTIES_COMMAND + '\n', 'utf8', () => {
-                setTimeout(() => {
-                    if (commandOutput) {
-                        console.log(commandOutput)
-                        res.status(HTTP[200]).send(JSON.parse(commandOutput));
-                    } else {
-                        res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
-                    }
-                }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-            });
-        });
-    } catch (err) {
-        return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
-    }
+      // Write the command to the Telnet server
+      tSocket.write(PROPERTIES_COMMAND + '\n', 'utf8', () => {
+        setTimeout(() => {
+          if (commandOutput) {
+            res.status(HTTP[200]).send(JSON.parse(commandOutput));
+          } else {
+            res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+          }
+        }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
+      });
+    });
+  } catch (err) {
+    return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+  }
 };
 
 const uploadGraph = async (req: Request, res: Response) => {
