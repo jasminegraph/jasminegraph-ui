@@ -191,13 +191,8 @@ const TwoLevelGraphVisualization = ({
             message.warning("No node details found for the selected node.");
             return;
         }
-        // if (nodeDetails.vertexcount > VISUALIZATION_VERTEX_LIMIT) {
-        //     setVertexCountExceed(true);
-        //     message.warning(`Vertex count exceeds ${VISUALIZATION_VERTEX_LIMIT}. Cannot view low-level graph.`);
-        //     return;
-        // } else {
             setVertexCountExceed(false);
-        // }
+
         if (selectedNode && selectedNode.length > 0) {
             await onPartitionClick(selectedNode[0]);
         }

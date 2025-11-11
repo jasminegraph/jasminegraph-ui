@@ -13,9 +13,9 @@ limitations under the License.
 
 'use client';
 import React, { useState, useEffect }  from "react";
-import { Input, message, Table, Tabs } from 'antd';
+import {Input, message, Spin, Table, Tabs} from 'antd';
 import type { TabsProps } from "antd";
-import { DownloadOutlined, CaretRightOutlined } from '@ant-design/icons';
+import {DownloadOutlined, CaretRightOutlined, LoadingOutlined} from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import {add_query_result, add_semantic_result, clear_result} from "@/redux/features/queryData";
 import { Select, Space } from 'antd';
@@ -34,7 +34,7 @@ export default function SemanticBeamSearchPage() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
-  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
+  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });
   const [clientId, setClientID] = useState<string>('')
 
   const { messagePool } = useAppSelector((state) => state.queryData);
@@ -155,6 +155,7 @@ export default function SemanticBeamSearchPage() {
 
   return (
     <div className="">
+        <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
       <div style={{display: "flex", justifyContent: "space-between", width: "100%", border: "1px solid #d9d9d9", borderRadius: "8px", padding: "10px", margin: "15px 0px", gap: "10px"}}>
         <Select
             placeholder={'Graph'}

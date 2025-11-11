@@ -127,7 +127,7 @@ export default function GraphDistribution() {
   const onPartitionDetailsView = async (partitionID: number | null | undefined) => {
       console.log("partitionId",partitionID)
       console.log("readyState",readyState)
-    if(partitionID!=null||partitionID!=undefined){
+      if(partitionID != null){
       try{
         setLoading(true);
         dispatch(clear_visualize_data());

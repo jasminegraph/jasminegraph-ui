@@ -14,7 +14,7 @@ limitations under the License.
 import { Router } from 'express';
 import {
     getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData, getClusterProperties,
-    getDataFromHadoop, constructKGHadoop, constructKG, stopConstructKG,
+    getDataFromHadoop, constructKG, stopConstructKG,
     updateKGConstructionMetaByClusterId, getKGConstructionMetaByGraphId, getOnProgressKGConstructionMeta, validateHDFS
 } from '../controllers/graph.controller';
 import multer from 'multer';

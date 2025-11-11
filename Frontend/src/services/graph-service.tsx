@@ -13,7 +13,7 @@ limitations under the License.
 
 'use client';
 import { IGraphDetails } from "@/types/graph-types";
-import {IKnowledgeGraph} from "@/app/graph-panel/extract/page";
+import {IKnowledgeGraph} from "@/types/graph-types";
 import {authApi} from "./axios";
 
 export async function getGraphList(): Promise<{data: IGraphDetails[]}> {

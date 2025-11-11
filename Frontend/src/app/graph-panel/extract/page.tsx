@@ -32,7 +32,7 @@ import {
     getOnProgressKGConstructionMetaData,
     stopConstructKG
 } from "@/services/graph-service";
-import HadoopKgForm from "@/components/extract-panel/haddop-kg-form";
+import HadoopKgForm from "@/components/extract-panel/hadoop-kg-form";
 import {LRUCache} from "lru-cache";
 import Status = LRUCache.Status;
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
@@ -40,23 +40,6 @@ import { DownOutlined, UpOutlined } from "@ant-design/icons";
 const { Dragger } = Upload;
 const { Search } = Input;
 const { Title, Text } = Typography;
-
-export interface IKnowledgeGraph {
-    _id: string,
-    graphId:string,
-    name: string,
-    status: string,
-    "hdfsIp": string,
-    "hdfsPort": string,
-    "hdfsFilePath": string,
-    "llmRunnerString": string,
-    "inferenceEngine": string,
-    "model": string
-    "chunkSize": number,
-
-}
-
-
 
 const WS_URL = "ws://localhost:8080";
 
@@ -89,7 +72,6 @@ export default function GraphUpload() {
     const [showUploadSection, setShowUploadSection] = useState<boolean>(false);
     const [graphs, setGraphs] = useState<IKnowledgeGraph[]>([]);
     const [initForm, setInitForm] = useState<IKnowledgeGraph[]>([]);
-    const [filteredGraphs, setFilteredGraphs] = useState<IKnowledgeGraph[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [clientId, setClientID] = useState<string>('');
     const [showMeta, setShowMeta] = useState<boolean>(false);
@@ -232,7 +214,6 @@ export default function GraphUpload() {
 
     const onSearch = (value: string) => {
         const filteredClusters = graphs.filter((cluster) => cluster.name.toLowerCase().includes(value.toLowerCase()));
-        setFilteredGraphs(filteredClusters);
     };
 
     return (
@@ -278,7 +259,6 @@ export default function GraphUpload() {
                     </Row>
 
 
-                    {/*<HadoopExtractModal initForm={initForm} open={hadoopModalOpen} setOpen={(state: boolean) => { setShowUploadSection(state); setHadoopModelOpen(state); }} />*/}
                 </div>}
             <KafkaUploadModal open={kafkaModalOpen} setOpen={setKafkaModelOpen} />
             <Modal title=""   footer={null}     open={hadoopModalOpen} onCancel={()=>setHadoopModelOpen(false)}>
@@ -382,8 +362,6 @@ export default function GraphUpload() {
                                         </div>
 
                                         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "14px" }}>
-                                            {/*<Text type="secondary">{upload.triplesPerSecond?.toLocaleString() || 0} Triples/sec </Text>*/}
-                                            {/*<Text type="secondary"> {formatSize(upload.bytesPerSecond)}/sec </Text>*/}
                                         </div>
 
                                         {upload.startTime && (
@@ -397,7 +375,7 @@ export default function GraphUpload() {
                                             <Button
                                                 type={pausedGraphs[upload.graphId] ? "default" : "primary"}
                                                 onClick={() =>{
-                                                    if (meta.status == "paused") {
+                                                    if (meta.status === "paused") {
                                                         getKGConstructionMetaData(upload.graphId).then(kgConstructMeta=>{
                                                             setInitForm(kgConstructMeta.data);
                                                             console.log(kgConstructMeta);
@@ -415,7 +393,7 @@ export default function GraphUpload() {
 
                                                 }}
                                             >
-                                                {meta.status=="paused" ? "Resume" : "Pause"}
+                                                {meta.status === "paused" ? "Resume" : "Pause"}
                                             </Button>
                                             <Button danger onClick={() => stopKGConstruction(upload.graphId)}>Stop</Button>
                                         </div>

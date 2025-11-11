@@ -100,7 +100,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
         });
 
         if (validatedNodes.length === 0) {
-          message.warning('No valid nodes found for low-level view. 103');
+          message.warning('No valid nodes found for low-level view.');
         }
 
         edgesRef.current.add(validatedEdges);

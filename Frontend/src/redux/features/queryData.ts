@@ -76,74 +76,22 @@ export const queryDataSlice = createSlice({
               }
           })
       },
-      // add_semantic_beam_search_results: (state, {payload}: {payload: any}) => {
-      //     // === Handle pathNodes and pathRelations (for multi-hop paths) ===
-      //     if (Array.isArray(payload.pathNodes) && Array.isArray(payload.pathRelations)) {
-      //         const { pathNodes, pathRelations } = payload;
-      //
-      //         // Add path nodes (avoid duplicates)
-      //         pathNodes.forEach((node) => {
-      //             if (node && node.id) {
-      //                 const exists = state.visualizeData.node.some(
-      //                     (n) => n.id === node.id
-      //                 );
-      //                 if (!exists) {
-      //                     state.visualizeData.node.push(node);
-      //                 }
-      //             }
-      //         });
-      //
-      //         // Add edges between path nodes based on pathRelations
-      //         for (let i = 0; i < pathRelations.length; i++) {
-      //             const rel = pathRelations[i];
-      //             const fromNode = pathNodes[i];
-      //             const toNode = pathNodes[i + 1];
-      //
-      //             if (fromNode && toNode && rel && fromNode.id && toNode.id) {
-      //                 state.visualizeData.edge.push({
-      //                     from: fromNode.id,
-      //                     to: toNode.id,
-      //                     label: rel.type,
-      //                 });
-      //             }
-      //         }
-      //     }
-      // },
-      add_upload_bytes: (state, {payload}: {payload: any}) => {
-        console.log("Upload Bytes: ", payload);
-          const key = Object.keys(payload)[0];
-          const node = payload[key];
-          console.log("Node",node)
-          const keys = Object.keys(payload);
-          console.log("INSERT KEYS", keys);
-          state.uploadBytes = payload;
 
-          // if (!state.messagePool[key]) {
-          //     state.messagePool[key] = [];
-          // }
-          //
-          // if(node){
-          //     state.messagePool[key].push(node);
-          // }
+      add_upload_bytes: (state, {payload}: {payload: any}) => {
+          state.uploadBytes = payload;
       },
     add_visualize_data: (state, { payload }) => {
-      console.log("PAYLOAD INSERT", payload);
-    
       const keys = Object.keys(payload);
-      console.log("INSERT KEYS", keys);
-    
-      
       const firstNode = { ...payload[keys[0]] };
       const secondNode = { ...payload[keys[1]] };
       const relation = payload[keys[2]];
-      console.log("INSERT RELATION", relation);
       if(firstNode && secondNode && firstNode.id && secondNode.id){
         state.visualizeData.edge.push({ from: firstNode?.id, to: secondNode?.id , label: relation?.type});
       }
     
       // Process each key to add nodes, avoiding duplicates
       keys.forEach((key) => {
-          if(key!="r") {
+          if(key!=="r") {
         const node = { ...payload[key] };
         if (node && node.id) {
           // Check if a node with the same id already exists

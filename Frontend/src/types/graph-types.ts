@@ -22,8 +22,6 @@ export interface IGraphDetails {
   partitions: IGraphPartitionDetails[],
 }
 
-
-
 export interface IGraphPartitionDetails {
   central_edgecount: number;
   central_edgecount_with_dups: number;
@@ -31,4 +29,19 @@ export interface IGraphPartitionDetails {
   edgecount: number;
   idpartition: number;
   vertexcount: number;
+}
+
+export interface IKnowledgeGraph {
+    _id: string,
+    graphId:string,
+    name: string,
+    status: string,
+    "hdfsIp": string,
+    "hdfsPort": string,
+    "hdfsFilePath": string,
+    "llmRunnerString": string,
+    "inferenceEngine": string,
+    "model": string,
+    "chunkSize": number,
+
 }

@@ -88,7 +88,7 @@ const HadoopKgForm = ({
                     port: hdfsPort,
                     filePath: hdfsFilePath
                 },
-            })
+            });
             message.destroy();
 
             if (response.data.exists) {
@@ -170,7 +170,6 @@ const HadoopKgForm = ({
         }
 
         try {
-            const token = getSrvAccessToken() || "";
             const llmRunnerString = allocations
                 .map((r: { runner: string; chunks: number }) => Array(r.chunks).fill(r.runner))
                 .flat()
