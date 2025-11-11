@@ -15,7 +15,7 @@ const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
 import fs from 'fs';
-import {
+
     GRAPH_REMOVE_COMMAND,
     GRAPH_UPLOAD_COMMAND,
     GRAPH_DATA_COMMAND,
