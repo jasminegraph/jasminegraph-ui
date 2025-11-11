@@ -17,8 +17,8 @@ import {
 } from "antd";
 import useAccessToken from "@/hooks/useAccessToken";
 import { constructKG } from "@/services/graph-service";
-import { IKnowledgeGraph } from "@/app/graph-panel/extract/page";
 import {authApi} from "@/services/axios";
+import {IKnowledgeGraph} from "@/types/graph-types";
 
 const { Option } = Select;
 const { Step } = Steps;
@@ -36,8 +36,6 @@ const HadoopKgForm = ({
     const [formError, setFormError] = useState<string | null>(null);
     const [models, setModels] = useState<string[]>([]);
     const [savedValues, setSavedValues] = useState<Record<string, any>>({});
-    const { getSrvAccessToken } = useAccessToken();
-
     // Persist form changes
     const handleValuesChange = (_: any, allValues: any) => {
         setSavedValues(allValues);
