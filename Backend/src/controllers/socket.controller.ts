@@ -18,7 +18,6 @@ import WebSocket from 'ws';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import {
-    CYPHER_AST_COMMAND,
     CYPHER_COMMAND,
     INDEGREE_COMMAND,
     OUTDEGREE_COMMAND,
@@ -47,6 +46,7 @@ export const setupWebSocket = (server: any) => {
 
     ws.on('message', (message) => {
       const data = JSON.parse(message.toString());
+      console.log(data)
 
       // Handle messages from clients
       if (data.type === 'REQUEST_GRAPH') {
@@ -77,10 +77,7 @@ export const setupWebSocket = (server: any) => {
 export const sendToClient = (clientId, data) => {
   const client = clients.get(clientId);
   if (client && client.readyState === WebSocket.OPEN) {
-      // console.log(`trying to send data to client ${clientId}:`, data);
-
     client.send(JSON.stringify(data));
-    // console.log(`Sent data to client ${clientId}:`, data);
   } else {
       clients.delete(clientId);
     console.error(`Client ${clientId} not connected or WebSocket not open.`);
@@ -125,7 +122,7 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
 };
 
 const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {
-  const cluster = await Cluster.findOne({ _id: clusterId });
+    const cluster = await getClusterByIdRepo(Number(clusterId));
   if (!(cluster?.host || cluster?.port)) {
     sendToClient(clientId, { Error: "cluster not found"})
     return
@@ -203,7 +200,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
   }
 }
 const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:string, query: string) => {
-    const cluster = await Cluster.findOne({ _id: clusterId });
+    const cluster = await getClusterByIdRepo(Number(clusterId));
     if (!(cluster?.host || cluster?.port)) {
         sendToClient(clientId, { Error: "cluster not found"})
         return
@@ -266,8 +263,6 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
             producer();
 
             tSocket.on('data', (buffer) => {
-                console.log( buffer.toString('utf8') );
-
                 sharedBuffer.push(buffer.toString('utf8'))
             });
 
@@ -275,7 +270,6 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
                 console.log('Telnet connection ended');
             });
 
-            console.log("185 stream query sending" +CYPHER_COMMAND + '|' + graphId + '|' + query + '\n');
             // Write the command to the Telnet server
             tSocket.write(SEMANTIC_BEAM_SEARCH_COMMAND + '|' + graphId + '|' + query + '\n', 'utf8');
         });
@@ -286,7 +280,7 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
 
 const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: string[]) => {
-    const cluster = await Cluster.findOne({ _id: clusterId });
+    const cluster = await getClusterByIdRepo(Number(clusterId));
     if (!(cluster?.host || cluster?.port)) {
         sendToClient(clientId, { Error: "cluster not found" });
         return;
@@ -406,7 +400,7 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
 
 
 const stopStream = async (clientId: string, clusterId: string) => {
-    const cluster = await Cluster.findOne({ _id: clusterId });
+    const cluster = await getClusterByIdRepo(Number(clusterId));
     if (!(cluster?.host || cluster?.port)) {
         sendToClient(clientId, { Error: "cluster not found"});
         return;

@@ -9,14 +9,12 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */
+ */ import {model} from "mongoose";
 
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
-import fs from 'fs';
-
-    GRAPH_REMOVE_COMMAND,
+import { GRAPH_REMOVE_COMMAND,
     GRAPH_UPLOAD_COMMAND,
     GRAPH_DATA_COMMAND,
     LIST_COMMAND,
@@ -29,8 +27,15 @@ import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { getClusterByIdRepo } from '../repository/cluster.repository';
 import { HTTP, TIMEOUT } from '../constants/constants';
 import { parseGraphFile } from '../utils/graph';
-import {User} from "../models/user.model";
-import {KGConstructionMeta, KGConstructionMetaInput} from "../models/kg-constrution-meta";
+import {
+    createKGConstructionMetaRepo,
+    getKGConstructionMetaByIdRepo,
+    getKGConstructionMetaByClusterRepo,
+    getAllKGConstructionMetaRepo,
+    updateKGConstructionMetaStatusRepo,
+    deleteKGConstructionMetaRepo,
+    KGStatus
+} from "../repository/kg-construction-meta.respository";
 
 export let socket;
 export let tSocket;
@@ -87,40 +92,7 @@ export const telnetConnection = (connection: IConnection) => (callback: any) => 
         callback(tSocket); // Use existing connection
     }
 };
-const addKGConstructionMeta = async (req: Request, res: Response) => {
-    const { name, description, host, port, ownerID } = req.body;
-    const accessToken = req.headers.authorization?.split(' ')[1];
-    try {
-        const token = await Token.findOne({ accessToken });
-        if (!token) {
-            return res.status(HTTP[401]).json({ message: 'Unauthorized: Invalid or missing access token.' });
-        }
-        const user = await User.findOne({ _id: token.userId });
-        if (!user) {
-            return res.status(HTTP[HTTP[404]]).json({ message: 'User not found: The token is associated with a non-existent user.' });
-        }
 
-        const newCluster: ClusterInput = {
-            name,
-            description,
-            host,
-            port,
-            userIDs: [],
-            clusterOwner: token.userId,
-        };
-
-        const clusterCreated = await Cluster.create(newCluster);
-
-        return res.status(HTTP[201]).json({ data: clusterCreated });
-    } catch (err) {
-        console.error(err, 'Error creating cluster');
-        return res.status(HTTP[404]).json({
-            message: 'Internal Server Error: Unable to create the cluster.',
-            error: err instanceof Error ? err.message : 'Unknown error occurred'
-        });
-    }
-
-}
 
 const getGraphList = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
@@ -210,12 +182,6 @@ const uploadGraph = async (req: Request, res: Response) => {
             //   setTimeout(() => {
             //     if (commandOutput) {
             //       console.log(new Date().toLocaleString() + " - UPLOAD " + req.body.graphName + " - " + commandOutput);
-            //       res.status(HTTP[200]).send(commandOutput);
-            //     } else {
-            //       res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: ErrorMsg.NoResponseFromServer });
-            //     }
-            //   }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
-            // });
 
             //write GRAPH_UPLOAD_COMMAND and if output == send then send again graphName|filePath if it is not send don't do anything
             tSocket.write(GRAPH_UPLOAD_COMMAND + '\n', "utf8", () => {
@@ -285,7 +251,7 @@ export const constructKG = async (req: Request, res: Response) => {
                 } else if (msg.includes("HDFS file path:")) {
                     tSocket.write(hdfsFilePath.toString("utf8").trim() + "\n");
                 } else if (msg.includes("There exists a graph with the file path")) {
-                    if (status == "paused") {
+                    if (status === "paused") {
                         tSocket.write("y\n"); // or "n" depending on user choice
 
                     } else {
@@ -318,27 +284,27 @@ export const constructKG = async (req: Request, res: Response) => {
                 } else if (msg.includes("Graph Id")) {
                     const graphId = msg.split(":")[1].trim()
                     tSocket.write("exit\n");
-                    if (status == "paused") {
-                        await KGConstructionMeta.updateOne({graphId, clusterId}, {
-                            $set: {
-                                ...req.body,
-                                status: 'running'
-                            }
-                        });
+                    if (status === "paused") {
+                        await updateKGConstructionMetaStatusRepo(
+                            Number(graphId),
+                            "running"
+                        );
                     } else {
-                        const meta = KGConstructionMeta.create({
-                            graphId,
-                            hdfsIp,
-                            hdfsPort,
-                            hdfsFilePath,
-                            llmRunnerString,
-                            inferenceEngine,
+                        await createKGConstructionMetaRepo({
+                            user_id: "",
+                            graph_id: graphId,
+                            hdfs_ip: hdfsIp,
+                            hdfs_port: hdfsPort,
+                            hdfs_file_path: hdfsFilePath,
+                            llm_runner_string: llmRunnerString,
+                            inference_engine: inferenceEngine,
                             model,
-                            chunkSize,
+                            chunk_size: chunkSize,
                             status: "running",
                             message: "Knowledge Graph construction initiated",
-                            clusterId
+                            cluster_id: clusterId!
                         });
+
                     }
 
 
@@ -357,152 +323,138 @@ export const constructKG = async (req: Request, res: Response) => {
         return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
     }
 };
-
 export const stopConstructKG = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
     if (!(connection.host || connection.port)) {
         return res.status(404).send(connection);
     }
-    const clusterId = req.header('Cluster-ID');
+    const clusterId = req.header("Cluster-ID");
+    const { graphId, status } = req.body;
 
-    const {
-        graphId, status
-    } = req.body;
-
-    console.log( req.body)
     try {
         telnetConnection({ host: connection.host, port: connection.port })(() => {
             let commandOutput = "";
-            req.setTimeout(0); // 0 = no timeout, or use 10 * 60 * 1000 for 10 minutes
-            res.setTimeout(0); // optional, for some reverse proxies
+            req.setTimeout(0);
+            res.setTimeout(0);
+
             tSocket.on("data", async (buffer) => {
                 const msg = buffer.toString("utf8").trim();
-                console.log("Master:", msg);
                 commandOutput += msg + "\n";
 
-                if (msg.includes("Graph ID?")) {
-
-                    console.log("sending graphId")
-                    tSocket.write(graphId.toString("utf8").trim() + "\n");
-
-                } else if (msg.includes("Graph Id not Found") || msg.includes("not available on") || msg.includes("Could not connect to")) {
+                if (msg.includes("done")) {
                     tSocket.write("exit\n");
-                    return res.status(HTTP[400]).send({
-                        code: ErrorCode.ServerError,
-                        message: ErrorMsg.ServerError,
-                        errorDetails: {errorMsg: msg}
-                    });
 
-                } else if (msg.includes("done")) {
-                    tSocket.write("exit\n");
-                    console.log("graphId:", graphId, "clusterId:", clusterId, "status:", status);
-                    if (status== "stopped") {
-                        await KGConstructionMeta.deleteOne({ graphId , clusterId });
-                    }else {
-                        await KGConstructionMeta.updateOne({graphId, clusterId}, {$set: {status}});
-
+                    if (status === "stopped") {
+                        await deleteKGConstructionMetaRepo(Number(graphId));
+                    } else {
+                        await updateKGConstructionMetaStatusRepo(
+                            Number(graphId),
+                            status as KGStatus
+                        );
                     }
-                    console.log("✅ KG extraction stopped sucessfully");
-                    res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
-                    // tSocket.end();
+
+                    console.log("✅ KG extraction stopped successfully");
+                    res.status(200).send({ message: "Knowledge Graph construction Stopped" });
                 }
             });
 
-
-
-            tSocket.write(STOP_CONSTRUCT_KG_COMMAND + "\n") ;
+            tSocket.write(STOP_CONSTRUCT_KG_COMMAND + "\n");
         });
     } catch (err) {
-        console.error("❌ Error in constructKG:", err);
-        return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+        console.error("❌ Error in stopConstructKG:", err);
+        return res
+            .status(500)
+            .send({ code: 500, message: "Server error", errorDetails: err });
     }
 };
 
-
-export const getKGConstructionMetaByGraphId= async (req: Request, res: Response) => {
-    // console.log(req);
+export const getKGConstructionMetaByGraphId = async (
+    req: Request,
+    res: Response
+) => {
     const { graphId } = req.query;
-    const clusterId = req.header('Cluster-ID');
-    try {
-        console.log( clusterId );
-        console.log( graphId );
-        // Fetch all metadata entries for a specific cluster and HDFS file path
-        const metaData = await KGConstructionMeta.find({ clusterId, graphId }).sort({ createdAt: -1 });
+    const clusterId = req.header("Cluster-ID");
 
-        if (!metaData ) {
-            return res.status(HTTP[404]).json({
+    try {
+        const metaData = await getKGConstructionMetaByClusterRepo(Number(clusterId));
+        const filtered = metaData.filter((m) => m.graph_id === graphId);
+
+        if (!filtered.length) {
+            return res.status(404).json({
                 message: `No KG construction metadata found for clusterId: ${clusterId} and graphId: ${graphId}`,
             });
         }
 
-        return res.status(HTTP[200]).json({
-            data: metaData,
-        });
+        return res.status(200).json({ data: filtered });
     } catch (err) {
-        console.error(err, "❌ Error fetching KGConstructionMeta for cluster and file path");
-        return res.status(HTTP[500]).json({
+        console.error(err);
+        return res.status(500).json({
             message:
-                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path. Please try again later.",
+                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path.",
             error: err instanceof Error ? err.message : "Unknown error occurred",
         });
     }
 };
 
-export const getOnProgressKGConstructionMeta= async (req: Request, res: Response) => {
-    // console.log(req);
+export const getOnProgressKGConstructionMeta = async (
+    req: Request,
+    res: Response
+) => {
+    const clusterId = req.header("Cluster-ID");
 
-    const clusterId = req.header('Cluster-ID');
     try {
-        console.log( clusterId );
-        // Fetch all metadata entries for a specific cluster and HDFS file path
-        const metaData = await KGConstructionMeta.find({ clusterId, status:"running" }).sort({ createdAt: -1 });
+        const metaData = await getKGConstructionMetaByClusterRepo(Number(clusterId));
+        const running = metaData.filter((m) => m.status === "running");
 
-        if (!metaData ) {
-            return res.status(HTTP[404]).json({
-                message: `No progress KG construction metadata found for clusterId: ${clusterId} `,
+        if (!running.length) {
+            return res.status(404).json({
+                message: `No progress KG construction metadata found for clusterId: ${clusterId}`,
             });
         }
 
-        return res.status(HTTP[200]).json({
-            data: metaData,
-        });
+        return res.status(200).json({ data: running });
     } catch (err) {
-        console.error(err, "❌ Error fetching KGConstructionMeta for cluster and file path");
-        return res.status(HTTP[500]).json({
+        console.error(err);
+        return res.status(500).json({
             message:
-                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path. Please try again later.",
+                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path.",
             error: err instanceof Error ? err.message : "Unknown error occurred",
         });
     }
 };
 
-export const updateKGConstructionMetaByClusterId = async (req: Request, res: Response) => {
+export const updateKGConstructionMetaByClusterId = async (
+    req: Request,
+    res: Response
+) => {
     const { clusterId, hdfsFilePath } = req.params;
     const updateData = req.body;
 
     try {
-        // Find and update metadata entry for given clusterId and hdfsFilePath
-        const updatedMeta = await KGConstructionMeta.findOneAndUpdate(
-            { clusterId, hdfsFilePath },
-            { $set: updateData },
-            { new: true } // Return the updated document
-        );
+        const metaData = await getKGConstructionMetaByClusterRepo(Number(clusterId));
+        const target = metaData.find((m) => m.hdfs_file_path === hdfsFilePath);
 
-        if (!updatedMeta) {
-            return res.status(HTTP[404]).json({
+        if (!target) {
+            return res.status(404).json({
                 message: `No KG construction metadata found for clusterId: ${clusterId} and hdfsFilePath: ${hdfsFilePath}`,
             });
         }
 
-        return res.status(HTTP[200]).json({
+        const updated = await updateKGConstructionMetaStatusRepo(
+            target.id,
+            updateData.status as KGStatus,
+            updateData.message
+        );
+
+        return res.status(200).json({
             message: "KGConstructionMeta updated successfully",
-            data: updatedMeta,
+            data: updated,
         });
     } catch (err) {
-        console.error(err, "❌ Error updating KGConstructionMeta for cluster and file path");
-        return res.status(HTTP[500]).json({
+        console.error(err);
+        return res.status(500).json({
             message:
-                "Internal Server Error: Unable to update KGConstructionMeta for the given cluster and file path. Please try again later.",
+                "Internal Server Error: Unable to update KGConstructionMeta for the given cluster and file path.",
             error: err instanceof Error ? err.message : "Unknown error occurred",
         });
     }
@@ -625,81 +577,6 @@ const constructKGHadoop = async (req: Request, res: Response) => {
         return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
     }
 };
-
-// const upload_from_hdfs = async (req: Request, res: Response) => {
-//   // console.log("called upload");
-//   const connection = await getClusterDetails(req);
-//   if (!(connection.host || connection.port)) {
-//     return res.status(404).send(connection);
-//   }
-//   const {graphName, isEdgeList, isDirected} = req.body;
-//   const configFilePath = "/var/tmp/config/hdfs_config.txt"; // Get the file path
-//
-//   console.log(UPLOAD_FROM_HDFS + '|' + graphName + '\n');
-//
-//   try {
-//     telnetConnection({host: connection.host, port: connection.port})(() => {
-//       let commandOutput = "";
-//
-//       tSocket.on("data", (buffer) => {
-//         commandOutput += buffer.toString("utf8");
-//       });
-//
-//       tSocket.write(UPLOAD_FROM_HDFS + '\n', "utf8", () => {
-//         setTimeout(() => {
-//           if (commandOutput.includes("default")) {
-//             commandOutput = "";
-//             tSocket.write('n\n', "utf8", () => {
-//               setTimeout(() => {
-//                 if (commandOutput.includes("configuration")) {
-//                   commandOutput = "";
-//                   tSocket.write(configFilePath + '\n', "utf8", () => {
-//                     setTimeout(() => {
-//                       if (commandOutput.includes("path:")) {
-//                         commandOutput = "";
-//                         tSocket.write('/home/' + graphName + '\n', "utf8", () => {
-//                           setTimeout(() => {
-//                             if(commandOutput.includes('edge')){
-//                               commandOutput = "";
-//                               tSocket.write(isEdgeList+'\n', "utf8", () => {
-//                              setTimeout(() => {
-//                                if(commandOutput.includes('directed')){
-//                                  commandOutput = "";
-//                                  tSocket.write(isDirected+'\n',"utf8",()=>{});
-//                                }
-//                              }, TIMEOUT.default);
-//                             }
-//                           }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-//                         });
-//                       } else {
-//                         res.status(HTTP[400]).send({
-//                           code: ErrorCode.NoResponseFromServer,
-//                           message: ErrorMsg.NoResponseFromServer,
-//                           errorDetails: ""
-//                         });
-//                       }
-//                     }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-//                   });
-//                 } else {
-//                   res.status(HTTP[400]).send({});
-//                 }
-//               }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-//             });
-//           } else {
-//             res.status(HTTP[400]).send({
-//               code: ErrorCode.NoResponseFromServer,
-//               message: ErrorMsg.NoResponseFromServer,
-//               errorDetails: ""
-//             });
-//           }
-//         }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
-//       });
-//     });
-//   } catch (err) {
-//     return res.status(HTTP[200]).send({code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err});
-//   }
-// };
-
 
 
 const triangleCount = async (req: Request, res: Response) => {
