@@ -36,6 +36,7 @@ import HadoopKgForm from "@/components/extract-panel/hadoop-kg-form";
 import {LRUCache} from "lru-cache";
 import Status = LRUCache.Status;
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
+import {IKnowledgeGraph} from "@/types/graph-types";
 
 const { Dragger } = Upload;
 const { Search } = Input;
