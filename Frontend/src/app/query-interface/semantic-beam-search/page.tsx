@@ -15,10 +15,10 @@ limitations under the License.
 import React, { useState, useEffect }  from "react";
 import {Input, message, Spin, Table, Tabs} from 'antd';
 import type { TabsProps } from "antd";
-import {DownloadOutlined, CaretRightOutlined, LoadingOutlined} from '@ant-design/icons';
+import { CaretRightOutlined, LoadingOutlined} from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
-import {add_query_result, add_semantic_result, clear_result} from "@/redux/features/queryData";
-import { Select, Space } from 'antd';
+import { add_semantic_result, clear_result} from "@/redux/features/queryData";
+import { Select } from 'antd';
 import { getGraphList } from "@/services/graph-service";
 import QueryVisualization from "@/components/visualization/query-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
@@ -140,7 +140,6 @@ export default function SemanticBeamSearchPage() {
             pagination={{ pageSize: 20 }}
             scroll={{ y: 90 * 5 }}
             size="small"
-            // rowClassName={() => "whitespace-pre-wrap"}
           />
         </>,
     },
@@ -175,7 +174,6 @@ export default function SemanticBeamSearchPage() {
           />
         </div>
         <CaretRightOutlined style={{fontSize: "24px", margin: "2px", padding: "0px 10px"}} onClick={onQuerySubmit}/>
-        {/* <DownloadOutlined style={{fontSize: "20px", margin: "2px"}} /> */}
       </div>
       {Object.keys(messagePool).length > 0 && (
         <Tabs
