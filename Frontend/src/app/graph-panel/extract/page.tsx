@@ -198,9 +198,6 @@ export default function GraphUpload() {
         })
         const interval = setInterval(() => {
             if (readyState === ReadyState.OPEN) {
-                // const activeGraphIds = uploadBytesGraphs.updates
-                //     .filter((g: IUploadBytes) => !pausedGraphs[g.graphId])
-                //     .map((g: IUploadBytes) => g.graphId);
 
                 sendJsonMessage({
                     type: "UPBYTES",
@@ -294,7 +291,7 @@ export default function GraphUpload() {
 
                             {/* ✅ Show Metadata */}
                             {graphs
-                                .filter((g) => g.graphId === upload.graphId)
+                                .filter((g) => g.graph_id === upload.graphId)
                                 .map((meta) => (
                                     <>
 

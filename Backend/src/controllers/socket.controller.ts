@@ -332,8 +332,7 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
                             startTime: string;
                             uploadPath: string;
                         }[] = [];
-
-                        for (let i = 1; i < parts.length; i += 8) { // fixed increment (you used 7, but you read 8 fields)
+                        for (let i = 1; i < parts.length; i += 7) {
                             const graphId = parts[i];
                             const uploaded = parseFloat(parts[i + 1] || "0");
                             const total = parseFloat(parts[i + 2] || "0");
@@ -346,6 +345,7 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
                             updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond, startTime, uploadPath });
                         }
 
+                        console.log(updates)
                         // Send updates only if still connected
                         if (client.readyState === WebSocket.OPEN) {
                             sendToClient(clientId, {

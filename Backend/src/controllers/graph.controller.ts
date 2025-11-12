@@ -9,8 +9,7 @@
  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  See the License for the specific language governing permissions and
  limitations under the License.
- */ import {model} from "mongoose";
-
+ */
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
@@ -20,7 +19,6 @@ import { GRAPH_REMOVE_COMMAND,
     LIST_COMMAND,
     TRIANGLE_COUNT_COMMAND,
     PROPERTIES_COMMAND,
-    UPLOAD_FROM_HDFS,
     STOP_CONSTRUCT_KG_COMMAND,
     CONSTRUCT_KG_COMMAND} from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
@@ -29,9 +27,7 @@ import { HTTP, TIMEOUT } from '../constants/constants';
 import { parseGraphFile } from '../utils/graph';
 import {
     createKGConstructionMetaRepo,
-    getKGConstructionMetaByIdRepo,
     getKGConstructionMetaByClusterRepo,
-    getAllKGConstructionMetaRepo,
     updateKGConstructionMetaStatusRepo,
     deleteKGConstructionMetaRepo,
     KGStatus
@@ -218,7 +214,7 @@ export const constructKG = async (req: Request, res: Response) => {
     const {
         hdfsIp,
         hdfsPort,
-        hdfsFilePath,           // <-- new
+        hdfsFilePath,
         llmRunnerString,         // [{ runner: string, chunks: number }]
         inferenceEngine,
         model,
@@ -277,10 +273,6 @@ export const constructKG = async (req: Request, res: Response) => {
 
                 } else if (msg.includes("chunk size")) {
                     tSocket.write(chunkSize.toString().toString("utf8").trim() + "\n");
-
-                    // console.log("✅ KG extraction completed");
-                    // res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
-                    // tSocket.end();
                 } else if (msg.includes("Graph Id")) {
                     const graphId = msg.split(":")[1].trim()
                     tSocket.write("exit\n");
@@ -405,14 +397,27 @@ export const getOnProgressKGConstructionMeta = async (
     try {
         const metaData = await getKGConstructionMetaByClusterRepo(Number(clusterId));
         const running = metaData.filter((m) => m.status === "running");
-
-        if (!running.length) {
+        const result = running.map((dbRow) => ({
+            userId: dbRow.user_id,
+            graphId: dbRow.graph_id,
+            hdfsIp: dbRow.hdfs_ip,
+            hdfsPort: dbRow.hdfs_port,
+            hdfsFilePath: dbRow.hdfs_file_path,
+            llmRunnerString: dbRow.llm_runner_string,
+            inferenceEngine: dbRow.inference_engine,
+            model: dbRow.model,
+            chunkSize: dbRow.chunk_size,
+            status: dbRow.status,
+            message: dbRow.message,
+            clusterId: dbRow.cluster_id,
+        }));
+        if (!result.length) {
             return res.status(404).json({
                 message: `No progress KG construction metadata found for clusterId: ${clusterId}`,
             });
         }
 
-        return res.status(200).json({ data: running });
+        return res.status(200).json({ data: result });
     } catch (err) {
         console.error(err);
         return res.status(500).json({

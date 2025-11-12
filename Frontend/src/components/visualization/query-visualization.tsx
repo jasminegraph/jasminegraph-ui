@@ -18,8 +18,6 @@ import { LoadingOutlined } from '@ant-design/icons';
 import 'vis-network/styles/vis-network.css';
 import { useAppSelector } from '@/redux/hook';
 import randomColor from 'randomcolor';
-import { INode } from './graph-visualization';
-
 const QueryVisualization = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [progressing, setProgressing] = useState<boolean>(false);
@@ -36,7 +34,6 @@ const QueryVisualization = () => {
         const edges: any[] = [];
         try {
             if (message?.pathRels && message?.pathNodes) {
-                // const { pathRels, pathNodes } = message.pathObj;
                 const pathNodes = message?.pathNodes;
                 const pathRels = message?.pathRels;
                 for (let i = 0; i < pathRels.length && i < pathNodes.length - 1; i++) {

@@ -24,8 +24,6 @@ const HadoopExtractModal = ({ open, setOpen }: Props) => {
 
     const handleOk = () => {
         console.log('Selected files:', selectedFiles);
-
-
         setOpen(false);
     };
 
