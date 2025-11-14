@@ -1,16 +1,19 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
-
-const GRAFANA_DASHBOARD_URL = "http://20.40.46.214:3001/d/your-dashboard-uid";
 
 export default function PerformancePage() {
   const [setupStatus, setSetupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [dashboardUID, setDashboardUID] = useState<string | null>(null);
 
   useEffect(() => {
-    const setupDone = localStorage.getItem('grafanaSetupDone');
-    if (setupDone === 'true') {
+    const savedUID = localStorage.getItem('grafanaDashboardUID');
+    console.log("[Frontend] localStorage grafanaDashboardUID:", savedUID);
+
+    if (savedUID) {
+      setDashboardUID(savedUID);
       setSetupStatus('success');
       return;
     }
@@ -18,17 +21,19 @@ export default function PerformancePage() {
     const setupGrafana = async () => {
       setSetupStatus('loading');
       try {
-        const res = await fetch('/grafana/setup', { method: 'POST' });
+        const res = await fetch('/backend/grafana/setup', { method: 'POST' });
         const data = await res.json();
 
-        if (res.ok) {
+        if (res.ok && data.uid) {
+          localStorage.setItem('grafanaDashboardUID', data.uid);
+          setDashboardUID(data.uid);
           setSetupStatus('success');
-          localStorage.setItem('grafanaSetupDone', 'true');
         } else {
           setSetupStatus('error');
           setErrorMessage(data.message || 'Setup failed');
         }
-      } catch (e) {
+      } catch (error) {
+        console.error("[Frontend] Could not connect to backend:", error);
         setSetupStatus('error');
         setErrorMessage('Could not connect to backend');
       }
@@ -56,20 +61,15 @@ export default function PerformancePage() {
     );
   }
 
-  // setupStatus === 'success'
+  const dashboardUrl = `http://20.40.46.214:3001/d/${dashboardUID}`;
+
   return (
     <PageWrapper>
-      <div style={{ flex: 1, height: "calc(100vh - 64px)", marginLeft: 200 }}>
-        {/* 
-          Assuming:
-          - Header height = 64px (Ant Design default)
-          - SideMenu width = 200px
-          Adjust these as per your actual styles.
-        */}
+      <div style={{ height: 'calc(100vh - 64px)', width: '100%', padding: 4 }}>
         <iframe
-          src={GRAFANA_DASHBOARD_URL}
-          style={{ width: "100%", height: "100%", border: "none" }}
-          title="Grafana Performance Dashboard"
+          src={dashboardUrl}
+          style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+          title="Grafana Dashboard"
         />
       </div>
     </PageWrapper>
