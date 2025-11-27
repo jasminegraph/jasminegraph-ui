@@ -25,6 +25,7 @@ import { graphRoute } from './routes/graph.routes';
 import { keycloakAuthMiddleware } from './middleware/keycloak.middleware';
 import clusterMiddleware from './middleware/cluster.middleware';
 import { setupWebSocket } from './controllers/socket.controller';
+import { grafanaRoute } from './routes/grafana.routes';
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ app.use('/users', userRoute());
 app.use('/clusters', keycloakAuthMiddleware, clusterRoute());
 app.use('/graph', clusterMiddleware, graphRoute());
 app.use('/query', clusterMiddleware, queryRoute());
+app.use('/grafana', grafanaRoute());
 
 // write an endpoint to check backend is running or not
 app.get('/ping', (req, res) => {
