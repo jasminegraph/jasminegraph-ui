@@ -20,7 +20,7 @@ import { IGraphDetails } from "@/types/graph-types";
 import { Descriptions } from "antd";
 import type { DescriptionsProps } from "antd";
 import { useAppSelector } from "@/redux/hook";
-import { ERROR_MSG } from './low-level-graph-visualization';
+// import { ERROR_MSG } from './low-level-graph-visualization';
 import { VISUALIZATION_VERTEX_LIMIT } from "@/properties";
 
 export type INode = {
@@ -54,10 +54,26 @@ const networkOptions = {
         color: { border: "#2B7CE9", background: "#97C2FC" },
     },
     edges: {
-        color: { color: "#848484", highlight: "#848484", hover: "#848484" },
+        color: { color: "#848484" },
         width: 2,
     },
-    autoResize: true,
+    physics: {
+        enabled: true,
+        repulsion: {
+            centralGravity: 0.1,       // less gravity → more spread
+            springLength: 300,         // default is 100 → increase spacing
+            springConstant: 0.01,
+            nodeDistance: 300,          // force nodes to stay apart
+            damping: 0.09,
+        },
+        solver: "repulsion"
+    },
+    layout: {
+        improvedLayout: true,
+        clusterThreshold: 500,
+        // avoids node overlap even if sizes are large
+        hierarchical: false,
+    },
 };
 
 const TwoLevelGraphVisualization = ({
@@ -76,11 +92,10 @@ const TwoLevelGraphVisualization = ({
     const [vertexCountExceed, setVertexCountExceed] = useState<boolean>(false);
 
     // Helper: scale vertexcount to node size
-    const getNodeSize = (vertexCount: number) => {
+    const getNodeSize = (vertexCount: number, maxVertexCount: number) => {
         const minSize = 20;
         const maxSize = 100;
-        const scaleFactor = 0.5; // Adjust to tune size relative to vertexcount
-        const size = Math.min(maxSize, Math.max(minSize, vertexCount * scaleFactor));
+        const size = minSize + ((vertexCount / maxVertexCount) * (maxSize - minSize));
         return size;
     };
 
@@ -103,14 +118,15 @@ const TwoLevelGraphVisualization = ({
 
             if (graph && graph.partitions && Array.isArray(graph.partitions)) {
                 // Create nodes with size proportional to vertexcount
+                const maxVertexCount = Math.max(...graph.partitions.map(p => p.vertexcount));
+
                 const validatedNodes = graph.partitions.map((partition) => ({
                     id: partition.idpartition,
                     label: partition.idpartition.toString(),
                     shape: "dot",
                     color: "#97c2fc",
-                    size: getNodeSize(partition.vertexcount),
+                    size: getNodeSize(partition.vertexcount, maxVertexCount),
                 }));
-
                 // Create edges
                 const validatedEdges = loadHighLevelEdgeList();
 
@@ -122,13 +138,13 @@ const TwoLevelGraphVisualization = ({
                     network.fit();
                 }
             } else {
-                console.warn(ERROR_MSG.noData, selectedNode);
-                message.warning(ERROR_MSG.noData);
+                // console.warn(ERROR_MSG.noData, selectedNode);
+                // message.warning(ERROR_MSG.noData);
             }
             setLoading(false);
         } catch (err) {
-            console.error(ERROR_MSG.failedMsg, err);
-            message.error(ERROR_MSG.failedMsg);
+            // console.error(ERROR_MSG.failedMsg, err);
+            // message.error(ERROR_MSG.failedMsg);
             setLoading(false);
         }
     };
@@ -146,13 +162,24 @@ const TwoLevelGraphVisualization = ({
     useEffect(() => {
         if (!networkContainerRef.current) return;
 
+        const maxVertexCount = Math.max(
+            0, // default value if partitions is empty
+            ...(graph?.partitions?.map(p => p.vertexcount) ?? [])
+        );
         const nodes = graph?.partitions.map((partition) => ({
             id: partition.idpartition,
-            label: `Partition ${partition.idpartition}`,
+            label: partition.idpartition.toString(),
             shape: "dot",
             color: "#97c2fc",
-            size: getNodeSize(partition.vertexcount),
+            size: getNodeSize(partition.vertexcount, maxVertexCount),
         }));
+        // const nodes = graph?.partitions.map((partition) => ({
+        //     id: partition.idpartition,
+        //     label: `Partition ${partition.idpartition}`,
+        //     shape: "dot",
+        //     color: "#97c2fc",
+        //     size: getNodeSize(partition.vertexcount),
+        // }));
 
         const edges: IEdge[] = loadHighLevelEdgeList();
 

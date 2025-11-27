@@ -145,6 +145,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
         let splitIndex;
 
         if(remaining.trim() == '-1'){
+            sendToClient(clientId, {"done":"true"})
           console.log("Termination signal received. Closing Telnet connection.");
           return
         }
@@ -157,6 +158,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
           if (jsonString) {
             if (jsonString == "-1") {
               console.log("Termination signal received. Closing Telnet connection.");
+                sendToClient(clientId, {"done":"true"})
               return; // Exit the producer loop
             }
 
@@ -171,6 +173,7 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
 
           if(remaining.trim() == '-1' || jsonString == '-1'){
             console.log("Termination signal received. Closing Telnet connection.");
+              sendToClient(clientId, {"done":"true"})
             return
           }
         }

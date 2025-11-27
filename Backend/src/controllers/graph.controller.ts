@@ -411,11 +411,6 @@ export const getOnProgressKGConstructionMeta = async (
             message: dbRow.message,
             clusterId: dbRow.cluster_id,
         }));
-        if (!result.length) {
-            return res.status(404).json({
-                message: `No progress KG construction metadata found for clusterId: ${clusterId}`,
-            });
-        }
 
         return res.status(200).json({ data: result });
     } catch (err) {

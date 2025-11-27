@@ -136,7 +136,7 @@ export default function GraphDistribution() {
           sendJsonMessage(
             {
               type: "QUERY",
-              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} AND m.partitionID = ${partitionID} return n,m,r`,
+              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} return n,m,r`,
               graphId: selectedGraph,
               clientId: clientId,
               clusterId: localStorage.getItem("selectedCluster"),            

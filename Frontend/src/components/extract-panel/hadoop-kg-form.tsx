@@ -118,8 +118,8 @@ const HadoopKgForm = ({
             for (const runner of runners) {
                 try {
                     let url = "";
-                    if (engine === "ollama") url = `http://${runner}/api/tags`;
-                    else if (engine === "vllm") url = `http://${runner}/models`;
+                    if (engine === "ollama") url = `${runner}/api/tags`;
+                    else if (engine === "vllm") url = `${runner}/v1/models`;
                     if (!url) continue;
 
                     const res = await axios.get(url, { timeout: 8000 });
@@ -168,9 +168,10 @@ const HadoopKgForm = ({
         }
 
         try {
+
+
             const llmRunnerString = allocations
-                .map((r: { runner: string; chunks: number }) => Array(r.chunks).fill(r.runner))
-                .flat()
+                .map((r: { runner: string; chunks: number }) => `${r.runner}:${r.chunks}`)
                 .join(",");
 
             await constructKG(
@@ -280,8 +281,8 @@ const HadoopKgForm = ({
                                                 rules={[
                                                     { required: true, message: "Enter LLM Runner" },
                                                     {
-                                                        pattern:
-                                                            /^(?:(?:https?:\/\/)?(?:localhost|(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|(?:\d{1,3}\.){3}\d{1,3}))(?::\d{1,5})?$/,
+                                                        pattern: /^(https?:\/\/)(localhost|([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}|(\d{1,3}\.){3}\d{1,3})(:\d{1,5})?$/,
+
                                                         message: "Enter valid URL or IP",
                                                     },
                                                 ]}

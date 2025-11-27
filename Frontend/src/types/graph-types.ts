@@ -43,5 +43,7 @@ export interface IKnowledgeGraph {
     "inferenceEngine": string,
     "model": string,
     "chunkSize": number,
+    "bytesPerSecond": number,
+    "triplesPerSecond": number
 
 }

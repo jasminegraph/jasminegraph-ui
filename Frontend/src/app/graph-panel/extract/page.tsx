@@ -75,7 +75,7 @@ export default function GraphUpload() {
     const [initForm, setInitForm] = useState<IKnowledgeGraph[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [clientId, setClientID] = useState<string>('');
-    const [showMeta, setShowMeta] = useState<boolean>(false);
+    const [showMeta, setShowMeta] = useState<string>("");
     const [pausedGraphs, setPausedGraphs] = useState<Record<string, boolean>>({});
 
 
@@ -291,7 +291,7 @@ export default function GraphUpload() {
 
                             {/* ✅ Show Metadata */}
                             {graphs
-                                .filter((g) => g.graph_id === upload.graphId)
+                                .filter((g) => g.graphId === upload.graphId)
                                 .map((meta) => (
                                     <>
 
@@ -301,7 +301,7 @@ export default function GraphUpload() {
 
 
                                             <div
-                                                onClick={() => setShowMeta(!showMeta)}
+                                                onClick={() => setShowMeta(meta.graphId)}
                                                 style={{
                                                     display: "flex",
                                                     justifyContent: "flex-start",
@@ -315,7 +315,7 @@ export default function GraphUpload() {
                                                     <Text strong>Graph Id: {upload.graphId}  </Text>
                                                     {/*<Text strong> </Text>*/}
                                                 </div>
-                                                {showMeta ? (
+                                                {showMeta == upload.graphId ? (
                                                     <>
                                                         <UpOutlined style={{ marginLeft: 6 }} />
                                                     </>
@@ -326,7 +326,7 @@ export default function GraphUpload() {
                                                 )}
                                             </div>
 
-                                            {showMeta && (
+                                            {showMeta == upload.graphId && (
                                                 <div
                                                     style={{
                                                         display: "grid",
@@ -343,7 +343,8 @@ export default function GraphUpload() {
                                                     <Text type="secondary"><strong>Chunk Size:</strong> {meta.chunkSize}</Text>
                                                     <Text type="secondary"><strong>HDFS Path:</strong> {meta.hdfsFilePath}</Text>
                                                     <Text type="secondary"><strong>HDFS IP:</strong> {meta.hdfsIp}:{meta.hdfsPort}</Text>
-                                                    <Text type="secondary"><strong>Status:</strong> {meta.status}</Text>
+                                                    <Text type="secondary"><strong>Triples Per second :</strong> {upload.triplesPerSecond}</Text>
+                                                    <Text type="secondary"><strong>Bytes Per Second</strong> {upload.bytesPerSecond}</Text>
                                                 </div>
                                             )}
                                         </div>

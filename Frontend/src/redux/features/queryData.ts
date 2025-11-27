@@ -24,6 +24,7 @@ interface IQueryData {
   visualizeData: {
     node: any[];
     edge: any[];
+    render: boolean;
   }
   inDegreeDataPool: any[];
   outDegreeDataPool: any[];
@@ -35,6 +36,7 @@ const initialData: IQueryData = {
   visualizeData: {
     node: [],
     edge: [],
+      render: false
   },
   inDegreeDataPool: [],
   outDegreeDataPool: [],
@@ -81,9 +83,17 @@ export const queryDataSlice = createSlice({
           state.uploadBytes = payload;
       },
     add_visualize_data: (state, { payload }) => {
+
+
       const keys = Object.keys(payload);
+      if(keys.includes("done")){
+          state.visualizeData.render = true;
+      }
+      console.log(payload)
       const firstNode = { ...payload[keys[0]] };
+      const firstPartition = firstNode.partitionID
       const secondNode = { ...payload[keys[1]] };
+        const secondPartition = secondNode.partitionID
       const relation = payload[keys[2]];
       if(firstNode && secondNode && firstNode.id && secondNode.id){
         state.visualizeData.edge.push({ from: firstNode?.id, to: secondNode?.id , label: relation?.type});
@@ -99,7 +109,11 @@ export const queryDataSlice = createSlice({
             (existingNode) => existingNode.id === node.id
           );
           if (!nodeExists) {
-            state.visualizeData.node.push(node);
+              let color = '#97C2FC'
+              if( node.partitionID != secondPartition ){
+                  color = '#6590C4'
+              }
+            state.visualizeData.node.push({...node, color:color})
           }
         }};
       });
@@ -125,6 +139,7 @@ export const queryDataSlice = createSlice({
       state.visualizeData = {
         node: [],
         edge: [],
+          render: false
       };
     },
   },
