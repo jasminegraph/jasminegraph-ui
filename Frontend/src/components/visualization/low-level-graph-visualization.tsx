@@ -5,7 +5,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { LeftOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useAppSelector } from "@/redux/hook";
 import randomColor from "randomcolor";
-
+import Graph from "graphology";
+import Sigma from "sigma";
+import FA2 from "graphology-layout-forceatlas2";
 interface Props {
     onHighLevelViewClick: () => void;
 }
@@ -111,9 +113,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
             if (typeof window === "undefined" || !containerRef.current) return;
 
             setLoading(true);
-            const Graph = (await import("graphology")).default;
-            const Sigma = (await import("sigma")).default;
-
             const graph = new Graph({ multi: true ,type : "directed"});
             graphRef.current = graph;
 
@@ -206,7 +205,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
             });
 
             // Light layout smoothing
-            const FA2 = (await import("graphology-layout-forceatlas2")).default;
             await FA2.assign(graph, { iterations: 200, settings: { gravity: 5 } });
 
             setLoading(false);

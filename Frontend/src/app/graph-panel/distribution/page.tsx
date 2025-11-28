@@ -23,8 +23,11 @@ import { add_degree_data, clear_degree_data, add_visualize_data, clear_visualize
 import { useAppDispatch } from "@/redux/hook";
 import { IOption } from "@/types/options-types";
 import { IGraphDetails } from "@/types/graph-types";
-import TwoLevelGraphVisualization from "@/components/visualization/two-level-graph-visualization";
-import {LoadingOutlined} from "@ant-design/icons";
+import dynamic from "next/dynamic";
+const TwoLevelGraphVisualization = dynamic(
+    () => import("@/components/visualization/two-level-graph-visualization"),
+    { ssr: false } // Important: disables server-side rendering
+);import {LoadingOutlined} from "@ant-design/icons";
 
 const WS_URL = "ws://localhost:8080";
 
