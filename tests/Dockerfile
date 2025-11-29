@@ -1,5 +1,5 @@
 # Use your prebuilt Playwright test image
-FROM jasminegraph/jasminegraph-ui-tests-prerequisites:20251129T095516
+FROM jasminegraph/jasminegraph-ui-tests-prerequisites:20251129T095458
 
 WORKDIR /app
 
