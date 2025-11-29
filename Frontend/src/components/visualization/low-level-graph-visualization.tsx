@@ -141,8 +141,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick }: Props) => {
                 setHoveredEdge(null);
             });
             setProgress(50);
-
-            // setLoading(false);
         };
 
         initGraph();
