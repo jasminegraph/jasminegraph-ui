@@ -12,7 +12,11 @@ limitations under the License.
  */
 
 import { Router } from 'express';
-import { getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData, getClusterProperties } from '../controllers/graph.controller';
+import {
+    getGraphList, uploadGraph, removeGraph, triangleCount, getGraphVisualization, getGraphData, getClusterProperties,
+    getDataFromHadoop, constructKG, stopConstructKG,
+    updateKGConstructionMetaByClusterId, getKGConstructionMetaByGraphId, getOnProgressKGConstructionMeta, validateHDFS
+} from '../controllers/graph.controller';
 import multer from 'multer';
 import path from 'path';
 
@@ -37,8 +41,15 @@ const graphRoute = () => {
   router.post('/analyze/trianglecount', triangleCount)
   router.get('/visualize', getGraphVisualization);
   router.get('/data', getGraphData)
-  router.get('/info', getClusterProperties);
+  router.get('/info', getClusterProperties)
+    router.get('/hadoop', getDataFromHadoop);
+  router.post('/hadoop/validate-file', validateHDFS)
+    router.post('/hadoop/construct-kg', constructKG);
+    router.post('/hadoop/stop-construct-kg', stopConstructKG);
 
+    router.get('/construct-kg-meta', getKGConstructionMetaByGraphId);
+    router.get('/construct-kg-meta/progress', getOnProgressKGConstructionMeta);
+    router.put('/construct-kg-meta', updateKGConstructionMetaByClusterId);
   return router;
 };
 
