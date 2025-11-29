@@ -1,5 +1,5 @@
 # Use the prebuilt backend prerequisites image
-FROM jasminegraph/jasminegraph-ui-backend-prerequisites:latest
+FROM jasminegraph/jasminegraph-ui-backend-prerequisites:20251129T095516
 
 WORKDIR /app
 
