@@ -13,12 +13,12 @@ limitations under the License.
 
 'use client';
 import React, { useState, useEffect }  from "react";
-import { Input, message, Table, Tabs } from 'antd';
+import {Input, message, Spin, Table, Tabs} from 'antd';
 import type { TabsProps } from "antd";
-import { DownloadOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { CaretRightOutlined, LoadingOutlined} from '@ant-design/icons';
 import { useAppDispatch, useAppSelector } from "@/redux/hook";
-import { add_query_result, clear_result } from "@/redux/features/queryData";
-import { Select, Space } from 'antd';
+import { add_semantic_result, clear_result} from "@/redux/features/queryData";
+import { Select } from 'antd';
 import { getGraphList } from "@/services/graph-service";
 import QueryVisualization from "@/components/visualization/query-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
@@ -30,13 +30,13 @@ const { TextArea } = Input;
 
 const WS_URL = "ws://localhost:8080";
 
-export default function Query() {
+export default function SemanticBeamSearchPage() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
-  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });
   const [clientId, setClientID] = useState<string>('')
-  
+
   const { messagePool } = useAppSelector((state) => state.queryData);
 
   const [selectedGraph, setSelectedGraph] = React.useState<any>();
@@ -47,25 +47,23 @@ export default function Query() {
         setLoading(true);
     const res = await getGraphList();
     if(res.data){
-
+        setLoading(false);
       const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
           value: graph.idgraph,
           label: graph.name,
         }
       })
-        setLoading(false);
-
-        setGraphs(filteredData);
+      setGraphs(filteredData);
     }
     }catch(err){
-        setLoading(false);
-
-        message.error("Failed to fetch graphs: " + err);
+      message.error("Failed to fetch graphs: " + err);
+      setLoading(false);
     }
   }
 
   useEffect(() => {
+
     getGraphsData();
   }, [])
 
@@ -79,7 +77,7 @@ export default function Query() {
     if(message?.type == "CONNECTED"){
       setClientID(message?.clientId || '')
     } else {
-      dispatch(add_query_result(message));
+      dispatch(add_semantic_result(message));
     }
   }, [lastJsonMessage])
 
@@ -89,7 +87,7 @@ export default function Query() {
       dispatch(clear_result());
       if(readyState === ReadyState.OPEN){
         sendJsonMessage({
-          type: "QUERY",
+          type: "SBS",
           query,
           graphId: selectedGraph,
           clientId: clientId,
@@ -105,8 +103,6 @@ export default function Query() {
 
   // Get all unique keys from the data
   const allKeys = Object.keys(messagePool)
-  console.log(allKeys);
-
   const categories = Object.keys(messagePool);
 
   // Transform data into rows
@@ -142,7 +138,6 @@ export default function Query() {
             pagination={{ pageSize: 20 }}
             scroll={{ y: 90 * 5 }}
             size="small"
-            // rowClassName={() => "whitespace-pre-wrap"}
           />
         </>,
     },
@@ -157,6 +152,7 @@ export default function Query() {
 
   return (
     <div className="">
+        <Spin spinning={loading} indicator={<LoadingOutlined spin />} fullscreen />
       <div style={{display: "flex", justifyContent: "space-between", width: "100%", border: "1px solid #d9d9d9", borderRadius: "8px", padding: "10px", margin: "15px 0px", gap: "10px"}}>
         <Select
             placeholder={'Graph'}
@@ -168,7 +164,7 @@ export default function Query() {
           />
         <div style={{width: "90%"}}>
           <TextArea 
-            placeholder="Query ..." 
+            placeholder="Semantic Search ..."
             onChange={(e) => setQuery(e.target.value)}
             autoSize={{ minRows: 1, maxRows: 7 }}
             size="large"
@@ -176,7 +172,6 @@ export default function Query() {
           />
         </div>
         <CaretRightOutlined style={{fontSize: "24px", margin: "2px", padding: "0px 10px"}} onClick={onQuerySubmit}/>
-        {/* <DownloadOutlined style={{fontSize: "20px", margin: "2px"}} /> */}
       </div>
       {Object.keys(messagePool).length > 0 && (
         <Tabs
