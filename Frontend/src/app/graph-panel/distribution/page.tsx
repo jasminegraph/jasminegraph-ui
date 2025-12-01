@@ -30,7 +30,7 @@ const TwoLevelGraphVisualization = dynamic(
 );import {LoadingOutlined} from "@ant-design/icons";
 
 
-const WS_URL = "ws://backend:8080";
+const WS_URL = "ws://localhost:8080";
 
 type ISocketResponse = {
   type: string,
