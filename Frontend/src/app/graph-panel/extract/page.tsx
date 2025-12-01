@@ -42,7 +42,7 @@ const { Dragger } = Upload;
 const { Search } = Input;
 const { Title, Text } = Typography;
 
-const WS_URL = "ws://localhost:8080";
+const WS_URL = "ws://backend:8080";
 
 interface IUploadBytes {
     graphId: string;
