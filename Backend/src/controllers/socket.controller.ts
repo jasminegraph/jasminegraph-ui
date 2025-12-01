@@ -46,8 +46,6 @@ export const setupWebSocket = (server: any) => {
 
     ws.on('message', (message) => {
       const data = JSON.parse(message.toString());
-      console.log(data)
-
       // Handle messages from clients
       if (data.type === 'REQUEST_GRAPH') {
         streamGraphVisualization(data.clientId, data.graphFilePath);
@@ -347,8 +345,6 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
 
                             updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond, startTime, uploadPath });
                         }
-
-                        console.log(updates)
                         // Send updates only if still connected
                         if (client.readyState === WebSocket.OPEN) {
                             sendToClient(clientId, {

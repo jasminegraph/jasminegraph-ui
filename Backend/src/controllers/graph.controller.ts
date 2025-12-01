@@ -153,14 +153,12 @@ const getClusterProperties = async (req: Request, res: Response) => {
 };
 
 const uploadGraph = async (req: Request, res: Response) => {
-    // console.log("called upload");
     const connection = await getClusterDetails(req);
     if (!(connection.host || connection.port)) {
         return res.status(404).send(connection);
     }
     const { graphName } = req.body;
     const fileName = req.file?.filename;
-    // const filePath = DEV_MODE ? "http://172.17.0.1:8080/public/" + fileName : fileName; // Get the file path
     const filePath = DEV_MODE ? "/var/tmp/data/" + fileName : fileName; // Get the file path
 
     console.log(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n');
@@ -172,14 +170,6 @@ const uploadGraph = async (req: Request, res: Response) => {
             tSocket.on("data", (buffer) => {
                 commandOutput += buffer.toString("utf8");
             });
-
-            // Write the command to the Telnet server
-            // tSocket.write(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n', "utf8", () => {
-            //   setTimeout(() => {
-            //     if (commandOutput) {
-            //       console.log(new Date().toLocaleString() + " - UPLOAD " + req.body.graphName + " - " + commandOutput);
-
-            //write GRAPH_UPLOAD_COMMAND and if output == send then send again graphName|filePath if it is not send don't do anything
             tSocket.write(GRAPH_UPLOAD_COMMAND + '\n', "utf8", () => {
                 setTimeout(() => {
                     if (commandOutput.includes("send")) {
@@ -187,7 +177,6 @@ const uploadGraph = async (req: Request, res: Response) => {
                         tSocket.write(graphName + '|' + filePath + '\n', "utf8", () => {
                             setTimeout(() => {
                                 if (commandOutput) {
-                                    console.log(new Date().toLocaleString() + " - UPLOAD " + req.body.graphName + " - " + commandOutput);
                                     res.status(HTTP[200]).send(commandOutput);
                                 } else {
                                     res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
@@ -223,7 +212,6 @@ export const constructKG = async (req: Request, res: Response) => {
         graphId
     } = req.body;
 
-    console.log( req.body)
     try {
         telnetConnection({ host: connection.host, port: connection.port })(() => {
             let commandOutput = "";
@@ -300,7 +288,7 @@ export const constructKG = async (req: Request, res: Response) => {
                     }
 
 
-                    console.log("✅ KG extraction completed");
+                    console.log("KG extraction started");
                     res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
                     // tSocket.end();
                 }
@@ -327,8 +315,6 @@ export const stopConstructKG = async (req: Request, res: Response) => {
         telnetConnection({ host: connection.host, port: connection.port })(() => {
             let commandOutput = "";
             req.setTimeout(0);
-            res.setTimeout(0);
-
             tSocket.on("data", async (buffer) => {
                 const msg = buffer.toString("utf8").trim();
                 commandOutput += msg + "\n";
@@ -382,7 +368,7 @@ export const getKGConstructionMetaByGraphId = async (
         console.error(err);
         return res.status(500).json({
             message:
-                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path.",
+                "Internal Server Error: Unable to fetch KG Construction Metadata for the given cluster and file path.",
             error: err instanceof Error ? err.message : "Unknown error occurred",
         });
     }
@@ -417,7 +403,7 @@ export const getOnProgressKGConstructionMeta = async (
         console.error(err);
         return res.status(500).json({
             message:
-                "Internal Server Error: Unable to fetch KGConstructionMeta for the given cluster and file path.",
+                "Internal Server Error: Unable to fetch KG Construction Metadata for the given cluster and file path.",
             error: err instanceof Error ? err.message : "Unknown error occurred",
         });
     }
@@ -447,14 +433,14 @@ export const updateKGConstructionMetaByClusterId = async (
         );
 
         return res.status(200).json({
-            message: "KGConstructionMeta updated successfully",
+            message: "KG Construction Metadata updated successfully",
             data: updated,
         });
     } catch (err) {
         console.error(err);
         return res.status(500).json({
             message:
-                "Internal Server Error: Unable to update KGConstructionMeta for the given cluster and file path.",
+                "Internal Server Error: Unable to update KG Construction Metadata for the given cluster and file path.",
             error: err instanceof Error ? err.message : "Unknown error occurred",
         });
     }
@@ -478,7 +464,6 @@ const removeGraph = async (req: Request, res: Response) => {
             tSocket.write(GRAPH_REMOVE_COMMAND + '|' + req.params.id + '\n', 'utf8', () => {
                 setTimeout(() => {
                     if (commandOutput) {
-                        console.log(new Date().toLocaleString() + ' - REMOVE ' + req.params.id + ' - ' + commandOutput);
                         return res.status(HTTP[200]).send(commandOutput);
                     } else {
                         return res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
@@ -504,13 +489,8 @@ const getDataFromHadoop = async (req: Request, res: Response) => {
             return res.status(response.status).json({ error: 'Failed to fetch from Hadoop' });
         }
         const data = await response.json();
-        // filer out data to pathSuffix only
-        // const fileToWrite = '/home/kopimenan/FYP_Fork/jasminegraph/env/config/hdfs_config.txt'; // specify your file path here
-        // fs.writeFileSync(fileToWrite, `hdfs.host=${ip}\nhdfs.port=9000\n`, { encoding: 'utf8' });
-        console.log(data);
         data.FileStatuses.FileStatus = data.FileStatuses.FileStatus.map((file) => file.pathSuffix);
         res.status(200).json(data.FileStatuses.FileStatus);
-        console.log(data);
     } catch (err) {
         res.status(500).json({ error: 'Error connecting to Hadoop', details: err });
     }
@@ -565,7 +545,6 @@ const constructKGHadoop = async (req: Request, res: Response) => {
             tSocket.write(LIST_COMMAND + '\n', 'utf8', () => {
                 setTimeout(() => {
                     if (commandOutput) {
-                        console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
                         res.status(HTTP[200]).send(JSON.parse(commandOutput));
                     } else {
                         res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
@@ -593,13 +572,10 @@ const triangleCount = async (req: Request, res: Response) => {
                 commandOutput += buffer.toString('utf8');
             });
 
-            console.log(TRIANGLE_COUNT_COMMAND + '|' + graph_id + '|' + priority + '\n');
-
             // Write the command to the Telnet server
             tSocket.write(TRIANGLE_COUNT_COMMAND + '|' + graph_id + '|' + priority + '\n', 'utf8', () => {
                 setTimeout(() => {
                     if (commandOutput) {
-                        console.log(new Date().toLocaleString() + ' - TRIANGLECOUNT - ' + commandOutput);
                         res.status(HTTP[200]).send(commandOutput);
                     } else {
                         res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
@@ -641,7 +617,6 @@ const getGraphData = async (req, res) => {
             tSocket.write(GRAPH_DATA_COMMAND + '\n', 'utf8', () => {
                 setTimeout(() => {
                     if (commandOutput) {
-                        console.log(new Date().toLocaleString() + ' - ' + GRAPH_DATA_COMMAND + ' - ' + commandOutput);
                         res.status(HTTP[200]).send({data: JSON.parse(commandOutput)});
                     } else {
                         res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });

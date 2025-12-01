@@ -123,18 +123,10 @@ export default function GraphUpload() {
     const pauseKGConstruction = async (graphId: string) => {
         try {
             setLoading(true);
-            //
-            // if (pausedGraphs.length > 0) {
-            //
-            // }
             stopConstructKG(graphId, "paused").then(()=>{
 
                 getKGConstructionMetaData(graphId).then(kgConstructMeta=>{
                     setInitForm(kgConstructMeta.data);
-                    console.log(kgConstructMeta);
-                    console.log(kgConstructMeta)
-
-
                     setHadoopModelOpen(true);
                     message.success("Graph construction paused");
                     setPausedGraphs((prev) => ({ ...prev, [graphId]: true }));
@@ -146,7 +138,7 @@ export default function GraphUpload() {
         } catch {
             message.error("Failed to pause graph construction");
         }finally {
-            // setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -184,17 +176,12 @@ export default function GraphUpload() {
     }, [lastJsonMessage]);
 
     useEffect(() => {
-        console.log("called useEffect on change of hadoopModalOpen", hadoopModalOpen);
-
         if(hadoopModalOpen || showUploadSection) return;
 
         setLoading(true);
 
         getOnProgressKGConstructionMetaData().then(res=>{
             setGraphs(res.data);
-            console.log("on progress graphs",res.data);
-
-
         })
         const interval = setInterval(() => {
             if (readyState === ReadyState.OPEN) {
@@ -313,7 +300,6 @@ export default function GraphUpload() {
                                             >
                                                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                                                     <Text strong>Graph Id: {upload.graphId}  </Text>
-                                                    {/*<Text strong> </Text>*/}
                                                 </div>
                                                 {showMeta == upload.graphId ? (
                                                     <>
@@ -377,10 +363,6 @@ export default function GraphUpload() {
                                                     if (meta.status === "paused") {
                                                         getKGConstructionMetaData(upload.graphId).then(kgConstructMeta=>{
                                                             setInitForm(kgConstructMeta.data);
-                                                            console.log(kgConstructMeta);
-                                                            console.log(kgConstructMeta)
-
-
                                                             setHadoopModelOpen(true);
                                                             message.success("Graph construction paused");
                                                             setPausedGraphs((prev) => ({ ...prev, [upload.graphId]: true }));

@@ -103,8 +103,6 @@ export default function SemanticBeamSearchPage() {
 
   // Get all unique keys from the data
   const allKeys = Object.keys(messagePool)
-  console.log(allKeys);
-
   const categories = Object.keys(messagePool);
 
   // Transform data into rows

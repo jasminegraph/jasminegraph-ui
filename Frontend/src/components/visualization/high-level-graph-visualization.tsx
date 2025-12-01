@@ -20,7 +20,6 @@ import { IGraphDetails } from "@/types/graph-types";
 import { Descriptions } from "antd";
 import type { DescriptionsProps } from "antd";
 import { useAppSelector } from "@/redux/hook";
-// import { ERROR_MSG } from './low-level-graph-visualization';
 import { VISUALIZATION_VERTEX_LIMIT } from "@/properties";
 
 export type INode = {
@@ -137,14 +136,9 @@ const TwoLevelGraphVisualization = ({
                     network.setData({ nodes: nodesRef.current, edges: edgesRef.current });
                     network.fit();
                 }
-            } else {
-                // console.warn(ERROR_MSG.noData, selectedNode);
-                // message.warning(ERROR_MSG.noData);
             }
             setLoading(false);
         } catch (err) {
-            // console.error(ERROR_MSG.failedMsg, err);
-            // message.error(ERROR_MSG.failedMsg);
             setLoading(false);
         }
     };
@@ -173,14 +167,6 @@ const TwoLevelGraphVisualization = ({
             color: "#97c2fc",
             size: getNodeSize(partition.vertexcount, maxVertexCount),
         }));
-        // const nodes = graph?.partitions.map((partition) => ({
-        //     id: partition.idpartition,
-        //     label: `Partition ${partition.idpartition}`,
-        //     shape: "dot",
-        //     color: "#97c2fc",
-        //     size: getNodeSize(partition.vertexcount),
-        // }));
-
         const edges: IEdge[] = loadHighLevelEdgeList();
 
         const net = new Network(
