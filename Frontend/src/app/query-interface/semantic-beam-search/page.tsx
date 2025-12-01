@@ -34,7 +34,7 @@ export default function SemanticBeamSearchPage() {
   const dispatch = useAppDispatch();
   const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
-  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });
   const [clientId, setClientID] = useState<string>('')
 
   const { messagePool } = useAppSelector((state) => state.queryData);
