@@ -13,18 +13,53 @@ limitations under the License.
 
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 
 export default function PerformancePage() {
   const dashboardUrl = "http://localhost:3001/d/beg67s27j6oe8b/jasminegraph-performance";
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkDashboardAvailability = async () => {
+      try {
+        const response = await fetch(dashboardUrl, { method: "HEAD" });
+        if (response.ok) {
+          setIsAvailable(true);
+        } else {
+          setIsAvailable(false);
+        }
+      } catch (error) {
+        setIsAvailable(false);
+      }
+    };
+    checkDashboardAvailability();
+  }, [dashboardUrl]);
+
+  if (isAvailable === null) {
+    return (
+      <PageWrapper>
+        <p>Checking performance dashboard availability</p>
+      </PageWrapper>
+    );
+  }
+
+  if (isAvailable === false) {
+    return (
+      <PageWrapper>
+        <p>
+          Performance dashboard is currently unavailable. Please check if the Grafana service is running.
+        </p>
+      </PageWrapper>
+    );
+  }
 
   return (
     <PageWrapper>
-      <div style={{ height: 'calc(100vh - 64px)', width: '100%', padding: 4 }}>
+      <div style={{ height: "calc(100vh - 64px)", width: "100%", padding: 4 }}>
         <iframe
           src={dashboardUrl}
-          style={{ width: '100%', height: '100%', border: 'none', display: 'block' }}
+          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
           title="Grafana Dashboard"
         />
       </div>
