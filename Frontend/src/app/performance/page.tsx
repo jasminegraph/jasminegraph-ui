@@ -15,9 +15,10 @@ limitations under the License.
 
 import React, { useEffect, useState } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
+import { GRAFANA_DASHBOARD } from "@/properties";
 
 export default function PerformancePage() {
-  const dashboardUrl = "http://localhost:3001/d/beg67s27j6oe8b/jasminegraph-performance";
+  const dashboardUrl = `${GRAFANA_DASHBOARD.baseUrl}/d/${GRAFANA_DASHBOARD.uid}/${GRAFANA_DASHBOARD.slug}`;
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -39,7 +40,23 @@ export default function PerformancePage() {
   if (isAvailable === null) {
     return (
       <PageWrapper>
-        <p>Checking performance dashboard availability</p>
+        <div
+          style={{
+            height: "calc(100vh - 64px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 16,
+            width: "100%",
+            textAlign: "center",
+            fontSize: 18,
+            color: "#555",
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            lineHeight: 1.4,
+          }}
+        >
+          <p>Checking performance dashboard availability</p>
+        </div>
       </PageWrapper>
     );
   }
@@ -47,9 +64,26 @@ export default function PerformancePage() {
   if (isAvailable === false) {
     return (
       <PageWrapper>
-        <p>
-          Performance dashboard is currently unavailable. Please check if the Grafana service is running.
-        </p>
+        <div
+          style={{
+            height: "calc(100vh - 64px)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 16,
+            width: "100%",
+            textAlign: "center",
+            fontSize: 18,
+            color: "#555",
+            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+            lineHeight: 1.4,
+          }}
+        >
+          <p>
+            Performance dashboard is currently unavailable. Please check if the
+            Grafana service is running.
+          </p>
+        </div>
       </PageWrapper>
     );
   }
@@ -59,7 +93,12 @@ export default function PerformancePage() {
       <div style={{ height: "calc(100vh - 64px)", width: "100%", padding: 4 }}>
         <iframe
           src={dashboardUrl}
-          style={{ width: "100%", height: "100%", border: "none", display: "block" }}
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            display: "block",
+          }}
           title="Grafana Dashboard"
         />
       </div>
