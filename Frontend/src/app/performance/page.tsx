@@ -16,6 +16,7 @@ limitations under the License.
 import React, { useEffect, useState } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 import { GRAFANA_DASHBOARD } from "@/properties";
+import styles from "./performance.module.css";
 
 export default function PerformancePage() {
   const dashboardUrl = `${GRAFANA_DASHBOARD.baseUrl}/d/${GRAFANA_DASHBOARD.uid}/${GRAFANA_DASHBOARD.slug}`;
@@ -40,22 +41,8 @@ export default function PerformancePage() {
   if (isAvailable === null) {
     return (
       <PageWrapper>
-        <div
-          style={{
-            height: "calc(100vh - 64px)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 16,
-            width: "100%",
-            textAlign: "center",
-            fontSize: 18,
-            color: "#555",
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-            lineHeight: 1.4,
-          }}
-        >
-          <p>Checking performance dashboard availability</p>
+        <div className={styles.container}>
+          <p>Checking performance dashboard&apos;s availability</p>
         </div>
       </PageWrapper>
     );
@@ -64,21 +51,7 @@ export default function PerformancePage() {
   if (isAvailable === false) {
     return (
       <PageWrapper>
-        <div
-          style={{
-            height: "calc(100vh - 64px)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 16,
-            width: "100%",
-            textAlign: "center",
-            fontSize: 18,
-            color: "#555",
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-            lineHeight: 1.4,
-          }}
-        >
+        <div className={styles.container}>
           <p>
             Performance dashboard is currently unavailable. Please check if the
             Grafana service is running.
@@ -90,15 +63,10 @@ export default function PerformancePage() {
 
   return (
     <PageWrapper>
-      <div style={{ height: "calc(100vh - 64px)", width: "100%", padding: 4 }}>
+      <div className={styles.iframeContainer}>
         <iframe
           src={dashboardUrl}
-          style={{
-            width: "100%",
-            height: "100%",
-            border: "none",
-            display: "block",
-          }}
+          className={styles.iframe}
           title="Grafana Dashboard"
         />
       </div>
