@@ -283,7 +283,7 @@ export default function Clusters() {
             columns={columns} 
             dataSource={getTableData()} 
             pagination={PaginationProps} 
-            scroll={{ y: "75vh" }}/>
+            scroll={{ y: "60vh" }}/>
         </Content>
       </Layout>
     </PageWrapper>
