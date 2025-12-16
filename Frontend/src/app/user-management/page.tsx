@@ -226,7 +226,7 @@ export default function Clusters() {
       const res = await getAllUsers();
       if(res.data){
         const mappedUsers: IUserAccessData[] = res.data.map((user: any) => ({
-          _id: user.id,
+          id: user.id,
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
