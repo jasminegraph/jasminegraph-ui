@@ -42,10 +42,11 @@ interface DataType {
 }
 
 const PaginationProps = {
-  pageSize: 5,
   defaultPageSize: 5,
   showSizeChanger: true,
-  showTotal: (total: number, range: [number, number]) => `${range[0]}-${range[1]} of ${total} items`,
+  pageSizeOptions: ["5", "10", "20", "50"],
+  showTotal: (total: number, range: [number, number]) =>
+    `${range[0]}-${range[1]} of ${total} items`,
 } as PaginationProps;
 
 export default function Clusters() {
@@ -278,7 +279,11 @@ export default function Clusters() {
             </div>
             <Button size="large" onClick={showModal}>Add New User</Button>
           </div>
-          <Table columns={columns} dataSource={getTableData()} pagination={PaginationProps}/>
+          <Table 
+            columns={columns} 
+            dataSource={getTableData()} 
+            pagination={PaginationProps} 
+            scroll={{ y: "75vh" }}/>
         </Content>
       </Layout>
     </PageWrapper>
