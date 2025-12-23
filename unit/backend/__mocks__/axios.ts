@@ -11,29 +11,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
+import { AxiosInstance } from 'axios';
+
 const mockAxios = {
-  get: jest.fn(),
-  post: jest.fn(),
-  put: jest.fn(),
-  delete: jest.fn(),
-  patch: jest.fn(),
-  create: jest.fn(() => mockAxios),
+  get: jest.fn() as jest.Mock,
+  post: jest.fn() as jest.Mock,
+  put: jest.fn() as jest.Mock,
+  delete: jest.fn() as jest.Mock,
+  patch: jest.fn() as jest.Mock,
+  create: jest.fn(() => mockAxios) as jest.Mock,
   defaults: {
     baseURL: '',
-    headers: {
-      common: {},
-    },
+    headers: { common: {} },
   },
   interceptors: {
-    request: {
-      use: jest.fn(),
-      eject: jest.fn(),
-    },
-    response: {
-      use: jest.fn(),
-      eject: jest.fn(),
-    },
+    request: { use: jest.fn(), eject: jest.fn() },
+    response: { use: jest.fn(), eject: jest.fn() },
   },
-};
+  CancelToken: {
+    source: jest.fn(),
+  },
+  isAxiosError: jest.fn(() => false),
+} as unknown as AxiosInstance;
 
 export default mockAxios;
