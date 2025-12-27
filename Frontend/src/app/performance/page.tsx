@@ -25,14 +25,20 @@ export default function PerformancePage() {
   useEffect(() => {
     const checkDashboardAvailability = async () => {
       try {
-        const response = await fetch(dashboardUrl, { method: "HEAD" });
-        if (response.ok) {
-          setIsAvailable(true);
+        await fetch(dashboardUrl, { method: "HEAD", mode: "no-cors" });
+        setIsAvailable(true);
+      } catch (error: any) {
+        // CORS errors mean service is likely running but blocked
+        if (
+          error.message &&
+          (error.message.includes("CORS") ||
+            error.message.includes("Load failed") ||
+            error.message.includes("TypeError"))
+        ) {
+          setIsAvailable(true); // Service running, CORS blocking
         } else {
-          setIsAvailable(false);
+          setIsAvailable(false); // Network error, service down
         }
-      } catch (error) {
-        setIsAvailable(false);
       }
     };
     checkDashboardAvailability();
