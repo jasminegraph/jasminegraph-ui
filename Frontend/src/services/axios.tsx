@@ -70,60 +70,63 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
     (response) => response,
-    (error) => {
-        const originalRequest = error.config;
-        if (error.response) {
-            const { status, data } = error.response;
-            switch (status) {
-                case 400:
-                    console.error(data || "Bad Request");
-                    break;
-                case 401:
-                    console.error("Unauthorized access. Please log in.");
-                    break;
-                case 500:
-                    console.error(
-                        "Internal Server Error. Please try again later."
-                    );
-                    break;
-                default:
-                    console.error("An error occurred. Please try again.");
-            }
-            if (
-                status === 400 &&
-                data?.find((d: any) => d?.ErrorCode === "0014")
-            ) {
-                try {
-                    originalRequest._retry = true;
-                    var tokenString;
-                    if (typeof window !== "undefined") {
-                        tokenString = localStorage.getItem(REFRESH_TOKEN);
-                    }
-                    if (tokenString) {
-                            const url = "/backend/auth/refresh";
-                            return axios
-                                .post(
-                                    url,
-                                    { token: tokenString },
-                                )
-                                .then((res) => {
-                                    const newAuth = res.data;
-                                    originalRequest["headers"][
-                                        "Authorization"
-                                    ] = `Bearer ${newAuth?.access_token}`;
-                                    localStorage.setItem(ACCESS_TOKEN, newAuth?.accessToken);
-                                    localStorage.setItem(REFRESH_TOKEN, newAuth?.refreshToken);
-                                  
-                                    return axios(originalRequest);
-                                });
-                        }
-                } catch (refreshError) {
-                    return Promise.reject(refreshError);
-                }
-            }
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN);
+        if (!refreshToken) {
+          console.log(
+            "[AXIOS] No refresh token available, redirecting to login"
+          );
+          localStorage.removeItem(ACCESS_TOKEN);
+          localStorage.removeItem(REFRESH_TOKEN);
+          window.location.href = "/auth";
+          return Promise.reject(error);
         }
-        return Promise.reject(error);
+
+        const response = await axios.post("/backend/auth/refresh-token", {
+          token: refreshToken,
+        });
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+
+        localStorage.setItem(ACCESS_TOKEN, accessToken);
+        localStorage.setItem(REFRESH_TOKEN, newRefreshToken);
+
+        originalRequest.headers["Authorization"] = `Bearer ${accessToken}`;
+
+        return axios(originalRequest);
+      } catch (refreshError) {
+        console.error("[AXIOS] Token refresh failed:", refreshError);
+        localStorage.removeItem(ACCESS_TOKEN);
+        localStorage.removeItem(REFRESH_TOKEN);
+        window.location.href = "/auth";
+        return Promise.reject(refreshError);
+      }
     }
+
+    if (error.response) {
+      const { status, data } = error.response;
+      switch (status) {
+        case 400:
+          console.error("[AXIOS] Bad Request:", data);
+          break;
+        case 500:
+          console.error(
+            "[AXIOS] Internal Server Error. Please try again later."
+          );
+          break;
+        default:
+          console.error("[AXIOS] An error occurred:", status, data);
+      }
+    }
+
+    return Promise.reject(error);
+  }
 );
 
 export default api;
