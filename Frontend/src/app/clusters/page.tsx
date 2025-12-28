@@ -43,12 +43,23 @@ export default function Clusters() {
   const { selectedCluster } = useAppSelector((state) => state.clusterData);
 
   const [openModal, setOpenModal] = useState<boolean>(false);
-  const { getSrvAccessToken } = useAccessToken();
+  const { getSrvAccessToken, refreshAccessToken, isTokenExpired } = useAccessToken();
   const [form] = Form.useForm();
 
   const getAllCluster = useCallback(async () => {
     try {
-      const token = getSrvAccessToken() || "";
+      let token = getSrvAccessToken() || "";
+
+      if (token && isTokenExpired(token)) {
+        try {
+          token = await refreshAccessToken();
+          console.log("[CLUSTERS] Token refreshed successfully");
+        } catch (refreshError) {
+          console.log("[CLUSTERS] Token refresh failed, redirecting to login");
+          router.replace("/auth");
+          return;
+        }
+      }
       const clusterRes = await getAllClusters(token);
       if (!clusterRes.data) return;
 
