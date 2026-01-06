@@ -269,6 +269,8 @@ export default function Clusters() {
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           <Modal
@@ -291,7 +293,7 @@ export default function Clusters() {
             dataSource={getTableData()} 
             pagination={PaginationProps} 
             scroll={{ y: "60vh" }}/>
-            <ActivityPanel featureName="User Management" />
+          <ActivityPanel featureName="User Management" />
         </Content>
       </Layout>
     </PageWrapper>
