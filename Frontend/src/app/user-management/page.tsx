@@ -27,7 +27,7 @@ import { useAppSelector } from "@/redux/hook";
 import { IUserAccessData } from "@/types/user-types";
 import { getAllUsers } from "@/services/user-service";
 import { set_Users_Cache } from "@/redux/features/cacheSlice";
-import form from "antd/es/form";
+import { useActivity } from "@/hooks/useActivity";
 
 const { Content } = Layout;
 
@@ -51,6 +51,7 @@ const PaginationProps = {
 
 export default function Clusters() {
   const router = useRouter();
+  const { reportErrorFromException } = useActivity();
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
@@ -238,6 +239,11 @@ export default function Clusters() {
       }
     }catch(err){
       message.error("Failed to fetch user data")
+      reportErrorFromException(
+        "User Management",
+        err,
+        "Failed to fetch user data."
+      );
     }
   }
 
