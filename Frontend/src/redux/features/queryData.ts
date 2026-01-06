@@ -25,6 +25,7 @@ interface IQueryData {
     node: any[];
     edge: any[];
     render: boolean;
+    updateProgress:boolean;
   }
   inDegreeDataPool: any[];
   outDegreeDataPool: any[];
@@ -36,7 +37,8 @@ const initialData: IQueryData = {
   visualizeData: {
     node: [],
     edge: [],
-      render: false
+      render: false,
+    updateProgress:false,
   },
   inDegreeDataPool: [],
   outDegreeDataPool: [],
@@ -80,14 +82,22 @@ export const queryDataSlice = createSlice({
       },
 
       add_upload_bytes: (state, {payload}: {payload: any}) => {
+        console.log(payload);
           state.uploadBytes = payload;
       },
+
     add_visualize_data: (state, { payload }) => {
 
 
       const keys = Object.keys(payload);
       if(keys.includes("done")){
           state.visualizeData.render = true;
+        state.visualizeData.updateProgress= !state.visualizeData.updateProgress;
+
+      }
+      if(state.visualizeData.edge.length % 100 == 0){
+        console.log("Updating progress ")
+        state.visualizeData.updateProgress= !state.visualizeData.updateProgress;
       }
       console.log(payload)
       const firstNode = { ...payload[keys[0]] };
@@ -139,7 +149,8 @@ export const queryDataSlice = createSlice({
       state.visualizeData = {
         node: [],
         edge: [],
-          render: false
+          render: false,
+        updateProgress: false,
       };
     },
   },

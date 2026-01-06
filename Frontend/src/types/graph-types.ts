@@ -44,6 +44,13 @@ export interface IKnowledgeGraph {
     "model": string,
     "chunkSize": number,
     "bytesPerSecond": number,
-    "triplesPerSecond": number
+    "triplesPerSecond": number,
+    total: number;
+    percentage: number;
+    startTime: string;
+    uploadPath: string;
+    kgConstructionStatus:string;
+    uploaded:number
+
 
 }

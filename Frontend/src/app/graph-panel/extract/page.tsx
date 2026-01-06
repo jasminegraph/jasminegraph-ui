@@ -37,6 +37,7 @@ import {LRUCache} from "lru-cache";
 import Status = LRUCache.Status;
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import {IKnowledgeGraph} from "@/types/graph-types";
+import KgForm from "@/components/extract-panel/kg-form";
 
 const { Dragger } = Upload;
 const { Search } = Input;
@@ -46,6 +47,7 @@ const WS_URL = "ws://localhost:8080";
 
 interface IUploadBytes {
     graphId: string;
+    name:string;
     uploaded: number;
     total: number;
     percentage: number;
@@ -53,6 +55,14 @@ interface IUploadBytes {
     bytesPerSecond: number;
     startTime: string;
     uploadPath: string;
+    llmRunnerString:string;
+    inferenceEngine:string;
+    model:string;
+    chunkSize:string;
+    kgConstructionStatus:string;
+    hdfsIp:string;
+    hdfsPort:string;
+
 }
 
 type ISocketResponse = {
@@ -69,16 +79,25 @@ export default function GraphUpload() {
     const [file, setFile] = useState<File>();
     const [fileUrl, setFileUrl] = useState<string>();
     const [modalOpen, setModalOpen] = useState(false);
+    const [isLocalFileUpload, setIsLocalFileUpload] = useState<boolean>(false);
     const [graphName, setGraphName] = useState<string>("");
     const [showUploadSection, setShowUploadSection] = useState<boolean>(false);
     const [graphs, setGraphs] = useState<IKnowledgeGraph[]>([]);
-    const [initForm, setInitForm] = useState<IKnowledgeGraph[]>([]);
+    const [initForm, setInitForm] = useState<IKnowledgeGraph>();
     const [loading, setLoading] = useState<boolean>(false);
     const [clientId, setClientID] = useState<string>('');
     const [showMeta, setShowMeta] = useState<string>("");
     const [pausedGraphs, setPausedGraphs] = useState<Record<string, boolean>>({});
+    const [textFileName, setTextFileName] = useState<string>("");
+    const [localFilePath, setLocalFilePath] = useState<string>("");
+    const [tpsHistory, setTpsHistory] = useState<Record<string, number[]>>({});
+    const getAverageTPS = (graphId: string) => {
+        const history = tpsHistory[graphId] || [];
+        if (history.length === 0) return 0;
 
-
+        const sum = history.reduce((acc, val) => acc + val, 0);
+        return sum / history.length;
+    };
     const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, { share: true, shouldReconnect: (closeEvent) => true });
 
     const formatSize = (bytes : number) => {
@@ -100,37 +119,19 @@ export default function GraphUpload() {
         return false;
     };
 
-    const handleUpload = async () => {
-        if (!file) {
-            message.error("Please select a file to upload");
-            return;
-        }
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('graphName', graphName);
-
-        try {
-            await axios.post('/backend/graph/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
-            message.success("File uploaded successfully");
-        } catch (error) {
-            message.error("Failed to upload file");
-        }
-
-        setModalOpen(false);
-    };
 
     const pauseKGConstruction = async (graphId: string) => {
         try {
             setLoading(true);
             stopConstructKG(graphId, "paused").then(()=>{
 
-                getKGConstructionMetaData(graphId).then(kgConstructMeta=>{
-                    setInitForm(kgConstructMeta.data);
-                    setHadoopModelOpen(true);
-                    message.success("Graph construction paused");
-                    setPausedGraphs((prev) => ({ ...prev, [graphId]: true }));
-                })
+                // getKGConstructionMetaData(graphId).then(kgConstructMeta=>{
+                //     setInitForm(kgConstructMeta.data);
+                //     setHadoopModelOpen(true);
+                //     message.success("Graph construction paused");
+                //     setPausedGraphs((prev) => ({ ...prev, [graphId]: true }));
+                // })
 
 
             })
@@ -171,18 +172,34 @@ export default function GraphUpload() {
 
 
             dispatch(add_upload_bytes({ ...message }));
+
             setLoading(false);
         }
     }, [lastJsonMessage]);
+
+    useEffect(() => {
+        uploadBytesGraphs?.updates?.forEach((upload) => {
+            if (upload.triplesPerSecond !== undefined) {
+                setTpsHistory(prev => ({
+                    ...prev,
+                    [upload.graphId]: [
+                        ...(prev[upload.graphId] || []),
+                        upload.triplesPerSecond
+                    ]
+                }));
+            }
+        });
+    }, [uploadBytesGraphs]);
+
 
     useEffect(() => {
         if(hadoopModalOpen || showUploadSection) return;
 
         setLoading(true);
 
-        getOnProgressKGConstructionMetaData().then(res=>{
-            setGraphs(res.data);
-        })
+        // getOnProgressKGConstructionMetaData().then(res=>{
+        //     setGraphs(res.data);
+        // })
         const interval = setInterval(() => {
             if (readyState === ReadyState.OPEN) {
 
@@ -215,14 +232,20 @@ export default function GraphUpload() {
                         <p className="ant-upload-text">Click or drag file to this area to upload</p>
                     </Dragger>
 
-                    <Modal title="Extract Graph" centered open={modalOpen} onOk={() => setModalOpen(false)} onCancel={() => setModalOpen(false)} footer={null}>
-                        <div className="flex whitespace-nowrap gap-4 mt-5">
-                            <div>Graph Name:</div>
-                            <Input value={graphName} onChange={(event) => setGraphName(event.currentTarget.value)} />
-                        </div>
-                        <Button type="primary" style={{ margin: "20px 0px", width: "100%" }} onClick={handleUpload}>
-                            Upload
-                        </Button>
+                    {/*<Modal title="Extract Graph" centered open={modalOpen} onOk={() => setModalOpen(false)} onCancel={() => setModalOpen(false)} footer={null}>*/}
+                    {/*    <div className="flex whitespace-nowrap gap-4 mt-5">*/}
+                    {/*        <div>Text file Name:</div>*/}
+                    {/*        <Input value={textFileName} onChange={(event) => setTextFileName(event.currentTarget.value)} />*/}
+                    {/*    </div>*/}
+                    {/*    <Button type="primary" style={{ margin: "20px 0px", width: "100%" }} onClick={handleUpload}>*/}
+                    {/*        Upload*/}
+                    {/*    </Button>*/}
+                    {/*</Modal>*/}
+                    <Modal title=""   footer={null}     open={modalOpen}  onCancel={()=>setModalOpen(false)}>
+                        {modalOpen  && <KgForm file={file} initForm={initForm as IKnowledgeGraph} onSuccess={()=>  {
+                            setShowUploadSection(false)
+                            setModalOpen(false)}} currentPage={0}/>
+                        }
                     </Modal>
 
                     <Button type="primary" style={{ margin: "20px 0px", width: "100%" }} onClick={() => setModalOpen(true)}>
@@ -247,7 +270,7 @@ export default function GraphUpload() {
                 </div>}
             <KafkaUploadModal open={kafkaModalOpen} setOpen={setKafkaModelOpen} />
             <Modal title=""   footer={null}     open={hadoopModalOpen} onCancel={()=>setHadoopModelOpen(false)}>
-                {hadoopModalOpen  && <HadoopKgForm  initForm={initForm[0]} onSuccess={()=>  {
+                {hadoopModalOpen  && <HadoopKgForm currentPage={isLocalFileUpload? 1: 0} initForm={initForm as IKnowledgeGraph} onSuccess={()=>  {
                     setShowUploadSection(false)
                     setHadoopModelOpen(false)}}/>
                 }
@@ -262,7 +285,7 @@ export default function GraphUpload() {
                 </div>}
 
             {!showUploadSection && uploadBytesGraphs && uploadBytesGraphs.updates.length > 0 &&
-                uploadBytesGraphs.updates.map((upload: IUploadBytes, index) => upload.percentage !== 100 && (
+                uploadBytesGraphs.updates.map((upload: IKnowledgeGraph, index) => upload.percentage !== 100 && (
                     <Card
                         key={index}
                         hoverable
@@ -277,18 +300,16 @@ export default function GraphUpload() {
                         <Typography>
 
                             {/* ✅ Show Metadata */}
-                            {graphs
-                                .filter((g) => g.graphId === upload.graphId)
-                                .map((meta) => (
+
                                     <>
 
-                                        <div key={meta.graphId}>
+                                        <div key={upload.graphId}>
 
 
 
 
                                             <div
-                                                onClick={() => setShowMeta(meta.graphId)}
+                                                onClick={() => setShowMeta(upload.graphId)}
                                                 style={{
                                                     display: "flex",
                                                     justifyContent: "flex-start",
@@ -322,14 +343,15 @@ export default function GraphUpload() {
                                                         marginBottom: "10px"
                                                     }}
                                                 >
-                                                    <Text type="secondary"><strong>Name:</strong> {meta.name}</Text>
-                                                    <Text type="secondary"><strong>Model:</strong> {meta.model}</Text>
-                                                    <Text type="secondary"><strong>Inference:</strong> {meta.inferenceEngine}</Text>
-                                                    <Text type="secondary"><strong>LLM Runner:</strong> {meta.llmRunnerString}</Text>
-                                                    <Text type="secondary"><strong>Chunk Size:</strong> {meta.chunkSize}</Text>
-                                                    <Text type="secondary"><strong>HDFS Path:</strong> {meta.hdfsFilePath}</Text>
-                                                    <Text type="secondary"><strong>HDFS IP:</strong> {meta.hdfsIp}:{meta.hdfsPort}</Text>
-                                                    <Text type="secondary"><strong>Triples Per second :</strong> {upload.triplesPerSecond}</Text>
+                                                    <Text type="secondary"><strong>Model:</strong> {upload.model}</Text>
+                                                    <Text type="secondary"><strong>Inference:</strong> {upload.inferenceEngine}</Text>
+                                                    <Text type="secondary"><strong>LLM Runner:</strong> {upload.llmRunnerString}</Text>
+                                                    <Text type="secondary"><strong>Chunk Size:</strong> {upload.chunkSize}</Text>
+                                                    <Text type="secondary"><strong>HDFS Path:</strong> {upload.uploadPath}</Text>
+                                                    <Text type="secondary"><strong>HDFS IP:</strong> {upload.hdfsIp}:{upload.hdfsPort}</Text>
+                                                    <Text type="secondary"><strong>Inst. Triples Per second :</strong> {upload.triplesPerSecond}</Text>
+                                                    <Text type="secondary"><strong>Avg.  Triples Per second :</strong> {getAverageTPS(upload.graphId).toFixed(2)}</Text>
+
                                                     <Text type="secondary"><strong>Bytes Per Second</strong> {upload.bytesPerSecond}</Text>
                                                 </div>
                                             )}
@@ -360,9 +382,9 @@ export default function GraphUpload() {
                                             <Button
                                                 type={pausedGraphs[upload.graphId] ? "default" : "primary"}
                                                 onClick={() =>{
-                                                    if (meta.status === "paused") {
+                                                    if (upload.kgConstructionStatus === "paused") {
                                                         getKGConstructionMetaData(upload.graphId).then(kgConstructMeta=>{
-                                                            setInitForm(kgConstructMeta.data);
+                                                            setInitForm(upload);
                                                             setHadoopModelOpen(true);
                                                             message.success("Graph construction paused");
                                                             setPausedGraphs((prev) => ({ ...prev, [upload.graphId]: true }));
@@ -374,13 +396,13 @@ export default function GraphUpload() {
 
                                                 }}
                                             >
-                                                {meta.status === "paused" ? "Resume" : "Pause"}
+                                                {upload.kgConstructionStatus === "paused" ? "Resume" : "Pause"}
                                             </Button>
                                             <Button danger onClick={() => stopKGConstruction(upload.graphId)}>Stop</Button>
                                         </div>
                                     </>
-                                ))
-                            }
+
+
                         </Typography>
                     </Card>
 

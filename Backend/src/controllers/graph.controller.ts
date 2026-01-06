@@ -1,3 +1,5 @@
+import path from "path";
+
 /**
  Copyright 2024 JasmineGraph Team
  Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,14 +15,16 @@
 const { TelnetSocket } = require('telnet-stream');
 const net = require('net');
 import { Request, Response } from 'express';
-import { GRAPH_REMOVE_COMMAND,
+import {
+    GRAPH_REMOVE_COMMAND,
     GRAPH_UPLOAD_COMMAND,
     GRAPH_DATA_COMMAND,
     LIST_COMMAND,
     TRIANGLE_COUNT_COMMAND,
     PROPERTIES_COMMAND,
     STOP_CONSTRUCT_KG_COMMAND,
-    CONSTRUCT_KG_COMMAND} from './../constants/frontend.server.constants';
+    CONSTRUCT_KG_COMMAND, CONSTRUCT_KG_COMMAND_LOCAL
+} from './../constants/frontend.server.constants';
 import { ErrorCode, ErrorMsg } from '../constants/error.constants';
 import { getClusterByIdRepo } from '../repository/cluster.repository';
 import { HTTP, TIMEOUT } from '../constants/constants';
@@ -32,6 +36,8 @@ import {
     deleteKGConstructionMetaRepo,
     KGStatus
 } from "../repository/kg-construction-meta.respository";
+import fs from "fs";
+import pdfParse from "pdf-parse";
 
 export let socket;
 export let tSocket;
@@ -42,6 +48,9 @@ export type IConnection = {
 }
 
 const DEV_MODE = process.env.DEV_MODE === 'true';
+const  HOST = process.env.HOST ;
+const  PORT = process.env.PORT ;
+const CACHE_DIR = path.resolve("/app/caches");
 
 export const getClusterDetails = async (req: Request) => {
   const clusterID = req.header('Cluster-ID');
@@ -159,7 +168,7 @@ const uploadGraph = async (req: Request, res: Response) => {
     }
     const { graphName } = req.body;
     const fileName = req.file?.filename;
-    const filePath = DEV_MODE ? "/var/tmp/data/" + fileName : fileName; // Get the file path
+    const filePath = HOST +":"+PORT + "/public/" + fileName ;
 
     console.log(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n');
 
@@ -170,23 +179,16 @@ const uploadGraph = async (req: Request, res: Response) => {
             tSocket.on("data", (buffer) => {
                 commandOutput += buffer.toString("utf8");
             });
-            tSocket.write(GRAPH_UPLOAD_COMMAND + '\n', "utf8", () => {
+
+
+            tSocket.write(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n', 'utf8', () => {
                 setTimeout(() => {
-                    if (commandOutput.includes("send")) {
-                        commandOutput = "";
-                        tSocket.write(graphName + '|' + filePath + '\n', "utf8", () => {
-                            setTimeout(() => {
-                                if (commandOutput) {
-                                    res.status(HTTP[200]).send(commandOutput);
-                                } else {
-                                    res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
-                                }
-                            }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-                        });
+                    if (commandOutput) {
+                        res.status(HTTP[200]).send(JSON.parse(commandOutput));
                     } else {
                         res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
                     }
-                }, TIMEOUT.hundred); // Adjust timeout to wait for the server response if needed
+                }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
             });
 
         });
@@ -303,6 +305,182 @@ export const constructKG = async (req: Request, res: Response) => {
         return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
     }
 };
+
+export const constructKGTXT = async (req: Request, res: Response) => {
+    const connection = await getClusterDetails(req);
+    if (!(connection.host && connection.port)) {
+        return res.status(404).send(connection);
+    }
+    const UPLOAD_DIR = CACHE_DIR;
+
+    console.log("79");
+    if (!req.file) {
+        return res.status(400).json({error: "No file uploaded"});
+    }
+
+    const customName = req.body.textFileName;
+    if (!customName) {
+        return res.status(400).json({error: "Missing textFileName"});
+    }
+
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    if (ext !== ".pdf" && ext !== ".txt") {
+        return res.status(400).json({error: "Only .txt or .pdf allowed"});
+    }
+
+    const finalFilename = customName + ext;
+    const finalPath = path.join(UPLOAD_DIR, finalFilename);
+
+    if (fs.existsSync(finalPath)) {
+        console.log("Duplicate file found:", finalFilename);
+
+        let existingContent = "";
+
+        if (ext === ".txt") {
+            existingContent = fs.readFileSync(finalPath, "utf8");
+        } else {
+            const pdfData = fs.readFileSync(finalPath);
+            const parsed = await pdfParse(pdfData);
+            existingContent = parsed.text;
+
+        }
+
+        return res.json({
+            status: "duplicate",
+            filename: finalFilename,
+            extractedText: existingContent
+        });
+    }
+
+    // ----------------------------------------------------
+    // STEP B: MOVE FILE FROM TMP → UPLOADS
+    // ----------------------------------------------------
+    await fs.promises.copyFile(req.file.path, finalPath);
+    await fs.promises.unlink(req.file.path);
+    // ----------------------------------------------------
+    // STEP C: TEXT EXTRACTION
+    // ----------------------------------------------------
+    let extractedText = "";
+
+    if (ext === ".txt") {
+        extractedText = fs.readFileSync(finalPath, "utf8");
+    } else {
+        const pdfBuffer = fs.readFileSync(finalPath);
+        const parsed = await pdfParse(pdfBuffer);
+        extractedText = parsed.text;
+    }
+
+    const textFilePath = path.join(UPLOAD_DIR, customName + ".txt");
+    fs.writeFileSync(textFilePath, extractedText, "utf8");
+
+
+
+
+    const clusterId = req.header("Cluster-ID");
+
+    const {
+        llmRunnerString,    // "host:port"
+        inferenceEngine,    // "ollama" | "vllm"
+        model,              // model name
+        chunkSize,          // bytes
+        status,
+        graphId
+    } = req.body;
+    const downloadURI =  HOST +":"+PORT + "/public/" + customName + ".txt" ;
+    console.log("downloadURI:", downloadURI);
+
+    try {
+        telnetConnection({ host: connection.host, port: connection.port })(() => {
+            let completed = false;
+
+            tSocket.on("data", async (buffer) => {
+                const msg = buffer.toString("utf8").trim();
+                console.log("Master:", msg);
+
+                /* 1. Local file path */
+                if (msg.includes("Local TXT file absolute path")) {
+                    tSocket.write(downloadURI.trim() + "\n");
+                }
+
+                /* 2. LLM runner */
+                else if (msg.includes("LLM runner hostname:port")) {
+                    tSocket.write(llmRunnerString.trim() + "\n");
+                }
+
+                /* 3. Inference engine */
+                else if (msg.includes("LLM inference engine")) {
+                    tSocket.write(inferenceEngine.trim() + "\n");
+                }
+
+                /* 4. Model name */
+                else if (msg.includes("LLM model name")) {
+                    tSocket.write(model.trim() + "\n");
+                }
+
+                /* 5. Chunk size */
+                else if (msg.includes("Chunk size")) {
+                    tSocket.write(chunkSize.toString().trim() + "\n");
+                }
+
+                /* 6. Final Graph ID */
+                else if (msg.startsWith("Graph Id:")) {
+                    const newGraphId = msg.split(":")[1].trim();
+                    completed = true;
+
+                    tSocket.write("exit\n");
+
+                    if (status === "paused") {
+                        // await updateKGConstructionMetaStatusRepo(
+                        //     Number(newGraphId),
+                        //     "running"
+                        // );
+                    } else {
+                        // await createKGConstructionMetaRepo({
+                        //     user_id: "",
+                        //     graph_id: newGraphId,
+                        //     local_file_path: localFilePath,
+                        //     llm_runner_string: llmRunnerString,
+                        //     inference_engine: inferenceEngine,
+                        //     model,
+                        //     chunk_size: chunkSize,
+                        //     status: "running",
+                        //     message: "Knowledge Graph construction initiated",
+                        //     cluster_id: clusterId!
+                        // });
+                    }
+
+                    res.status(200).send({
+                        message: "Knowledge Graph construction started",
+                        graphId: newGraphId
+                    });
+                }
+
+                /* Error handling from C++ */
+                else if (
+                    msg.includes("Invalid local file path") ||
+                    msg.includes("Socket write failed")
+                ) {
+                    tSocket.write("exit\n");
+                    return res.status(400).send({
+                        code: ErrorCode.ServerError,
+                        message: msg
+                    });
+                }
+            });
+
+
+            tSocket.write(CONSTRUCT_KG_COMMAND_LOCAL + "\n");
+        });
+    } catch (err) {
+        console.error("❌ constructKGTXT failed:", err);
+        return res.status(500).send({
+            code: ErrorCode.ServerError,
+            message: ErrorMsg.ServerError,
+            errorDetails: err
+        });
+    }
+};
+
 export const stopConstructKG = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
     if (!(connection.host || connection.port)) {
