@@ -106,9 +106,9 @@ export default function GraphUpload() {
         if (!file) {
             message.error("Please select a file to upload");
             reportError({
-              menuItem: "Graph Extract",
-              title: "Please select a file to upload",
-              message: "Please select a file to upload."
+              menuItem: "Graph Panel",
+              title: "File Selection Required",
+              message: "Please select a file to upload before proceeding with the graph extraction process."
             });
             return;
         }
@@ -123,7 +123,7 @@ export default function GraphUpload() {
         } catch (error) {
             message.error("Failed to upload file");
             reportErrorFromException(
-                "Graph Extract",
+                "Graph Panel",
                 error,
                 "Failed to upload graph file to the server."
             );
@@ -147,7 +147,7 @@ export default function GraphUpload() {
         } catch (error) {
             message.error("Failed to pause graph construction");
             reportErrorFromException(
-                "Graph Extract",
+                "Graph Panel",
                 error,
                 "Unable to pause the graph construction process."
             );
@@ -167,7 +167,7 @@ export default function GraphUpload() {
         } catch (error) {
             message.error("Failed to stop graph construction");
             reportErrorFromException(
-                "Graph Extract",
+                "Graph Panel",
                 error,
                 "Unable to stop the graph construction process."
             );

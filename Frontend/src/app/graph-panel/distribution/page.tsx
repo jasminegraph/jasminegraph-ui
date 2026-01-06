@@ -75,7 +75,7 @@ export default function GraphDistribution() {
     }catch(err){
       message.error("Failed to fetch graphs: " + err);
       reportErrorFromException(
-        "Graph Distribution",
+        "Graph Panel",
         err,
         "Failed to retrieve graph list from the server."
       );

@@ -92,7 +92,7 @@ export default function QueryPropoerties() {
     }catch(err){
       message.error("Failed to fetch the list of graphs");
       reportErrorFromException(
-        "Query Properties",
+        "Query Interface",
         err,
         "Failed to fetch the list of graphs."
       );
@@ -123,7 +123,7 @@ export default function QueryPropoerties() {
     } else {
       message.error("Error in graph analysis: " + result.message);
       reportErrorFromException(
-        "Query Properties",
+        "Query Interface",
         result.message,
         "Failed to analyze the graph."
       );

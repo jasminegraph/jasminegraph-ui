@@ -61,7 +61,7 @@ export default function SemanticBeamSearchPage() {
     }catch(err){
       message.error("Failed to fetch graphs: " + err);
       reportErrorFromException(
-        "Semantic Beam Search",
+        "Query Interface",
         err,
         "Failed to fetch the list of graphs."
       );
