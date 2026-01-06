@@ -28,6 +28,7 @@ import { IUserAccessData } from "@/types/user-types";
 import { getAllUsers } from "@/services/user-service";
 import { set_Users_Cache } from "@/redux/features/cacheSlice";
 import { useActivity } from "@/hooks/useActivity";
+import ActivityPanel from "@/components/common/ActivityPanel";
 
 const { Content } = Layout;
 
@@ -290,6 +291,7 @@ export default function Clusters() {
             dataSource={getTableData()} 
             pagination={PaginationProps} 
             scroll={{ y: "60vh" }}/>
+            <ActivityPanel featureName="User Management" />
         </Content>
       </Layout>
     </PageWrapper>

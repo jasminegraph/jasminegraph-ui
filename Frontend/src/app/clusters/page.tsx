@@ -26,6 +26,7 @@ import { getAllClusters, getClustersStatusByIds } from "@/services/cluster-servi
 import { useAppSelector } from "@/redux/hook";
 import ClusterRegistrationForm from "@/components/cluster-details/cluster-registration-form";
 import useAccessToken from "@/hooks/useAccessToken";
+import ActivityPanel from "@/components/common/ActivityPanel";
 import { useActivity } from "@/hooks/useActivity";
 
 const { Search } = Input;
@@ -248,6 +249,7 @@ export default function Clusters() {
               </Col>
             </>
           )}
+          <ActivityPanel featureName="Clusters" />
         </Content>
       </Layout>
     </PageWrapper>
