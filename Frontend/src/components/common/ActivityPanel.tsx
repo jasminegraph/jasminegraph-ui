@@ -14,12 +14,13 @@ limitations under the License.
 "use client";
 
 import React from "react";
-import { Alert, List, Typography, Empty, Button, Badge, Dropdown, Space } from "antd";
-import { BugOutlined, ClearOutlined } from "@ant-design/icons";
+import { Alert, List, Typography, Empty, Button, Badge, Space } from "antd";
+import { BugOutlined, CloseCircleFilled } from "@ant-design/icons";
 import { useAppSelector, useAppDispatch } from "@/redux/hook";
 import {
   toggle_activity_panel,
   clear_all_errors,
+  remove_error,
 } from "@/redux/features/activityData";
 import styles from "./ActivityPanel.module.css";
 
@@ -43,20 +44,13 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
     dispatch(toggle_activity_panel());
   };
 
+  const handleRemoveError = (errorId: string) => {
+    dispatch(remove_error(errorId));
+  };
+
   const handleClearAll = () => {
     dispatch(clear_all_errors());
   };
-
-  const menuItems = [
-    {
-      key: "clear-all",
-      label: "Clear All",
-      icon: <ClearOutlined />,
-      onClick: handleClearAll,
-      disabled: filteredErrors.length === 0,
-      danger: true,
-    },
-  ];
 
   return (
     <>
@@ -79,20 +73,6 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
               />
             )}
           </Button>
-          {hasErrors && (
-            <Dropdown
-              menu={{ items: menuItems }}
-              placement="topRight"
-              trigger={["click"]}
-            >
-              <Button
-                type="text"
-                size="small"
-                icon={<ClearOutlined />}
-                className={styles.clearButton}
-              />
-            </Dropdown>
-          )}
         </Space>
       </div>
 
@@ -117,9 +97,21 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
                 />
               )}
             </div>
-            <Button type="text" size="small" onClick={handleTogglePanel}>
-              Close
-            </Button>
+            <div className={styles.headerRight}>
+              {hasErrors && (
+                <Button
+                  type="text"
+                  size="small"
+                  danger
+                  onClick={handleClearAll}
+                >
+                  Clear All
+                </Button>
+              )}
+              <Button type="text" size="small" onClick={handleTogglePanel}>
+                Close
+              </Button>
+            </div>
           </div>
 
           {!hasErrors ? (
@@ -137,6 +129,12 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
                   <Alert
                     type="error"
                     showIcon
+                    icon={
+                      <CloseCircleFilled
+                        style={{ color: "#ff4d4f", cursor: "pointer" }}
+                        onClick={() => handleRemoveError(item.id)}
+                      />
+                    }
                     message={
                       <div className={styles.errorHeader}>
                         <div className={styles.errorTitleContainer}>
@@ -149,15 +147,25 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
                             </div>
                           )}
                         </div>
+                      </div>
+                    }
+                    description={
+                      <div style={{ position: 'relative' }}>
+                        {item.message}
                         <Text
                           type="secondary"
-                          className={styles.errorTimestamp}
+                          style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            right: 0,
+                            fontSize: '11px',
+                            color: '#999'
+                          }}
                         >
                           {item.time}
                         </Text>
                       </div>
                     }
-                    description={item.message}
                     className={styles.errorAlert}
                   />
                 </List.Item>

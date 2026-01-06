@@ -61,6 +61,12 @@ limitations under the License.
   gap: 8px;
 }
 
+.headerRight {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .errorList {
   overflow-y: auto;
   flex: 1;
@@ -68,13 +74,14 @@ limitations under the License.
 
 .errorItem {
   border-radius: 4px;
-  padding: 8px;
+  padding: 16px;
   margin-bottom: 8px;
 }
 
 .errorAlert {
-  border: none;
-  padding: 0;
+  border: none !important;
+  padding: 0 !important;
+  width: 100%;
 }
 
 .errorHeader {
@@ -90,14 +97,4 @@ limitations under the License.
 .errorMenuItem {
   margin-top: 4px;
   font-size: 11px;
-}
-
-.errorTimestamp {
-  font-size: 12px;
-  margin-left: 8px;
-  white-space: nowrap;
-}
-
-.clearButton {
-  color: #666;
 }
