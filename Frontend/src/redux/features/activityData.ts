@@ -39,7 +39,7 @@ export const activityDataSlice = createSlice({
       const error: ActivityError = {
         ...payload,
         id: `${payload.menuItem}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        time: new Date().toLocaleString(),
+        time: new Date().toLocaleTimeString(),
       };
       state.errors.unshift(error);
     },
