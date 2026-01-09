@@ -1,5 +1,5 @@
 /**
- Copyright 2025 JasmineGraph Team
+ Copyright 2026 JasmineGraph Team
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
  You may obtain a copy of the License at
@@ -25,12 +25,11 @@ import {
     message,
     Steps,
     Alert,
-    Card,
 } from "antd";
-import useAccessToken from "@/hooks/useAccessToken";
 import { constructKG } from "@/services/graph-service";
 import {authApi} from "@/services/axios";
 import {IKnowledgeGraph} from "@/types/graph-types";
+import { useActivity } from "@/hooks/useActivity";
 
 const { Option } = Select;
 const { Step } = Steps;
@@ -42,6 +41,7 @@ const HadoopKgForm = ({
     onSuccess: () => void;
     initForm: IKnowledgeGraph;
 }) => {
+    const { reportErrorFromException } = useActivity();
     const [form] = Form.useForm();
     const [currentStep, setCurrentStep] = useState(0);
     const [loading, setLoading] = useState(false);
@@ -106,15 +106,23 @@ const HadoopKgForm = ({
                 setCurrentStep(1);
             } else {
                 message.error("❌ File not found in HDFS");
+                reportErrorFromException(
+                    "Hadoop KG Form",
+                    message.error,
+                    "Failed to validate HDFS configuration."
+                );
             }
-
         } catch (err: any) {
             message.destroy();
             console.error(err);
             message.error("⚠️ Failed to validate HDFS configuration");
+            reportErrorFromException(
+                "Hadoop KG Form",
+                err,
+                "Failed to validate HDFS configuration."
+            );
         }
     };
-
 
     const validateLLM = async () => {
         try {
@@ -164,6 +172,11 @@ const HadoopKgForm = ({
         } catch (err) {
             console.error("LLM validation error:", err);
             message.error("Please fix LLM configuration errors");
+            reportErrorFromException(
+                "Hadoop KG Form",
+                err,
+                "Failed to validate LLM configuration."
+            );
         }
     };
 

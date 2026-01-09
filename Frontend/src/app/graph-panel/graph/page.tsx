@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasmineGraph Team
+Copyright 2026 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,8 +18,10 @@ import type { TableProps } from 'antd';
 import { LoadingOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import { getGraphList, deleteGraph } from "@/services/graph-service";
 import { IGraphDetails } from "@/types/graph-types";
+import { useActivity } from "@/hooks/useActivity";
 
 export default function GraphDetails() {
+  const { reportErrorFromException } = useActivity();
   const [graphs, setGraphs] = React.useState<IGraphDetails[]>([]);
   const [loading, setLoading] = React.useState(false);
 
@@ -32,6 +34,11 @@ export default function GraphDetails() {
     }
     }catch(err){
       message.error("Failed to fetch graphs: " + err);
+      reportErrorFromException(
+        "Graph Panel",
+        err,
+        "Failed to retrieve graph list from the server."
+      );
     }
     finally{
       setLoading(false);
@@ -95,6 +102,11 @@ export default function GraphDetails() {
               getGraphsData();
             } catch (err) {
               message.error("Failed to delete graph");
+              reportErrorFromException(
+                "Graph Panel",
+                err,
+                "Failed to delete the selected graph."
+              );
             }
           }
         }

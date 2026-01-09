@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasmineGraph Team
+Copyright 2026 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import authDataSlice from "./features/authData";
 import clusterDataSlice from "./features/clusterData";
 import cacheDataSlice from "./features/cacheSlice";
 import queryDataSlice from "./features/queryData";
+import activityDataSlice from "./features/activityData";
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     clusterData: clusterDataSlice,
     cacheData: cacheDataSlice,
     queryData: queryDataSlice,
+    activityData: activityDataSlice,
   },
 });
 
