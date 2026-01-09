@@ -13,19 +13,18 @@ limitations under the License.
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
-import { GRAFANA_DASHBOARD } from "@/properties";
-import styles from "./performance.module.css";
+import { LOKI_EXPLORE } from "@/properties";
+import styles from "./logs.module.css";
 
-export default function PerformancePage() {
-  const dashboardUrl = `${GRAFANA_DASHBOARD.baseUrl}/d/${GRAFANA_DASHBOARD.uid}/${GRAFANA_DASHBOARD.slug}`;
+export default function LogsPage() {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkDashboardAvailability = async () => {
+    const checkAvailability = async () => {
       try {
-        await fetch(dashboardUrl, { method: "HEAD", mode: "no-cors" });
+        await fetch(LOKI_EXPLORE.url, { method: "HEAD", mode: "no-cors" });
         setIsAvailable(true);
       } catch (error: any) {
         // CORS errors mean service is likely running but blocked
@@ -41,14 +40,14 @@ export default function PerformancePage() {
         }
       }
     };
-    checkDashboardAvailability();
-  }, [dashboardUrl]);
+    checkAvailability();
+  }, []);
 
   if (isAvailable === null) {
     return (
       <PageWrapper>
         <div className={styles.container}>
-          <p>Checking performance dashboard&apos;s availability</p>
+          <p>Checking logs availability...</p>
         </div>
       </PageWrapper>
     );
@@ -59,8 +58,8 @@ export default function PerformancePage() {
       <PageWrapper>
         <div className={styles.container}>
           <p>
-            Performance dashboard is currently unavailable. Please check if the
-            Grafana service is running.
+            Logs explorer is currently unavailable. Please check if the Loki
+            service is running.
           </p>
         </div>
       </PageWrapper>
@@ -71,9 +70,10 @@ export default function PerformancePage() {
     <PageWrapper>
       <div className={styles.iframeContainer}>
         <iframe
-          src={dashboardUrl}
+          src={LOKI_EXPLORE.url}
           className={styles.iframe}
-          title="Grafana Dashboard"
+          title="Loki Logs Explorer"
+          style={{ border: "none", width: "100%", height: "100%" }}
         />
       </div>
     </PageWrapper>
