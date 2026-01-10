@@ -56,6 +56,10 @@ const register = async (req: Request, res: Response) => {
 const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(422).json({ message: 'Email and password are required' });
+  }
+
   try {
     const response = await axios.post(
       `http://keycloak:8080/realms/jasminegraph/protocol/openid-connect/token`,
@@ -73,8 +77,11 @@ const login = async (req: Request, res: Response) => {
     console.log('[LOGIN] Tokens received from Keycloak');
     return res.json({ accessToken: access_token, refreshToken: refresh_token });
   } catch (err: any) {
-    console.error('[LOGIN] Invalid credentials:', err.response?.data || err.message);
-    return res.status(HTTP[401]).send('Invalid credentials');
+    console.error('[LOGIN] Error:', err.response?.data || err.message);
+    if (err.response && err.response.status === 401) {
+      return res.status(HTTP[401]).send('Invalid credentials');
+    }
+    return res.status(HTTP[500]).send('Server error');
   }
 };
 
