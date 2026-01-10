@@ -225,6 +225,8 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
                 if(remaining.trim() == '-1'){
                     console.log("Termination signal received. Closing Telnet connection.");
+                    sendToClient(clientId, { "done":"true"})
+
                     return
                 }
 
@@ -235,6 +237,8 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
                     if (jsonString) {
                         if (jsonString == "-1") {
+                            sendToClient(clientId, { "done":"true"})
+
                             console.log("Termination signal received. Closing Telnet connection.");
                             return; // Exit the producer loop
                         }
@@ -250,6 +254,8 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
                     if(remaining.trim() == '-1' || jsonString == '-1'){
                         console.log("Termination signal received. Closing Telnet connection.");
+                        sendToClient(clientId, { "done":"true"})
+
                         return
                     }
                 }
@@ -332,8 +338,16 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
                             triplesPerSecond: number;
                             startTime: string;
                             uploadPath: string;
+                            llmRunnerString: string;
+                            inferenceEngine: string;
+                            model:string;
+                            chunkSize:number;
+                            kgConstructionStatus:string;
+                            hdfsIp:string;
+                            hdfsPort:string;
+
                         }[] = [];
-                        for (let i = 1; i < parts.length; i += 7) {
+                        for (let i = 1; i < parts.length; i += 14) {
                             const graphId = parts[i];
                             const uploaded = parseFloat(parts[i + 1] || "0");
                             const total = parseFloat(parts[i + 2] || "0");
@@ -342,8 +356,15 @@ const streamUploadBytes = async (clientId: string, clusterId: string, graphIds: 
                             const triplesPerSecond = parseFloat(parts[i + 5] || "0");
                             const startTime = parts[i + 6];
                             const uploadPath = parts[i + 7];
+                            const llmRunnerString  = parts[i+8];
+                            const inferenceEngine = parts[i+9];
+                            const model = parts[i+10];
+                            const chunkSize =parseInt(parts[i+11]);
+                            const kgConstructionStatus = parts[i+12];
+                            const hdfsIp = parts[i+13];
+                            const hdfsPort = parts[i+14];
 
-                            updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond, startTime, uploadPath });
+                            updates.push({ graphId, uploaded, total, percentage, bytesPerSecond, triplesPerSecond, startTime, uploadPath, llmRunnerString, inferenceEngine, model, chunkSize, kgConstructionStatus, hdfsIp, hdfsPort});
                         }
                         // Send updates only if still connected
                         if (client.readyState === WebSocket.OPEN) {

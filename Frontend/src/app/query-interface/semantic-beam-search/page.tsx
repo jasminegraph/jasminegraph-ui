@@ -51,7 +51,7 @@ export default function SemanticBeamSearchPage() {
       const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
           value: graph.idgraph,
-          label: graph.name,
+          label: graph.idgraph+" | "+ graph.name,
         }
       })
       setGraphs(filteredData);
@@ -77,6 +77,9 @@ export default function SemanticBeamSearchPage() {
     if(message?.type == "CONNECTED"){
       setClientID(message?.clientId || '')
     } else {
+
+        setLoading(false);
+
       dispatch(add_semantic_result(message));
     }
   }, [lastJsonMessage])
@@ -96,8 +99,6 @@ export default function SemanticBeamSearchPage() {
       }   
     }catch (err){
       console.log("ERROR::", err)
-    }finally{
-      setLoading(false)
     }
   }
 
@@ -111,6 +112,7 @@ export default function SemanticBeamSearchPage() {
     const row: Record<string, any> = { key: rowIndex.toString() };
 
     categories.forEach((category) => {
+
       row[category] = messagePool[category][rowIndex]
         ? JSON.stringify(messagePool[category][rowIndex], null, 2)
         : ""; // Empty if no data

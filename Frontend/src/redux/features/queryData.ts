@@ -25,6 +25,7 @@ interface IQueryData {
     node: any[];
     edge: any[];
     render: boolean;
+    updateProgress:boolean;
   }
   inDegreeDataPool: any[];
   outDegreeDataPool: any[];
@@ -36,7 +37,8 @@ const initialData: IQueryData = {
   visualizeData: {
     node: [],
     edge: [],
-      render: false
+      render: false,
+    updateProgress:false,
   },
   inDegreeDataPool: [],
   outDegreeDataPool: [],
@@ -66,30 +68,40 @@ export const queryDataSlice = createSlice({
     },
       add_semantic_result: (state, {payload}: {payload: any}) => {
           const keys = Object.keys(payload);
+          console.log(payload, keys)
           keys.forEach((key) => {
+            if (key != "hop") {
+
+
               const row = payload[key];
 
               if (!state.messagePool[key]) {
-                  state.messagePool[key] = [];
+                state.messagePool[key] = [];
               }
 
               if (row) {
-                  state.messagePool[key].push(row);
+                state.messagePool[key].push(row);
               }
+            }
           })
       },
 
       add_upload_bytes: (state, {payload}: {payload: any}) => {
           state.uploadBytes = payload;
       },
+
     add_visualize_data: (state, { payload }) => {
 
 
       const keys = Object.keys(payload);
       if(keys.includes("done")){
           state.visualizeData.render = true;
+        state.visualizeData.updateProgress= !state.visualizeData.updateProgress;
+
       }
-      console.log(payload)
+      if(state.visualizeData.edge.length % 100 == 0){
+        state.visualizeData.updateProgress= !state.visualizeData.updateProgress;
+      }
       const firstNode = { ...payload[keys[0]] };
       const firstPartition = firstNode.partitionID
       const secondNode = { ...payload[keys[1]] };
@@ -139,7 +151,8 @@ export const queryDataSlice = createSlice({
       state.visualizeData = {
         node: [],
         edge: [],
-          render: false
+          render: false,
+        updateProgress: false,
       };
     },
   },

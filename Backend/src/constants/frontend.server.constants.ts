@@ -25,4 +25,5 @@ export const OUTDEGREE_COMMAND = "odd";
 export const PROPERTIES_COMMAND = "prp";
 export const UPLOAD_FROM_HDFS = "adhdfs";
 export const CONSTRUCT_KG_COMMAND = "constructkg";
+export const CONSTRUCT_KG_COMMAND_LOCAL = "constructkgl";
 export const STOP_CONSTRUCT_KG_COMMAND = "stop-constructkg";
