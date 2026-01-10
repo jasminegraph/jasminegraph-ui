@@ -225,6 +225,8 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
                 if(remaining.trim() == '-1'){
                     console.log("Termination signal received. Closing Telnet connection.");
+                    sendToClient(clientId, { "done":"true"})
+
                     return
                 }
 
@@ -235,6 +237,8 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
                     if (jsonString) {
                         if (jsonString == "-1") {
+                            sendToClient(clientId, { "done":"true"})
+
                             console.log("Termination signal received. Closing Telnet connection.");
                             return; // Exit the producer loop
                         }
@@ -250,6 +254,8 @@ const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:st
 
                     if(remaining.trim() == '-1' || jsonString == '-1'){
                         console.log("Termination signal received. Closing Telnet connection.");
+                        sendToClient(clientId, { "done":"true"})
+
                         return
                     }
                 }

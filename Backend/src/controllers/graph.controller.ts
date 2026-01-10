@@ -312,10 +312,7 @@ export const constructKG = async (req: Request, res: Response) => {
                 } else if(msg.includes("Could not connect")) {
                 res.status(HTTP[400]).send({message: msg});
 
-            } else if(msg.includes("HDFS file System Not reachable.")) {
-                    res.status(HTTP[400]).send({message: msg});
-
-                } else if(msg.includes("The provided HDFS path is invalid.")) {
+            }  else if(msg.includes("The provided HDFS path is invalid.")) {
                 res.status(HTTP[400]).send({message: msg});
 
             }
@@ -401,15 +398,12 @@ export const constructKGTXT = async (req: Request, res: Response) => {
 
 
 
-    const clusterId = req.header("Cluster-ID");
 
     const {
         llmRunnerString,    // "host:port"
         inferenceEngine,    // "ollama" | "vllm"
         model,              // model name
         chunkSize,          // bytes
-        status,
-        graphId
     } = req.body;
     const downloadURI =  HOST +":"+PORT + "/public/" + customName + ".txt" ;
     console.log("downloadURI:", downloadURI);
@@ -451,29 +445,7 @@ export const constructKGTXT = async (req: Request, res: Response) => {
                 else if (msg.startsWith("Graph Id:")) {
                     const newGraphId = msg.split(":")[1].trim();
                     completed = true;
-
                     tSocket.write("exit\n");
-
-                    if (status === "paused") {
-                        // await updateKGConstructionMetaStatusRepo(
-                        //     Number(newGraphId),
-                        //     "running"
-                        // );
-                    } else {
-                        // await createKGConstructionMetaRepo({
-                        //     user_id: "",
-                        //     graph_id: newGraphId,
-                        //     local_file_path: localFilePath,
-                        //     llm_runner_string: llmRunnerString,
-                        //     inference_engine: inferenceEngine,
-                        //     model,
-                        //     chunk_size: chunkSize,
-                        //     status: "running",
-                        //     message: "Knowledge Graph construction initiated",
-                        //     cluster_id: clusterId!
-                        // });
-                    }
-
                     res.status(200).send({
                         message: "Knowledge Graph construction started",
                         graphId: newGraphId
@@ -524,16 +496,6 @@ export const stopConstructKG = async (req: Request, res: Response) => {
 
                 if (msg.includes("done")) {
                     tSocket.write("exit\n");
-
-                    if (status === "stopped") {
-                        await deleteKGConstructionMetaRepo(Number(graphId));
-                    } else {
-                        await updateKGConstructionMetaStatusRepo(
-                            Number(graphId),
-                            status as KGStatus
-                        );
-                    }
-
                     console.log("✅ KG extraction stopped successfully");
                     res.status(200).send({ message: "Knowledge Graph construction Stopped" });
                 }

@@ -14,7 +14,7 @@
 
 import {Button, Card, Progress, Spin, Descriptions} from "antd";
 import React, {useEffect, useRef, useState} from "react";
-import {LeftOutlined, LoadingOutlined} from "@ant-design/icons";
+import {LeftOutlined} from "@ant-design/icons";
 import {useAppSelector} from "@/redux/hook";
 import randomColor from "randomcolor";
 import Graph from "graphology";
@@ -44,7 +44,6 @@ interface IEdge {
 const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Props) => {
     const [loading, setLoading] = useState(true);
     const [progress, setProgress] = useState(0);
-    const [count, setCount] = useState(0);
 
     const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
     const [hoveredNode, setHoveredNode] = useState<any | null>(null);
@@ -138,7 +137,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
             rendererRef.current = renderer;
 
             // Click selects node
-            renderer.on("clickNode", ({node}) => setSelectedNodeId(Number(node)));
+            // renderer.on("clickNode", ({node}) => setSelectedNodeId(Number(node)));
 
             // --- HOVER TOOLTIP EVENTS ---
             renderer.on("enterNode", ({node}) => {
@@ -155,7 +154,16 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
                 });
             });
 
-            renderer.on("leaveNode", () => {
+            renderer.on("leaveNode", ({node}) => {
+                const neighbors = new Set(graph.neighbors(node));
+
+                graph.forEachNode((n) => {
+                    graph.setNodeAttribute(
+                        n,
+                        "highlighted",
+                        false
+                    );
+                });
                 setHoveredNode(null);
             });
 
@@ -169,19 +177,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
             renderer.on("leaveEdge", () => {
                 setHoveredEdge(null);
             });
-            // setLoading(true)
-            // let count = 0;
-            // if(totalNoOfEdges){
-            //     while(count < totalNoOfEdges){
-            //         console.log( "count", count);
-            //         count = lowLevelGraphData.edge.length;
-            //         setProgress(Math.round((count / totalNoOfEdges) * 100));
-            //         count++;
-            //     }
-            // }
-
-
-        };
+              };
 
         initGraph();
     }, []);
@@ -255,7 +251,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
 
             // Light layout smoothing
             FA2.assign(graph, {iterations: 200, settings: {gravity: 5}});
-            console.log("progress",progress);
             if (isRender) {
                 setLoading(false);
             }
@@ -359,7 +354,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
 
 
                             {Object.entries(hoveredNode).map(([key, value]) =>
-                                key !== "id" && key !== "label" && key !== "x" && key !== "y" && key !== "color" && key !== "size" ? (
+                                key !== "id" && key !== "label" &&  key !== "highlighted" && key !== "x" && key !== "y" && key !== "color" && key !== "size" ? (
                                     <div key={key}>
                                         <b>{key}:</b> {String(value)}
                                     </div>
@@ -408,14 +403,14 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
                     <div
                         style={{
                             position: "absolute",
-                            top: 16,
-                            right: 16,
+                            bottom: 16,       // move to bottom
+                            right: 16,        // keep on right
                             zIndex: 15,
                             background: "#ffffffcc",
                             padding: "6px 10px",
                             borderRadius: 8,
                             fontSize: 12,
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
                         }}
                     >
 
@@ -423,19 +418,6 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges}: Pro
                     </div>
                 )}
             </div>
-
-
-            {/* Progress bar */}
-            {/*{loading && (*/}
-            {/*    <div style={{marginTop: 12, maxWidth: "1400px", marginInline: "auto"}}>*/}
-            {/*        <Progress*/}
-            {/*            percent={progress}*/}
-            {/*            showInfo={false}*/}
-            {/*            strokeColor={{from: "#108ee9", to: "#87d068"}}*/}
-            {/*        />*/}
-            {/*    </div>*/}
-            {/*)}*/}
-
         </div>
 
     );

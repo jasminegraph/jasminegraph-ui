@@ -181,12 +181,10 @@ const HadoopKgForm = ({
             console.log(response["status"]);
 
             if (response["status"] == 200) {
-                message.success("✅ LLM inference engine reachable ...");
                 setCurrentStep(1);
             } else {
-                setFormError(response["message"])
+                setFormError(response["message"]);
                 return
-                // message.error("❌ File not found in HDFS");
             }
 
             const runners = allocations.map((a: any) => a.runner);
@@ -222,10 +220,8 @@ const HadoopKgForm = ({
             if (modelsFetched.length === 0) {
                 message.warning("⚠️ Could not fetch models. Please verify runner URLs or network.");
             } else {
-                setFormError(null)
-
+                setFormError(null);
                 setModels(modelsFetched);
-
                 message.success(`✅ Successfully fetched ${modelsFetched.length} models`);
                 setCurrentStep(2);
             }

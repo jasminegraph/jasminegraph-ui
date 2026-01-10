@@ -18,8 +18,6 @@ import {LoadingOutlined} from "@ant-design/icons";
 import "vis-network/styles/vis-network.css";
 import {IGraphDetails} from "@/types/graph-types";
 import {Descriptions} from "antd";
-import type {DescriptionsProps} from "antd";
-import {useAppSelector} from "@/redux/hook";
 import {VISUALIZATION_VERTEX_LIMIT} from "@/properties";
 
 export type INode = {
@@ -249,7 +247,6 @@ const TwoLevelGraphVisualization = ({
                     ref={networkContainerRef}
                     style={{
                         height: "600px",
-                        // border: "1px solid lightgray",
                         backgroundColor: "#ffffff",
                         aspectRatio: "16/9"
                     }}

@@ -25,11 +25,7 @@ import {
     message,
     Steps,
     Alert,
-    Card,
 } from "antd";
-import useAccessToken from "@/hooks/useAccessToken";
-import { constructKG } from "@/services/graph-service";
-import {authApi} from "@/services/axios";
 import {IKnowledgeGraph} from "@/types/graph-types";
 
 const { Option } = Select;
@@ -59,12 +55,7 @@ const KgForm = ({
     const handleValuesChange = (_: any, allValues: any) => {
         setSavedValues(allValues);
     };
-    const handleUpload = async () => {
-
-
-    };
-
-    // Load initial form values
+     // Load initial form values
     useEffect(() => {
         if (initForm && Object.keys(initForm).length > 0) {
             const newValues: any = { ...initForm };
@@ -149,7 +140,6 @@ const KgForm = ({
     };
 
     const onFinish = async (values: any) => {
-        console.log("testing bug");
         setLoading(true);
         setFormError(null);
 
@@ -167,16 +157,6 @@ const KgForm = ({
             const llmRunnerString = allocations
                 .map((r: { runner: string; chunks: number }) => `${r.runner}:${r.chunks}`)
                 .join(",");
-
-            // await constructKGTXT(
-            //     finalValues.graphName,
-            //     llmRunnerString,
-            //     finalValues.inferenceEngine,
-            //     finalValues.model,
-            //     finalValues.chunkSize,
-            //     initForm?.status,
-            //     initForm?.graphId
-            // );
             if (!file) {
                 message.error("Please select a file to upload");
                 return;
@@ -187,7 +167,6 @@ const KgForm = ({
             formData.append("llmRunnerString",  llmRunnerString);
             formData.append("inferenceEngine",  finalValues.inferenceEngine);
             formData.append("model",  finalValues.model);
-            formData.append("chunkSize",  finalValues.chunkSize);
             formData.append("chunkSize",  finalValues.chunkSize);
             formData.append("status",   initForm?.status);
             formData.append("graphId",   initForm?.graphId);
@@ -229,13 +208,6 @@ const KgForm = ({
 
                 onValuesChange={handleValuesChange}
             >
-
-
-
-
-
-
-
                     <div style={{ display: currentStep === 0 ? "block" : "none" }}>
                         <Form.Item
                             name="graphName"

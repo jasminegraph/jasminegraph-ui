@@ -21,9 +21,6 @@ import {
 import multer from 'multer';
 import path from 'path';
 import fs from "fs";
-import pdfParse from "pdf-parse";
-import { Request, Response } from 'express';
-import net from "net";
 import axios from 'axios';
 // --------------------
 // Cache directory (single source of truth)
@@ -33,41 +30,7 @@ const CACHE_DIR = path.resolve("/app/caches");
 // Ensure directory exists at startup
 fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-// Use same dir everywhere
-const UPLOAD_DIR = CACHE_DIR;
 
-const HadoopIp = "192.168.1.19";
-const HDFS_NAMENODE = "http://192.168.1.19:9870"; // change if remote
-const HDFS_BASE_PATH = "/user/jasminegraph/extracted_texts";
-
-const uploadTextToHDFS = async (filename: string, content: string) => {
-    const hdfsPath = `${HDFS_BASE_PATH}/${filename}`;
-
-    // Step 1: Request HDFS to create file (redirect expected)
-    const createUrl = `${HDFS_NAMENODE}/webhdfs/v1${hdfsPath}?op=CREATE&overwrite=true`;
-
-    const response = await axios.put(createUrl, null, {
-        maxRedirects: 0,
-        validateStatus: (status) => status === 307
-    });
-
-    // Step 2: Upload data to redirected DataNode
-    const dataNodeUrlRaw = response.headers.location;
-
-// Replace only the hostname part
-    const dataNodeUrl = dataNodeUrlRaw.replace(
-        /\/\/[^:/]+/,
-        `//${process.env.HDFS_DATANODE_IP ||HadoopIp}`
-    );
-
-    await axios.put(dataNodeUrl, content, {
-        headers: {
-            "Content-Type": "application/octet-stream"
-        }
-    });
-
-    console.log(`Uploaded to HDFS: ${hdfsPath}`);
-};
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

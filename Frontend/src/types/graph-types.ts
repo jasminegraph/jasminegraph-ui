@@ -50,7 +50,7 @@ export interface IKnowledgeGraph {
     startTime: string;
     uploadPath: string;
     kgConstructionStatus:string;
-    uploaded:number
+    uploaded:number;
 
 
 }

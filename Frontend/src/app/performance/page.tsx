@@ -20,7 +20,7 @@ import styles from "./performance.module.css";
 
 export default function PerformancePage() {
   const dashboardUrl = `${GRAFANA_DASHBOARD.baseUrl}/d/${GRAFANA_DASHBOARD.uid}/${GRAFANA_DASHBOARD.slug}`;
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(true);
 
   useEffect(() => {
     const checkDashboardAvailability = async () => {
@@ -32,10 +32,14 @@ export default function PerformancePage() {
           setIsAvailable(false);
         }
       } catch (error) {
-        setIsAvailable(false);
+        console.log(error)
+        // If fetch fails (likely CORS), fall back to iframe
+        console.warn("Fetch failed, possibly due to CORS:", error);
+        setIsAvailable(true); // We assume dashboard exists
+        // setIsAvailable(false);
       }
     };
-    checkDashboardAvailability();
+    // checkDashboardAvailability();
   }, [dashboardUrl]);
 
   if (isAvailable === null) {

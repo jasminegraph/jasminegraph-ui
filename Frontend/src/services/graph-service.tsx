@@ -73,9 +73,9 @@ export async function getOnProgressKGConstructionMetaData(): Promise<{data: IKno
 }
 
 export async function constructKG(
-    hdfsIp: string,
-    hdfsPort: string,
-    hdfsFilePath: string,
+    hdfsIp: string | null,
+    hdfsPort: string | null,
+    hdfsFilePath: string | null,
     llmRunnerString:  string | null ,
     inferenceEngine: string | null,
     model: string | null,

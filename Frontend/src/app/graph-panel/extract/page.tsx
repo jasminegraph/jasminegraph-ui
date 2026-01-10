@@ -80,7 +80,6 @@ export default function GraphUpload() {
     const [fileUrl, setFileUrl] = useState<string>();
     const [modalOpen, setModalOpen] = useState(false);
     const [isLocalFileUpload, setIsLocalFileUpload] = useState<boolean>(false);
-    const [graphName, setGraphName] = useState<string>("");
     const [showUploadSection, setShowUploadSection] = useState<boolean>(false);
     const [graphs, setGraphs] = useState<IKnowledgeGraph[]>([]);
     const [initForm, setInitForm] = useState<IKnowledgeGraph>();
@@ -88,8 +87,6 @@ export default function GraphUpload() {
     const [clientId, setClientID] = useState<string>('');
     const [showMeta, setShowMeta] = useState<string>("");
     const [pausedGraphs, setPausedGraphs] = useState<Record<string, boolean>>({});
-    const [textFileName, setTextFileName] = useState<string>("");
-    const [localFilePath, setLocalFilePath] = useState<string>("");
     const [tpsHistory, setTpsHistory] = useState<Record<string, number[]>>({});
     const getAverageTPS = (graphId: string) => {
         const history = tpsHistory[graphId] || [];
@@ -124,17 +121,7 @@ export default function GraphUpload() {
     const pauseKGConstruction = async (graphId: string) => {
         try {
             setLoading(true);
-            stopConstructKG(graphId, "paused").then(()=>{
-
-                // getKGConstructionMetaData(graphId).then(kgConstructMeta=>{
-                //     setInitForm(kgConstructMeta.data);
-                //     setHadoopModelOpen(true);
-                //     message.success("Graph construction paused");
-                //     setPausedGraphs((prev) => ({ ...prev, [graphId]: true }));
-                // })
-
-
-            })
+            await stopConstructKG(graphId, "paused")
 
         } catch {
             message.error("Failed to pause graph construction");
@@ -196,10 +183,6 @@ export default function GraphUpload() {
         if(hadoopModalOpen || showUploadSection) return;
 
         setLoading(true);
-
-        // getOnProgressKGConstructionMetaData().then(res=>{
-        //     setGraphs(res.data);
-        // })
         const interval = setInterval(() => {
             if (readyState === ReadyState.OPEN) {
 
@@ -242,15 +225,6 @@ export default function GraphUpload() {
                         <p className="ant-upload-text">Click or drag file to this area to upload</p>
                     </Dragger>
 
-                    {/*<Modal title="Extract Graph" centered open={modalOpen} onOk={() => setModalOpen(false)} onCancel={() => setModalOpen(false)} footer={null}>*/}
-                    {/*    <div className="flex whitespace-nowrap gap-4 mt-5">*/}
-                    {/*        <div>Text file Name:</div>*/}
-                    {/*        <Input value={textFileName} onChange={(event) => setTextFileName(event.currentTarget.value)} />*/}
-                    {/*    </div>*/}
-                    {/*    <Button type="primary" style={{ margin: "20px 0px", width: "100%" }} onClick={handleUpload}>*/}
-                    {/*        Upload*/}
-                    {/*    </Button>*/}
-                    {/*</Modal>*/}
                     <Modal title=""   footer={null}     open={modalOpen}  onCancel={()=>setModalOpen(false)}>
                         {modalOpen  && <KgForm file={file} initForm={initForm as IKnowledgeGraph} onSuccess={()=>  {
                             setShowUploadSection(false)
@@ -353,15 +327,17 @@ export default function GraphUpload() {
                                                         marginBottom: "10px"
                                                     }}
                                                 >
-                                                    <Text type="secondary"><strong>Model:</strong> {upload.model}</Text>
-                                                    <Text type="secondary"><strong>Inference:</strong> {upload.inferenceEngine}</Text>
-                                                    <Text type="secondary"><strong>LLM Runner:</strong> {upload.llmRunnerString}</Text>
-                                                    <Text type="secondary"><strong>Chunk Size:</strong> {upload.chunkSize}</Text>
                                                     <Text type="secondary"><strong>HDFS Path:</strong> {upload.uploadPath}</Text>
-                                                    <Text type="secondary"><strong>HDFS IP:</strong> {upload.hdfsIp}:{upload.hdfsPort}</Text>
-                                                    <Text type="secondary"><strong>Inst. Triples Per second :</strong> {upload.triplesPerSecond}</Text>
-                                                    <Text type="secondary"><strong>Avg.  Triples Per second :</strong> {getAverageTPS(upload.graphId).toFixed(2)}</Text>
+                                                    <Text type="secondary"><strong>Model:</strong> {upload.model}</Text>
+                                                    <Text type="secondary"><strong>Instantaneous Triples Per second :</strong> {upload.triplesPerSecond}</Text>
 
+                                                    <Text type="secondary"><strong>HDFS IP:</strong> {upload.hdfsIp}:{upload.hdfsPort}</Text>
+                                                    <Text type="secondary"><strong>Inference:</strong> {upload.inferenceEngine}</Text>
+                                                    <Text type="secondary"><strong>Avg.  Triples Per Second :</strong> {getAverageTPS(upload.graphId).toFixed(2)}</Text>
+
+
+                                                    <Text type="secondary"><strong>Chunk Size:</strong> {upload.chunkSize}</Text>
+                                                    <Text type="secondary"><strong>LLM Runner:</strong> {upload.llmRunnerString}</Text>
                                                     <Text type="secondary"><strong>Bytes Per Second</strong> {upload.bytesPerSecond}</Text>
                                                 </div>
                                             )}

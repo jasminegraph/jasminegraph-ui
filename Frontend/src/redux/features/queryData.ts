@@ -68,21 +68,25 @@ export const queryDataSlice = createSlice({
     },
       add_semantic_result: (state, {payload}: {payload: any}) => {
           const keys = Object.keys(payload);
+          console.log(payload, keys)
           keys.forEach((key) => {
+            if (key != "hop") {
+
+
               const row = payload[key];
 
               if (!state.messagePool[key]) {
-                  state.messagePool[key] = [];
+                state.messagePool[key] = [];
               }
 
               if (row) {
-                  state.messagePool[key].push(row);
+                state.messagePool[key].push(row);
               }
+            }
           })
       },
 
       add_upload_bytes: (state, {payload}: {payload: any}) => {
-        console.log(payload);
           state.uploadBytes = payload;
       },
 
@@ -96,10 +100,8 @@ export const queryDataSlice = createSlice({
 
       }
       if(state.visualizeData.edge.length % 100 == 0){
-        console.log("Updating progress ")
         state.visualizeData.updateProgress= !state.visualizeData.updateProgress;
       }
-      console.log(payload)
       const firstNode = { ...payload[keys[0]] };
       const firstPartition = firstNode.partitionID
       const secondNode = { ...payload[keys[1]] };
