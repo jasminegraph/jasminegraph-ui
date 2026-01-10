@@ -270,7 +270,7 @@ export default function GraphUpload() {
                 </div>}
             <KafkaUploadModal open={kafkaModalOpen} setOpen={setKafkaModelOpen} />
             <Modal title=""   footer={null}     open={hadoopModalOpen} onCancel={()=>setHadoopModelOpen(false)}>
-                {hadoopModalOpen  && <HadoopKgForm currentPage={isLocalFileUpload? 1: 0} initForm={initForm as IKnowledgeGraph} onSuccess={()=>  {
+                {hadoopModalOpen  && <HadoopKgForm  currentPage={isLocalFileUpload? 1: 0} initForm={initForm as IKnowledgeGraph} onSuccess={()=>  {
                     setShowUploadSection(false)
                     setHadoopModelOpen(false)}}/>
                 }

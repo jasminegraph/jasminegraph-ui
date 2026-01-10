@@ -90,46 +90,105 @@ const HadoopKgForm = ({
     }, [initForm]);
     const validateHDFS = async () => {
         try {
+            setLoading(true)
+            setFormError(null);
+
             await form.validateFields(["hdfsIp", "hdfsPort", "hdfsFilePath"]);
             const { hdfsIp, hdfsPort, hdfsFilePath } = form.getFieldsValue([
                 "hdfsIp", "hdfsPort", "hdfsFilePath"
             ]);
 
             message.loading("🔍 Validating HDFS file...", 0);
-            const response = await authApi({
-                method: "post",
-                url: `/backend/graph/hadoop/validate-file`,
-                headers: {
-                    "Cluster-ID": localStorage.getItem("selectedCluster"),
-                },
-                data: {
-                    ip: hdfsIp,
-                    port: hdfsPort,
-                    filePath: hdfsFilePath
-                },
-            });
-            message.destroy();
 
-            if (response.data.exists) {
+            const response =  await constructKG(
+                hdfsIp,
+                hdfsPort,
+                hdfsFilePath,
+                null,
+               null,
+                null,
+               null,
+                null,
+               null
+            );
+
+            // const response = await authApi({
+            //     method: "post",
+            //     url: `/backend/graph/hadoop/validate-file`,
+            //     headers: {
+            //         "Cluster-ID": localStorage.getItem("selectedCluster"),
+            //     },
+            //     data: {
+            //         ip: hdfsIp,
+            //         port: hdfsPort,
+            //         filePath: hdfsFilePath
+            //     },
+            // });
+            message.destroy();
+            console.log(response);
+            console.log(response["status"]);
+
+            if (response["status"] == 200) {
                 message.success("✅ File found and HDFS validated successfully");
+                setFormError(null)
                 setCurrentStep(1);
             } else {
+
+                setFormError(response["message"])
                 message.error("❌ File not found in HDFS");
             }
 
         } catch (err: any) {
             message.destroy();
             console.error(err);
+            setFormError(err)
             message.error("⚠️ Failed to validate HDFS configuration");
+        } finally {
+            setLoading(false);
+
         }
     };
 
 
     const validateLLM = async () => {
         try {
-            const values = await form.validateFields(["llmAllocations", "inferenceEngine"]);
+            setFormError(null);
+            setLoading(true);
+
+
+            const values = await form.validateFields(["hdfsIp", "hdfsPort", "hdfsFilePath", "llmAllocations", "inferenceEngine"]);
             const engine = values.inferenceEngine;
             const allocations = values.llmAllocations;
+            const llmRunnerString = allocations
+                .map((r: { runner: string; chunks: number }) => `${r.runner}:${r.chunks}`)
+                .join(",");
+            message.loading("🔍 Validating inference engine ...", 0);
+
+            const response =  await constructKG(
+                values.hdfsIp,
+                values.hdfsPort,
+                values.hdfsFilePath,
+                llmRunnerString,
+                engine,
+                null,
+                null,
+                null,
+                null
+            );
+
+            message.destroy();
+            console.log(response);
+            console.log(response["status"]);
+
+            if (response["status"] == 200) {
+                message.success("✅ LLM inference engine reachable ...");
+                setCurrentStep(1);
+            } else {
+                setFormError(response["message"])
+                return
+                // message.error("❌ File not found in HDFS");
+            }
+
             const runners = allocations.map((a: any) => a.runner);
 
             message.loading("Fetching models from engine...", 0);
@@ -163,6 +222,8 @@ const HadoopKgForm = ({
             if (modelsFetched.length === 0) {
                 message.warning("⚠️ Could not fetch models. Please verify runner URLs or network.");
             } else {
+                setFormError(null)
+
                 setModels(modelsFetched);
 
                 message.success(`✅ Successfully fetched ${modelsFetched.length} models`);
@@ -173,6 +234,9 @@ const HadoopKgForm = ({
         } catch (err) {
             console.error("LLM validation error:", err);
             message.error("Please fix LLM configuration errors");
+        } finally {
+            setLoading(false);
+
         }
     };
 
@@ -279,9 +343,19 @@ const HadoopKgForm = ({
                         >
                             <Input placeholder="/path/to/file" />
                         </Form.Item>
+                        {formError && (
+                            <Alert
+                                message={formError}
+                                type="error"
+                                showIcon
+                                closable
+                                onClose={() => setFormError(null)}
+                                style={{ marginBottom: 16 }}
+                            />
+                        )}
 
                         <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                            <Button type="primary" onClick={validateHDFS}>
+                            <Button type="primary" disabled={loading} onClick={validateHDFS}>
                                 Next: Validate HDFS
                             </Button>
                         </div>
@@ -349,14 +423,26 @@ const HadoopKgForm = ({
                                 <Option value="transformers">Transformers</Option>
                             </Select>
                         </Form.Item>
-
+                        {formError && (
+                            <Alert
+                                message={formError}
+                                type="error"
+                                showIcon
+                                closable
+                                onClose={() => setFormError(null)}
+                                style={{ marginBottom: 16 }}
+                            />
+                        )}
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             {/* Keep a placeholder div to preserve spacing */}
                             <div style={{ visibility: currentStep === 1 && initForm?.status !== "paused" ? "visible" : "hidden" }}>
-                                <Button onClick={() => setCurrentStep(0)}>Back</Button>
+                                <Button  disabled={loading} onClick={() => {
+                                    setFormError(null)
+                                    setCurrentStep(0)
+                                }}>Back</Button>
                             </div>
 
-                            <Button type="primary" onClick={validateLLM}>
+                            <Button type="primary" disabled={loading} onClick={validateLLM}>
                                 Next: Fetch Models
                             </Button>
                         </div>
@@ -405,8 +491,8 @@ const HadoopKgForm = ({
                         )}
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Button onClick={() => setCurrentStep(1)}>Back</Button>
-                            <Button type="primary" htmlType="submit" loading={loading}>
+                            <Button disabled={loading} onClick={() => setCurrentStep(1)}>Back</Button>
+                            <Button type="primary" htmlType="submit" disabled={loading} loading={loading}>
                                 {initForm?.status === "paused"
                                     ? "Resume Construction"
                                     : (formError? "Retry Construction":  "Start Construction")}

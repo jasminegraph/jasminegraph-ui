@@ -213,6 +213,7 @@ export const constructKG = async (req: Request, res: Response) => {
         status,
         graphId
     } = req.body;
+    console.log("req.body", req.body)
 
     try {
         telnetConnection({ host: connection.host, port: connection.port })(() => {
@@ -248,19 +249,30 @@ export const constructKG = async (req: Request, res: Response) => {
 
                     tSocket.write(graphId.toString("utf8").trim() + "\n");
                 } else if (msg.includes("LLM runner hostname:port:")) {
-                    tSocket.write(llmRunnerString.toString("utf8").trim() + "\n");
+                    console.log(llmRunnerString);
+                    if (llmRunnerString == null) {
+                        console.log("ending telnet connection")
+                        // tSocket.end();
+                        tSocket.write("exit\n");
+                        res.status(HTTP[200]).send({message: "HDFS is reachable from the cluster"});
+
+                    } else {
+                        tSocket.write(llmRunnerString.toString("utf8").trim() + "\n");
+
+                    }
                 } else if (msg.includes("LLM inference engine?")) {
                     tSocket.write(inferenceEngine.toString("utf8").trim() + "\n");
                 } else if (msg.includes("What is the LLM you want to use?")) {
-                    tSocket.write(model.toString("utf8").trim() + "\n");
-                } else if (msg.includes("The provided HDFS path is invalid") || msg.includes("not available on") || msg.includes("Could not connect to")) {
-                    tSocket.write("exit\n");
-                    return res.status(HTTP[400]).send({
-                        code: ErrorCode.ServerError,
-                        message: ErrorMsg.ServerError,
-                        errorDetails: {errorMsg: msg}
-                    });
+                    if (model == null) {
+                        console.log("ending telnet connection")
+                        tSocket.write("exit\n");
+                        // tSocket.end();
 
+                        res.status(HTTP[200]).send({message: "LLM is reachable from the cluster"});
+                    } else {
+                        tSocket.write(model.toString("utf8").trim() + "\n");
+
+                    }
                 } else if (msg.includes("chunk size")) {
                     tSocket.write(chunkSize.toString().toString("utf8").trim() + "\n");
                 } else if (msg.includes("Graph Id")) {
@@ -294,6 +306,19 @@ export const constructKG = async (req: Request, res: Response) => {
                     res.status(HTTP[200]).send({message: "Knowledge Graph construction Started"});
                     // tSocket.end();
                 }
+                else if(msg.includes("HDFS file System Not reachable.")) {
+                    res.status(HTTP[400]).send({message: msg});
+
+                } else if(msg.includes("Could not connect")) {
+                res.status(HTTP[400]).send({message: msg});
+
+            } else if(msg.includes("HDFS file System Not reachable.")) {
+                    res.status(HTTP[400]).send({message: msg});
+
+                } else if(msg.includes("The provided HDFS path is invalid.")) {
+                res.status(HTTP[400]).send({message: msg});
+
+            }
             });
 
 
