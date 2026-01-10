@@ -2,6 +2,10 @@
   "id": "jasminegraph",
   "realm": "jasminegraph",
   "enabled": true,
+  "accessTokenLifespan": 3600,
+  "accessTokenLifespanForImplicitFlow": 3600,
+  "ssoSessionIdleTimeout": 3600,
+  "ssoSessionMaxLifespan": 3600,
   "components": {
     "org.keycloak.userprofile.UserProfileProvider": [
       {
