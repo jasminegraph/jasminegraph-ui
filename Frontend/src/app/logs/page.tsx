@@ -13,34 +13,14 @@ limitations under the License.
 
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 import { LOKI_EXPLORE } from "@/properties";
 import styles from "./logs.module.css";
+import { useIframeAvailability } from "@/hooks/useIframeAvailability";
 
 export default function LogsPage() {
-  const [iframeError, setIframeError] = useState<"none" | "service" | "embed">("none");
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    timerRef.current = setTimeout(() => {
-      if (iframeError === "none") {
-        setIframeError("service");
-      }
-    }, 6000);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const handleIframeError = () => {
-    setIframeError("embed");
-    if (timerRef.current) clearTimeout(timerRef.current);
-  };
-
-  const handleIframeLoad = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-  };
+  const [iframeError, handleIframeError, handleIframeLoad] = useIframeAvailability();
 
   return (
     <PageWrapper>
