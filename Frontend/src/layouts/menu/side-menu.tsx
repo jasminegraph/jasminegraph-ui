@@ -30,14 +30,14 @@ const SideMenu = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
-    const path = pathname.split("/")[1];
+    const path = (pathname || "").split("/")[1] || "";
     // Auto-collapse the menu when viewing the performance or logs page to avoid two sidebars
     if (path === "performance" || path === "logs") setCollapsed(true);
     else setCollapsed(false);
   }, [pathname]);
 
   const findActiveMenu = () => {
-    const path = pathname.split("/")[1];
+    const path = (pathname || "").split("/")[1] || "";
     return sideMenuData
       .filter((item) => item?.key === `/${path}`)
       .map((item) => item.key)[0];
