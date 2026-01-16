@@ -1,5 +1,5 @@
 /**
-Copyright 2025 JasmineGraph Team
+Copyright 2026 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -13,68 +13,68 @@ limitations under the License.
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 import { LOKI_EXPLORE } from "@/properties";
 import styles from "./logs.module.css";
 
 export default function LogsPage() {
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [iframeError, setIframeError] = useState<"none" | "service" | "embed">("none");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const checkAvailability = async () => {
-      try {
-        await fetch(LOKI_EXPLORE.url, { method: "HEAD", mode: "no-cors" });
-        setIsAvailable(true);
-      } catch (error: any) {
-        // CORS errors mean service is likely running but blocked
-        if (
-          error.message &&
-          (error.message.includes("CORS") ||
-            error.message.includes("Load failed") ||
-            error.message.includes("TypeError"))
-        ) {
-          setIsAvailable(true); // Service running, CORS blocking
-        } else {
-          setIsAvailable(false); // Network error, service down
-        }
+    timerRef.current = setTimeout(() => {
+      if (iframeError === "none") {
+        setIframeError("service");
       }
+    }, 6000);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
-    checkAvailability();
   }, []);
 
-  if (isAvailable === null) {
-    return (
-      <PageWrapper>
-        <div className={styles.container}>
-          <p>Checking logs availability...</p>
-        </div>
-      </PageWrapper>
-    );
-  }
+  const handleIframeError = () => {
+    setIframeError("embed");
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
 
-  if (isAvailable === false) {
-    return (
-      <PageWrapper>
-        <div className={styles.container}>
-          <p>
-            Logs explorer is currently unavailable. Please check if the Loki
-            service is running.
-          </p>
-        </div>
-      </PageWrapper>
-    );
-  }
+  const handleIframeLoad = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
 
   return (
     <PageWrapper>
       <div className={styles.iframeContainer}>
-        <iframe
-          src={LOKI_EXPLORE.url}
-          className={styles.iframe}
-          title="Loki Logs Explorer"
-          style={{ border: "none", width: "100%", height: "100%" }}
-        />
+        {iframeError === "none" ? (
+          <iframe
+            src={LOKI_EXPLORE.url}
+            className={styles.iframe}
+            title="Loki Logs Explorer"
+            style={{ border: "none", width: "100%", height: "100%" }}
+            onError={handleIframeError}
+            onLoad={handleIframeLoad}
+          />
+        ) : iframeError === "service" ? (
+          <div className={styles.container}>
+            <p>
+              Logs explorer is currently unavailable. Please check if the Loki service is running.
+            </p>
+          </div>
+        ) : (
+          <div className={styles.container}>
+            <div>
+              Unable to display logs explorer in this page. This may be due to browser security settings or the service blocking embedding.
+            </div>
+            <a
+              href={LOKI_EXPLORE.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.openInNewTabBtn}
+            >
+              Open Logs Explorer in New Tab
+            </a>
+          </div>
+        )}
       </div>
     </PageWrapper>
   );

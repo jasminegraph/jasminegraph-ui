@@ -13,68 +13,69 @@ limitations under the License.
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 import { GRAFANA_DASHBOARD } from "@/properties";
 import styles from "./performance.module.css";
 
 export default function PerformancePage() {
   const dashboardUrl = `${GRAFANA_DASHBOARD.baseUrl}/d/${GRAFANA_DASHBOARD.uid}/${GRAFANA_DASHBOARD.slug}`;
-  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [iframeError, setIframeError] = useState<"none" | "service" | "embed">("none");
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    const checkDashboardAvailability = async () => {
-      try {
-        await fetch(dashboardUrl, { method: "HEAD", mode: "no-cors" });
-        setIsAvailable(true);
-      } catch (error: any) {
-        // CORS errors mean service is likely running but blocked
-        if (
-          error.message &&
-          (error.message.includes("CORS") ||
-            error.message.includes("Load failed") ||
-            error.message.includes("TypeError"))
-        ) {
-          setIsAvailable(true); // Service running, CORS blocking
-        } else {
-          setIsAvailable(false); // Network error, service down
-        }
+    timerRef.current = setTimeout(() => {
+      if (iframeError === "none") {
+        setIframeError("service");
       }
+    }, 6000);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
-    checkDashboardAvailability();
-  }, [dashboardUrl]);
+  }, []);
 
-  if (isAvailable === null) {
-    return (
-      <PageWrapper>
-        <div className={styles.container}>
-          <p>Checking performance dashboard&apos;s availability</p>
-        </div>
-      </PageWrapper>
-    );
-  }
+  const handleIframeError = () => {
+    setIframeError("embed");
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
 
-  if (isAvailable === false) {
-    return (
-      <PageWrapper>
-        <div className={styles.container}>
-          <p>
-            Performance dashboard is currently unavailable. Please check if the
-            Grafana service is running.
-          </p>
-        </div>
-      </PageWrapper>
-    );
-  }
+  const handleIframeLoad = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+  };
 
   return (
     <PageWrapper>
       <div className={styles.iframeContainer}>
-        <iframe
-          src={dashboardUrl}
-          className={styles.iframe}
-          title="Grafana Dashboard"
-        />
+        {iframeError === "none" ? (
+          <iframe
+            src={dashboardUrl}
+            className={styles.iframe}
+            title="Grafana Dashboard"
+            style={{ border: "none", width: "100%", height: "100%" }}
+            onError={handleIframeError}
+            onLoad={handleIframeLoad}
+          />
+        ) : iframeError === "service" ? (
+          <div className={styles.container}>
+            <p>
+              Performance dashboard is currently unavailable. Please check if the Grafana service is running.
+            </p>
+          </div>
+        ) : (
+          <div className={styles.container}>
+            <div>
+              Unable to display performance dashboard in this page. This may be due to browser security settings or the service blocking embedding.
+            </div>
+            <a
+              href={dashboardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.openInNewTabBtn}
+            >
+              Open Performance Dashboard in New Tab
+            </a>
+          </div>
+        )}
       </div>
     </PageWrapper>
   );

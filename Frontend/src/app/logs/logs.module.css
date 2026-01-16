@@ -1,6 +1,7 @@
 .container {
   height: calc(100vh - 64px);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   padding: 16px;
@@ -23,4 +24,24 @@
   height: 100%;
   border: none;
   display: block;
+}
+
+.openInNewTabBtn {
+  display: inline-block;
+  margin-top: 20px;
+  padding: 10px 22px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #fff;
+  background: #0078d4;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.openInNewTabBtn:hover,
+.openInNewTabBtn:focus {
+  background: #005fa3;
+  outline: none;
 }
