@@ -26,13 +26,13 @@ import { ErrorCode, ErrorMsg } from '../../../../Backend/src/constants/error.con
 import { HTTP } from '../../../../Backend/src/constants/constants';
 
 import * as clusterRepository from '../../../../Backend/src/repository/cluster.repository';
-import * as kgRepository from '../../../../Backend/src/repository/kg-construction-meta.respository';
+import * as kgRepository from '../../../../Backend/src/repository/kg-construction-meta.repository';
 
 import { validClusterData } from '../../fixtures/cluster';
 import { runningKGMeta } from '../../fixtures/kg';
 
 jest.mock('../../../../Backend/src/repository/cluster.repository');
-jest.mock('../../../../Backend/src/repository/kg-construction-meta.respository');
+jest.mock('../../../../Backend/src/repository/kg-construction-meta.repository');
 jest.mock('../../../../Backend/src/utils/graph', () => ({
   parseGraphFile: jest.fn(),
 }));

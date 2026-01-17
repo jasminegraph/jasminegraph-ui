@@ -31,7 +31,7 @@ import {
     updateKGConstructionMetaStatusRepo,
     deleteKGConstructionMetaRepo,
     KGStatus
-} from "../repository/kg-construction-meta.respository";
+} from "../repository/kg-construction-meta.repository";
 
 export let socket;
 export let tSocket;

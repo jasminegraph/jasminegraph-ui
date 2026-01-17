@@ -22,7 +22,7 @@ import {
   KGStatus,
   KGConstructionMeta,
   LLMRunner,
-} from '../../../../Backend/src/repository/kg-construction-meta.respository';
+} from '../../../../Backend/src/repository/kg-construction-meta.repository';
 
 jest.mock('../../../../Backend/src/databaseConnection', () => ({
   pool: {
