@@ -110,7 +110,7 @@ describe('Auth Controller', () => {
       await register(mockRequest as Request, mockResponse as Response);
 
       expect(responseStatus).toHaveBeenCalledWith(500);
-      expect(responseJson).toHaveBeenCalledWith('Server error');
+      expect(responseJson).toHaveBeenCalledWith(expect.stringContaining('Server error: Network error'));
     });
 
     it('should handle admin token retrieval failure', async () => {
@@ -120,7 +120,7 @@ describe('Auth Controller', () => {
       await register(mockRequest as Request, mockResponse as Response);
 
       expect(responseStatus).toHaveBeenCalledWith(500);
-      expect(responseJson).toHaveBeenCalledWith('Server error');
+      expect(responseJson).toHaveBeenCalledWith(expect.stringContaining('Server error: Token error'));
       expect(mockedAxios.post).not.toHaveBeenCalled();
     });
   });
@@ -180,7 +180,7 @@ describe('Auth Controller', () => {
       await login(mockRequest as Request, mockResponse as Response);
 
       expect(responseStatus).toHaveBeenCalledWith(500);
-      expect(responseJson).toHaveBeenCalledWith('Server error');
+      expect(responseJson).toHaveBeenCalledWith(expect.stringContaining('Server error: Network error'));
     });
   });
 
