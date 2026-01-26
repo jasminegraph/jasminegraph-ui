@@ -135,7 +135,6 @@ const HadoopKgForm = ({
             } else {
 
                 setFormError(response["message"])
-                message.error("❌ File not found in HDFS");
             }
 
         } catch (err: any) {
