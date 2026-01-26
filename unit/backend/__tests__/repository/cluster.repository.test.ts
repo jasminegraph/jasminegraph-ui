@@ -19,7 +19,6 @@ import {
   addUserToClusterRepo,
   removeUserFromClusterRepo,
   getMyClustersRepo,
-  Cluster
 } from '../../../../Backend/src/repository/cluster.repository';
 import {
   validClusterData,
