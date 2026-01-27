@@ -27,7 +27,8 @@ import dynamic from "next/dynamic";
 const TwoLevelGraphVisualization = dynamic(
     () => import("@/components/visualization/two-level-graph-visualization"),
     { ssr: false } // Important: disables server-side rendering
-);import {LoadingOutlined} from "@ant-design/icons";
+);
+import {LoadingOutlined} from "@ant-design/icons";
 import { useActivity } from "@/hooks/useActivity";
 
 const WS_URL = "ws://localhost:8080";

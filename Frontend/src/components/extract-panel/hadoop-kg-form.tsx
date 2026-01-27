@@ -108,7 +108,7 @@ const HadoopKgForm = ({
                 message.error("❌ File not found in HDFS");
                 reportErrorFromException(
                     "Hadoop KG Form",
-                    message.error,
+                    "File not found in HDFS",
                     "Failed to validate HDFS configuration."
                 );
             }
