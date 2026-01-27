@@ -38,7 +38,7 @@ export const activityDataSlice = createSlice({
     add_error: (state, { payload }: PayloadAction<Omit<ActivityError, 'id' | 'time'>>) => {
       const error: ActivityError = {
         ...payload,
-        id: `${payload.menuItem}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: `${payload.menuItem}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
         time: new Date().toLocaleTimeString(),
       };
       state.errors.unshift(error);

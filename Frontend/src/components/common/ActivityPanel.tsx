@@ -20,6 +20,7 @@ import { useAppSelector, useAppDispatch } from "@/redux/hook";
 import {
   toggle_activity_panel,
   clear_all_errors,
+  clear_errors_by_menu_item,
   remove_error,
 } from "@/redux/features/activityData";
 import styles from "./ActivityPanel.module.css";
@@ -49,7 +50,11 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
   };
 
   const handleClearAll = () => {
-    dispatch(clear_all_errors());
+    if (featureName) {
+      dispatch(clear_errors_by_menu_item(featureName));
+    } else {
+      dispatch(clear_all_errors());
+    }
   };
 
   return (
@@ -150,20 +155,13 @@ export default function ActivityPanel({ featureName }: ActivityPanelProps) {
                       </div>
                     }
                     description={
-                      <div style={{ position: 'relative' }}>
-                        {item.message}
-                        <Text
-                          type="secondary"
-                          style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            right: 0,
-                            fontSize: '11px',
-                            color: '#999'
-                          }}
-                        >
-                          {item.time}
-                        </Text>
+                      <div className={styles.errorDescription}>
+                        <div className={styles.errorMessage}>{item.message}</div>
+                        <div className={styles.errorTimeContainer}>
+                          <Text type="secondary" className={styles.errorTime}>
+                            {item.time}
+                          </Text>
+                        </div>
                       </div>
                     }
                     className={styles.errorAlert}

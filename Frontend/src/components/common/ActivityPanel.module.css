@@ -98,3 +98,24 @@ limitations under the License.
   margin-top: 4px;
   font-size: 11px;
 }
+
+.errorDescription {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.errorMessage {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.errorTimeContainer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.errorTime {
+  font-size: 11px;
+  color: #999;
+}
