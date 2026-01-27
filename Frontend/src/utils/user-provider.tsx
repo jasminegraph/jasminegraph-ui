@@ -28,14 +28,34 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathName = usePathname();
   const dispatch = useDispatch();
-  const { getSrvAccessToken } = useAccessToken();
+  const { getSrvAccessToken, isTokenExpired, refreshAccessToken } = useAccessToken();
   const { isUserDataFetched } = useAppSelector((state) => state.authData);
   const [isLoading, setIsLoading] = useState(true);
 
   const getUser = async () => {
     try {
       setIsLoading(true);
-      const token = getSrvAccessToken();
+      let token = getSrvAccessToken();
+
+      if (!token) {
+        console.log(
+          "[USER_PROVIDER] No access token found, redirecting to login"
+        );
+        router.replace("/auth");
+        return;
+      }
+      if (isTokenExpired(token!)) {
+        try {
+          token = await refreshAccessToken();
+          console.log("[USER_PROVIDER] Token refreshed successfully");
+        } catch (refreshError) {
+          console.log(
+            "[USER_PROVIDER] Token refresh failed, redirecting to login"
+          );
+          router.replace("/auth");
+          return;
+        }
+      }
       const res = await getUserDataByToken(token!).then((res) => res.data);
       const userData: IUserAccessData = {
         email: res.data.email,

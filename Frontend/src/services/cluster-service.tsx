@@ -54,14 +54,14 @@ export async function addNewCluster(name: string, description: string, host: str
   }
 }
 
-export async function getAllClusters(token: string) {
+export async function getAllClusters(token: string | null) {
   try {
     const result = await authApi({
       method: "get",
       url: `/backend/clusters/myClusters`,
       headers: {
-        "Authorization": `Bearer ${token}`,
-      },
+      Authorization: token ? `Bearer ${token}` : "",
+    },
     }).then((res) => res.data);
     return {
       data: result.data,
@@ -88,13 +88,13 @@ export async function getCluster(clusterID: string, token: string) {
   }
 }
 
-export async function getClustersStatusByIds(token: string, ids: number[]) {
+export async function getClustersStatusByIds(token: string | null, ids: number[]) {
   try {
     const result = await authApi({
       method: "post",
       url: `/backend/clusters/status`,
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: token ? `Bearer ${token}` : "",
       },
       data: { ids },
     }).then(res => res.data);
