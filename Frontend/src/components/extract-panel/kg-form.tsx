@@ -25,30 +25,29 @@ import {
     message,
     Steps,
     Alert,
-    Card,
 } from "antd";
-import useAccessToken from "@/hooks/useAccessToken";
-import { constructKG } from "@/services/graph-service";
-import {authApi} from "@/services/axios";
 import {IKnowledgeGraph} from "@/types/graph-types";
 
 const { Option } = Select;
 const { Step } = Steps;
 
-const HadoopKgForm = ({
-                          onSuccess,
-                          currentPage,
-                          initForm
-                      }: {
+
+
+const KgForm = ({
+                    onSuccess,
+                    currentPage,
+                    initForm,
+                    file
+                }: {
     onSuccess: () => void,
     currentPage: number,
-
     initForm: IKnowledgeGraph,
-
+    file?: File | undefined
 }) => {
     const [form] = Form.useForm();
     const [currentStep, setCurrentStep] = useState(currentPage);
     const [loading, setLoading] = useState(false);
+
     const [formError, setFormError] = useState<string | null>(null);
     const [models, setModels] = useState<string[]>([]);
     const [savedValues, setSavedValues] = useState<Record<string, any>>({});
@@ -56,8 +55,7 @@ const HadoopKgForm = ({
     const handleValuesChange = (_: any, allValues: any) => {
         setSavedValues(allValues);
     };
-
-    // Load initial form values
+     // Load initial form values
     useEffect(() => {
         if (initForm && Object.keys(initForm).length > 0) {
             const newValues: any = { ...initForm };
@@ -88,104 +86,13 @@ const HadoopKgForm = ({
             }
         }
     }, [initForm]);
-    const validateHDFS = async () => {
-        try {
-            setLoading(true)
-            setFormError(null);
-
-            await form.validateFields(["hdfsIp", "hdfsPort", "hdfsFilePath"]);
-            const { hdfsIp, hdfsPort, hdfsFilePath } = form.getFieldsValue([
-                "hdfsIp", "hdfsPort", "hdfsFilePath"
-            ]);
-
-            message.loading("🔍 Validating HDFS file...", 0);
-
-            const response =  await constructKG(
-                hdfsIp,
-                hdfsPort,
-                hdfsFilePath,
-                null,
-               null,
-                null,
-               null,
-                null,
-               null
-            );
-
-            // const response = await authApi({
-            //     method: "post",
-            //     url: `/backend/graph/hadoop/validate-file`,
-            //     headers: {
-            //         "Cluster-ID": localStorage.getItem("selectedCluster"),
-            //     },
-            //     data: {
-            //         ip: hdfsIp,
-            //         port: hdfsPort,
-            //         filePath: hdfsFilePath
-            //     },
-            // });
-            message.destroy();
-            console.log(response);
-            console.log(response["status"]);
-
-            if (response["status"] == 200) {
-                message.success("✅ File found and HDFS validated successfully");
-                setFormError(null)
-                setCurrentStep(1);
-            } else {
-
-                setFormError(response["message"])
-            }
-
-        } catch (err: any) {
-            message.destroy();
-            console.error(err);
-            setFormError(err)
-            message.error("⚠️ Failed to validate HDFS configuration");
-        } finally {
-            setLoading(false);
-
-        }
-    };
 
 
     const validateLLM = async () => {
         try {
-            setFormError(null);
-            setLoading(true);
-
-
-            const values = await form.validateFields(["hdfsIp", "hdfsPort", "hdfsFilePath", "llmAllocations", "inferenceEngine"]);
+            const values = await form.validateFields(["llmAllocations", "inferenceEngine"]);
             const engine = values.inferenceEngine;
             const allocations = values.llmAllocations;
-            const llmRunnerString = allocations
-                .map((r: { runner: string; chunks: number }) => `${r.runner}:${r.chunks}`)
-                .join(",");
-            message.loading("🔍 Validating inference engine ...", 0);
-
-            const response =  await constructKG(
-                values.hdfsIp,
-                values.hdfsPort,
-                values.hdfsFilePath,
-                llmRunnerString,
-                engine,
-                null,
-                null,
-                null,
-                null
-            );
-
-            message.destroy();
-            console.log(response);
-            console.log(response["status"]);
-
-            if (response["status"] == 200) {
-                setCurrentStep(1);
-            } else {
-                setFormError(response["message"]);
-                return
-            }
-
             const runners = allocations.map((a: any) => a.runner);
 
             message.loading("Fetching models from engine...", 0);
@@ -219,24 +126,20 @@ const HadoopKgForm = ({
             if (modelsFetched.length === 0) {
                 message.warning("⚠️ Could not fetch models. Please verify runner URLs or network.");
             } else {
-                setFormError(null);
                 setModels(modelsFetched);
+
                 message.success(`✅ Successfully fetched ${modelsFetched.length} models`);
-                setCurrentStep(2);
+                setCurrentStep(1);
             }
 
 
         } catch (err) {
             console.error("LLM validation error:", err);
             message.error("Please fix LLM configuration errors");
-        } finally {
-            setLoading(false);
-
         }
     };
 
     const onFinish = async (values: any) => {
-        console.log("testing bug");
         setLoading(true);
         setFormError(null);
 
@@ -254,18 +157,28 @@ const HadoopKgForm = ({
             const llmRunnerString = allocations
                 .map((r: { runner: string; chunks: number }) => `${r.runner}:${r.chunks}`)
                 .join(",");
+            if (!file) {
+                message.error("Please select a file to upload");
+                return;
+            }
 
-            await constructKG(
-                finalValues.hdfsIp,
-                finalValues.hdfsPort,
-                finalValues.hdfsFilePath,
-                llmRunnerString,
-                finalValues.inferenceEngine,
-                finalValues.model,
-                finalValues.chunkSize,
-                initForm?.status,
-                initForm?.graphId
-            );
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append("llmRunnerString",  llmRunnerString);
+            formData.append("inferenceEngine",  finalValues.inferenceEngine);
+            formData.append("model",  finalValues.model);
+            formData.append("chunkSize",  finalValues.chunkSize);
+            formData.append("status",   initForm?.status);
+            formData.append("graphId",   initForm?.graphId);
+
+            formData.append('textFileName', finalValues.graphName);
+            try {
+                await axios.post('/backend/graph/construct-kg-local', formData, { headers: { 'Content-Type': 'multipart/form-data', 'Cluster-ID': localStorage.getItem('selectedCluster') } });
+                // message.success("File uploaded successfully");
+            } catch (error) {
+                message.error("Failed to upload file");
+            }
+
 
             message.success("Knowledge Graph construction started");
             onSuccess();
@@ -284,7 +197,6 @@ const HadoopKgForm = ({
                 style={{ marginBottom: 50 }}
                 labelPlacement="vertical"
             >
-                <Step title="HDFS Configuration" />
                 <Step title="LLM Runner Setup" />
                 <Step title="Start Construction" />
             </Steps>
@@ -296,68 +208,14 @@ const HadoopKgForm = ({
 
                 onValuesChange={handleValuesChange}
             >
-
-                    <div style={{ display: currentStep === 0 && initForm?.status !== "paused" ? "block" : "none" }}>
-
-                    <Form.Item
-                            name="hdfsIp"
-                            label="HDFS Server IP"
-                            rules={[
-                                { required: true, message: "Enter HDFS IP" },
-                                {
-                                    pattern:
-                                        /^(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)){3}$/,
-                                    message: "Invalid IPv4 address",
-                                },
-                            ]}
-                        >
-                            <Input placeholder="e.g., 192.168.1.10" />
-                        </Form.Item>
-
+                    <div style={{ display: currentStep === 0 ? "block" : "none" }}>
                         <Form.Item
-                            name="hdfsPort"
-                            label="HDFS Port"
-                            rules={[
-                                { required: true, message: "Enter HDFS port" },
-                                { pattern: /^([1-9][0-9]{0,4})$/, message: "Port 1–65535" },
-                            ]}
+                            name="graphName"
+                            label="Graph Name"
+
                         >
-                            <Input placeholder="e.g., 9000" />
+                            <Input />
                         </Form.Item>
-
-                        <Form.Item
-                            name="hdfsFilePath"
-                            label="HDFS File Path"
-                            rules={[
-                                { required: true, message: "Enter file path" },
-                                {
-                                    pattern: /^\/(?:[a-zA-Z0-9._-]+\/)*[a-zA-Z0-9._-]*$/,
-                                    message: "Invalid path format",
-                                },
-                            ]}
-                        >
-                            <Input placeholder="/path/to/file" />
-                        </Form.Item>
-                        {formError && (
-                            <Alert
-                                message={formError}
-                                type="error"
-                                showIcon
-                                closable
-                                onClose={() => setFormError(null)}
-                                style={{ marginBottom: 16 }}
-                            />
-                        )}
-
-                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                            <Button type="primary" disabled={loading} onClick={validateHDFS}>
-                                Next: Validate HDFS
-                            </Button>
-                        </div>
-                    </div>
-
-
-                    <div style={{ display: currentStep === 1 ? "block" : "none" }}>
                         <Form.List name="llmAllocations" initialValue={[{ runner: "", chunks: 1 }]}>
                             {(fields, { add, remove }) => (
                                 <>
@@ -418,32 +276,20 @@ const HadoopKgForm = ({
                                 <Option value="transformers">Transformers</Option>
                             </Select>
                         </Form.Item>
-                        {formError && (
-                            <Alert
-                                message={formError}
-                                type="error"
-                                showIcon
-                                closable
-                                onClose={() => setFormError(null)}
-                                style={{ marginBottom: 16 }}
-                            />
-                        )}
+
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             {/* Keep a placeholder div to preserve spacing */}
                             <div style={{ visibility: currentStep === 1 && initForm?.status !== "paused" ? "visible" : "hidden" }}>
-                                <Button  disabled={loading} onClick={() => {
-                                    setFormError(null)
-                                    setCurrentStep(0)
-                                }}>Back</Button>
+                                <Button onClick={() => setCurrentStep(0)}>Back</Button>
                             </div>
 
-                            <Button type="primary" disabled={loading} onClick={validateLLM}>
+                            <Button type="primary" onClick={validateLLM}>
                                 Next: Fetch Models
                             </Button>
                         </div>
                     </div>
 
-                {currentStep === 2 && (
+                {currentStep === 1 && (
                     <>
                         <Form.Item
                             name="model"
@@ -486,11 +332,11 @@ const HadoopKgForm = ({
                         )}
 
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
-                            <Button disabled={loading} onClick={() => setCurrentStep(1)}>Back</Button>
-                            <Button type="primary" htmlType="submit" disabled={loading} loading={loading}>
+                            <Button onClick={() => setCurrentStep(1)}>Back</Button>
+                            <Button type="primary" htmlType="submit" loading={loading}>
                                 {initForm?.status === "paused"
                                     ? "Resume Construction"
-                                    : (formError? "Retry Construction":  "Start Construction")}
+                                    : "Start Construction"}
                             </Button>
                         </div>
                     </>
@@ -500,4 +346,4 @@ const HadoopKgForm = ({
     );
 };
 
-export default HadoopKgForm;
+export default KgForm;
