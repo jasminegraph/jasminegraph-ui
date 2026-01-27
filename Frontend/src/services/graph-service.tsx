@@ -79,7 +79,7 @@ export async function constructKG(
     llmRunnerString:  string | null ,
     inferenceEngine: string | null,
     model: string | null,
-    chunkSize: string | null,
+    chunkSize: number | null,
     status: string | null | undefined,
     graphId: string | null | undefined
 ): Promise<{ status: any; message: any; data: any }> {
