@@ -48,7 +48,7 @@ export default function Clusters() {
 
   const getAllCluster = useCallback(async () => {
     try {
-      let token = getSrvAccessToken() || "";
+      let token = getSrvAccessToken() || null;
 
       if (token && isTokenExpired(token)) {
         try {

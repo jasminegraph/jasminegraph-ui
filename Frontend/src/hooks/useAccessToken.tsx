@@ -22,6 +22,7 @@ const useAccessToken = () => {
   };
 
   const setSrvAccessToken = (accessToken: string) => {
+    if (typeof window === "undefined") return null;
     localStorage.setItem(ACCESS_TOKEN, accessToken);
   };
 
@@ -30,16 +31,19 @@ const useAccessToken = () => {
   };
 
   const setSrvRefreshToken = (refreshToken: string) => {
+    if (typeof window === "undefined") return null;
     localStorage.setItem(REFRESH_TOKEN, refreshToken);
   };
 
   const clearTokens = () => {
+    if (typeof window === "undefined") return null;
     localStorage.removeItem(ACCESS_TOKEN);
     localStorage.removeItem(REFRESH_TOKEN);
   };
 
   const isTokenExpired = (token: string | null) => {
-    if (!token) return true;
+    if (!token || token.split('.').length !== 3) 
+      return true;
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const currentTime = Date.now() / 1000;
@@ -63,7 +67,7 @@ const useAccessToken = () => {
       const refreshToken = getSrvRefreshToken();
       if (!refreshToken) {
         console.log("[TOKEN] No refresh token available for refresh");
-        throw new Error("No refresh token available");
+        throw new Error("No refresh token available for refresh");
       }
       const response = await axios.post("/backend/auth/refresh-token", {
         token: refreshToken,
