@@ -62,7 +62,7 @@ type ISocketResponse = {
 }
 
 export default function GraphUpload() {
-    const { reportErrorFromException } = useActivity();
+    const { reportError, reportErrorFromException } = useActivity();
     const dispatch = useAppDispatch();
     const uploadBytesGraphs  = useAppSelector((state) => state.queryData.uploadBytes);
 
