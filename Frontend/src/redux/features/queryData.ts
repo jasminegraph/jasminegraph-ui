@@ -13,6 +13,28 @@ limitations under the License.
 
 import { GRAPH_TYPES, GraphType } from "@/data/graph-data";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+
+const normalizeEventTime = (relation: any): number | undefined => {
+  const candidates = [
+    relation?.eventTime,
+    relation?.properties?.eventTime,
+    relation?.timestamp,
+    relation?.properties?.timestamp,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null || candidate === "") {
+      continue;
+    }
+    const parsed = Number(candidate);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return undefined;
+};
+
 interface  IUpBytesResponse{
     type:string;
     updates :any[];
@@ -101,30 +123,52 @@ export const queryDataSlice = createSlice({
       if(state.visualizeData.edge.length % 100 == 0){
         state.visualizeData.updateProgress= !state.visualizeData.updateProgress;
       }
+      const resolveId = (node: any) => node?.id ?? node?.name ?? null;
+
       const firstNode = { ...payload[keys[0]] };
-      const firstPartition = firstNode.partitionID
+      const firstPartition = firstNode.partitionID;
       const secondNode = { ...payload[keys[1]] };
-        const secondPartition = secondNode.partitionID
-      const relation = payload[keys[2]];
-      if(firstNode && secondNode && firstNode.id && secondNode.id){
-        state.visualizeData.edge.push({ from: firstNode?.id, to: secondNode?.id , label: relation?.type});
+      const secondPartition = secondNode.partitionID;
+      const relation = payload.r ?? payload[keys[2]] ?? {};
+      const eventTime = normalizeEventTime(relation);
+      const firstId = resolveId(firstNode);
+      const secondId = resolveId(secondNode);
+      if(firstNode && secondNode && firstId && secondId){
+        // Deduplicate: normalize node order so A→B and B→A are treated as the same undirected edge
+        const [idA, idB] = [firstId, secondId].sort();
+        const dupKey = `${idA}-${idB}-${eventTime}`;
+        const edgeExists = state.visualizeData.edge.some((e) => {
+          const [eA, eB] = [e.from, e.to].sort();
+          return `${eA}-${eB}-${e.eventTime}` === dupKey;
+        });
+        if (!edgeExists) {
+          state.visualizeData.edge.push({
+            from: firstId,
+            to: secondId,
+            label: relation?.type ?? relation?.label ?? relation?.relation,
+            type: relation?.type ?? relation?.relation,
+            properties: relation,
+            eventTime,
+          });
+        }
       }
     
       // Process each key to add nodes, avoiding duplicates
       keys.forEach((key) => {
           if(key!=="r") {
         const node = { ...payload[key] };
-        if (node && node.id) {
+        const nodeId = resolveId(node);
+        if (node && nodeId) {
           // Check if a node with the same id already exists
           const nodeExists = state.visualizeData.node.some(
-            (existingNode) => existingNode.id === node.id
+            (existingNode) => existingNode.id === nodeId
           );
           if (!nodeExists) {
               let color = '#97C2FC'
               if( node.partitionID != secondPartition ){
                   color = '#6590C4'
               }
-            state.visualizeData.node.push({...node, color:color})
+            state.visualizeData.node.push({...node, id: nodeId, label: node.name ?? nodeId, color})
           }
         }};
       });

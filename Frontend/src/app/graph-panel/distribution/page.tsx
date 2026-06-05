@@ -12,18 +12,19 @@ limitations under the License.
  */
 
 'use client';
-import React, { useState, useEffect } from "react";
-import {Button, message, Select, Spin} from 'antd';
+import React, { useState, useEffect, useMemo } from "react";
+import {Button, message, Select, Slider, Spin} from 'antd';
 import GraphVisualization from "@/components/visualization/graph-visualization";
 import { getGraphList } from "@/services/graph-service";
 import InDegreeVisualization from "@/components/visualization/indegree-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 import { GRAPH_TYPES, GRAPH_VISUALIZATION_TYPE, GraphType, GraphVisualizationType } from "@/data/graph-data";
 import { add_degree_data, clear_degree_data, add_visualize_data, clear_visualize_data } from "@/redux/features/queryData";
-import { useAppDispatch } from "@/redux/hook";
+import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { IOption } from "@/types/options-types";
 import { IGraphDetails } from "@/types/graph-types";
 import dynamic from "next/dynamic";
+import LowLevelGraphVisualization from "@/components/visualization/low-level-graph-visualization";
 const TwoLevelGraphVisualization = dynamic(
     () => import("@/components/visualization/two-level-graph-visualization"),
     { ssr: false } // Important: disables server-side rendering
@@ -31,7 +32,22 @@ const TwoLevelGraphVisualization = dynamic(
 import {LoadingOutlined} from "@ant-design/icons";
 import { useActivity } from "@/hooks/useActivity";
 
-const WS_URL = "ws://localhost:8080";
+const WS_URL = typeof window !== 'undefined'
+  ? `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080`
+  : 'ws://localhost:8080';
+
+const _normalizeEventTime = (edge: any): number | null => {
+    const candidates = [edge?.eventTime, edge?.properties?.eventTime, edge?.timestamp, edge?.properties?.timestamp];
+    for (const c of candidates) {
+        if (c !== undefined && c !== null && c !== "") {
+            const parsed = Number(c);
+            if (Number.isFinite(parsed)) return parsed;
+        }
+    }
+    return null;
+};
+
+const _formatServerTime = (timestamp: number) => new Date(timestamp).toLocaleString();
 
 type ISocketResponse = {
   type: string,
@@ -46,9 +62,41 @@ export default function GraphDistribution() {
   const [graphOptions, setGraphOptions] = useState<IOption[]>([]);
   const [selectedGraph, setSelectedGraph] = useState<string | undefined>(undefined);
   const [visualizationType, setVisualizationType] = useState<GraphVisualizationType | undefined>(undefined);
-  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
+  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: () => true, reconnectInterval: 1000, reconnectAttempts: Infinity });  
   const [clientId, setClientID] = useState<string>('')
   const [isVisualize, setIsVisualize] = useState<boolean>(false);
+  const firstDataRowLogged = React.useRef(false);
+
+  const lowLevelEdges = useAppSelector((state) => (state as any).queryData.visualizeData.edge);
+  const serverTimes = useMemo(() => {
+      const allTimes = (lowLevelEdges || [])
+          .map((e: any) => _normalizeEventTime(e))
+          .filter((t: any): t is number => t !== null)
+          .sort((a: number, b: number) => a - b);
+      return [...new Set(allTimes)] as number[];
+  }, [lowLevelEdges]);
+  const hasTemporalData = serverTimes.length > 0;
+  const [currentTimeIndex, setCurrentTimeIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+      if (!serverTimes.length) { setCurrentTimeIndex(0); setIsPlaying(false); return; }
+      setCurrentTimeIndex(serverTimes.length - 1);
+      setIsPlaying(false);
+  }, [serverTimes]);
+
+  useEffect(() => {
+      if (!isPlaying || !serverTimes.length) return;
+      if (currentTimeIndex >= serverTimes.length - 1) { setIsPlaying(false); return; }
+      const timer = window.setInterval(() => {
+          setCurrentTimeIndex((prev) => {
+              const next = Math.min(prev + 1, serverTimes.length - 1);
+              if (next >= serverTimes.length - 1) setIsPlaying(false);
+              return next;
+          });
+      }, 600);
+      return () => window.clearInterval(timer);
+  }, [isPlaying, currentTimeIndex, serverTimes]);
 
   const connectionStatus = {
     [ReadyState.CONNECTING]: 'Connecting',
@@ -98,13 +146,27 @@ export default function GraphDistribution() {
   }
 
   useEffect(() => {
+    console.log('[WS] readyState changed:', connectionStatus);
+  }, [readyState]);
+
+  useEffect(() => {
     const message = lastJsonMessage as ISocketResponse;
     if(!message) return;
+    const keys = Object.keys(message as object);
+    console.log('[WS] message received — type:', (message as any)?.type, '| keys:', keys);
     if(message?.type == "CONNECTED"){
+      console.log('[WS] CONNECTED, clientId:', message?.clientId);
       setClientID(message?.clientId || '')
     }else if (Object.values(GRAPH_TYPES).includes(message.type as GraphType)) {
       dispatch(add_degree_data({data: message, type: message?.type as GraphType}));
     } else {
+      if ((message as any)?.done) {
+        console.log('[WS] done signal received');
+        firstDataRowLogged.current = false;
+      } else if (!firstDataRowLogged.current) {
+        firstDataRowLogged.current = true;
+        console.log('[WS] first data row sample:', JSON.stringify(message));
+      }
       dispatch(add_visualize_data({ ...message}));
     }
   }, [lastJsonMessage]) 
@@ -136,36 +198,55 @@ export default function GraphDistribution() {
   }
 
   const onPartitionDetailsView = async (partitionID: number | null | undefined) => {
-      if(partitionID != null){
       try{
         setLoading(true);
         dispatch(clear_visualize_data());
         if (readyState === ReadyState.OPEN){
-            console.log("134",partitionID);
+            const query = partitionID != null
+              ? `match (n)-[r]-(m) where n.partitionID = ${partitionID} return n,m,r`
+              : `match (n)-[r]-(m) return n,m,r`;
+
+          console.log('[sendJsonMessage] QUERY graphId:', selectedGraph, '| clusterId:', localStorage.getItem('selectedCluster'), '| clientId:', clientId);
           sendJsonMessage(
             {
               type: "QUERY",
-              query: `match (n)-[r]-(m) where n.partitionID = ${partitionID} return n,m,r`,
+              query,
               graphId: selectedGraph,
               clientId: clientId,
               clusterId: localStorage.getItem("selectedCluster"),            
             }
           );
+        } else {
+          console.warn('[onPartitionDetailsView] WS not open, query NOT sent — readyState:', connectionStatus);
         }    
       }catch (err){
         console.error(err)
       }finally{
         setLoading(false)
       }
-    }
   }
 
   const onVisualize = async () => {
+    console.log('[onVisualize] readyState:', connectionStatus, '| clientId:', clientId, '| graph:', selectedGraph, '| type:', visualizationType);
+    if (readyState === ReadyState.CONNECTING) {
+      message.info('WebSocket is connecting. Please try again in a moment.');
+      return;
+    }
+    if (readyState !== ReadyState.OPEN) {
+      message.error('WebSocket is not connected. Please refresh the page.');
+      return;
+    }
     if(Object.values(GRAPH_TYPES).includes(visualizationType as GraphType)){
       setIsVisualize(false);
       onDegreeQuerySubmit();
     }else{
       setIsVisualize(true);
+      const selectedGraphDetails = graphs.find((graph: IGraphDetails) => String(graph.idgraph) === String(selectedGraph));
+      const hasPartitionMetadata = Array.isArray(selectedGraphDetails?.partitions) && selectedGraphDetails!.partitions.length > 0;
+
+      if (!hasPartitionMetadata && visualizationType === "full_view") {
+        await onPartitionDetailsView(null);
+      }
     }
   }
 
@@ -182,8 +263,8 @@ export default function GraphDistribution() {
         </p>
       </div>
       <div style={{width: "80%"}}>
-        <div style={{ display: "flex", gap: "30px" }}>
-          <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px"}}>
+        <div style={{ display: "flex", alignItems: "center", gap: "30px", flexWrap: "nowrap" }}>
+          <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px", flexShrink: 0}}>
             <div>Select Graph:</div>
             <Select
               style={{ width: 120 }}
@@ -193,7 +274,7 @@ export default function GraphDistribution() {
               size="large"
             />
           </div>
-          <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px"}}>
+          <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px", flexShrink: 0}}>
             <div>Visualization Type:</div>
             <Select
               style={{ width: 160 }}
@@ -203,7 +284,7 @@ export default function GraphDistribution() {
               size="large"
             />
           </div>
-          <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px"}}>
+          <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: "10px", flexShrink: 0}}>
             <Button
               type="primary"
               size="large"
@@ -214,13 +295,49 @@ export default function GraphDistribution() {
               Visualize
             </Button>
           </div>
+          {isVisualize && hasTemporalData && (
+            <div style={{display: "flex", alignItems: "center", marginBottom: "10px", gap: 10, flex: 1, minWidth: 0}}>
+              <Button size="small" style={{flexShrink: 0}} onClick={() => setCurrentTimeIndex(0)}>Reset</Button>
+              <Button size="small" type="primary" style={{flexShrink: 0}} onClick={() => setIsPlaying((p) => !p)}>
+                {isPlaying ? "Pause" : "▶ Play"}
+              </Button>
+              <span style={{fontSize: 12, color: "#4a5580", whiteSpace: "nowrap", fontWeight: 500, flexShrink: 0}}>
+                {_formatServerTime(serverTimes[currentTimeIndex])}
+              </span>
+              <div style={{flex: 1, minWidth: 0}}>
+                <Slider
+                  min={0}
+                  max={Math.max(serverTimes.length - 1, 0)}
+                  value={currentTimeIndex}
+                  onChange={(value) => { setCurrentTimeIndex(Array.isArray(value) ? value[0] : value); setIsPlaying(false); }}
+                  tooltip={{ formatter: (v) => _formatServerTime(serverTimes[typeof v === "number" ? v : 0] ?? serverTimes[0]) }}
+                />
+              </div>
+            </div>
+          )}
         </div>
         {selectedGraph && isVisualize && (visualizationType=="full_view") && (
-          <TwoLevelGraphVisualization 
-            graphID={selectedGraph} 
-            graph={graphs.find((graph) => graph.idgraph == selectedGraph)}
-            onPartitionClick={onPartitionDetailsView} />
-          )}
+          (() => {
+            const selectedGraphDetails = graphs.find((graph: IGraphDetails) => String(graph.idgraph) === String(selectedGraph));
+            const hasPartitionMetadata = Array.isArray(selectedGraphDetails?.partitions) && selectedGraphDetails.partitions.length > 0;
+
+            if (!hasPartitionMetadata) {
+              return <LowLevelGraphVisualization
+                onHighLevelViewClick={async () => setIsVisualize(false)}
+                serverTimes={serverTimes}
+                currentTimeIndex={currentTimeIndex}
+              />;
+            }
+
+            return (
+              <TwoLevelGraphVisualization
+                graphID={selectedGraph}
+                graph={selectedGraphDetails}
+                onPartitionClick={onPartitionDetailsView}
+              />
+            );
+          })()
+        )}
         {(selectedGraph && (visualizationType=="in_degree" || visualizationType=="out_degree")) && 
           (<InDegreeVisualization loading={loading} degree={visualizationType} />)}
       </div>
