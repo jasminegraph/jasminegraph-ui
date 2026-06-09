@@ -14,7 +14,6 @@ limitations under the License.
 'use client';
 import React, { useState, useEffect, useMemo } from "react";
 import {Button, message, Select, Slider, Spin} from 'antd';
-import GraphVisualization from "@/components/visualization/graph-visualization";
 import { getGraphList } from "@/services/graph-service";
 import InDegreeVisualization from "@/components/visualization/indegree-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
@@ -24,7 +23,10 @@ import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { IOption } from "@/types/options-types";
 import { IGraphDetails } from "@/types/graph-types";
 import dynamic from "next/dynamic";
-import LowLevelGraphVisualization from "@/components/visualization/low-level-graph-visualization";
+const LowLevelGraphVisualization = dynamic(
+  () => import("@/components/visualization/low-level-graph-visualization"),
+  { ssr: false }
+);
 const TwoLevelGraphVisualization = dynamic(
     () => import("@/components/visualization/two-level-graph-visualization"),
     { ssr: false } // Important: disables server-side rendering

@@ -30,10 +30,10 @@ import FA2 from "graphology-layout-forceatlas2";
 
 
 interface Props {
-    onHighLevelViewClick: () => void,
-    totalNoOfEdges?: number | null  | undefined,
-    serverTimes: number[],
-    currentTimeIndex: number,
+    onHighLevelViewClick: () => void, 
+    totalNoOfEdges?: number | null,
+    serverTimes?: number[],
+    currentTimeIndex?: number,
 }
 
 interface INode {
@@ -73,11 +73,12 @@ const normalizeEventTime = (edge: IEdge | Record<string, any>): number | null =>
     return null;
 };
 
-const formatServerTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleString();
-};
-
-const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges, serverTimes, currentTimeIndex }: Props) => {
+const LowLevelGraphVisualization = ({
+    onHighLevelViewClick,
+    totalNoOfEdges,
+    serverTimes = [],
+    currentTimeIndex = 0,
+}: Props) => {
     const [loading, setLoading] = useState(true);
     const [progress, setProgress] = useState(0);
 
@@ -522,7 +523,7 @@ const LowLevelGraphVisualization = ({ onHighLevelViewClick, totalNoOfEdges, serv
                                         <span style={{ fontWeight: 600 }}>{k}:</span> {String(v)}
                                     </div>
                                 ))
-                            }}
+                            }
                         </Card>
                     </div>
                 )}
