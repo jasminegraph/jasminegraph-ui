@@ -462,48 +462,84 @@ const withKafkaAdmin = async <T>(brokers: string[], handler: (admin: any) => Pro
 
 const getKafkaTopics = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
+
+    console.log("=== GET KAFKA TOPICS ===");
+    console.log("Connection:", connection);
+
     if (!(connection.host && connection.port)) {
         return res.status(404).send(connection);
     }
 
     try {
-        // Try server command first
         const commandTopics = await fetchKafkaTopicsFromServerCommand(connection);
+
+        console.log("Topics from server command:", commandTopics);
+
         if (commandTopics.length > 0) {
-            return res.status(200).send({ topics: commandTopics, source: 'server-command' });
+            return res.status(200).send({
+                topics: commandTopics,
+                source: 'server-command'
+            });
         }
 
-        // Fallback: get brokers from query param or cluster properties
         let brokers = String(req.query?.broker ?? '')
             .split(',')
             .map((value: string) => value.trim())
             .filter(Boolean);
 
         if (brokers.length === 0) {
-            // Get broker from cluster properties without sending an HTTP response
-            const properties = await resolveClusterProperties(connection, req.header('Cluster-ID') ?? undefined);
+            const properties = await resolveClusterProperties(
+                connection,
+                req.header('Cluster-ID') ?? undefined
+            );
+
+            console.log("Cluster properties:", properties);
+
             if (properties.broker) {
                 brokers = [properties.broker];
             }
         }
 
+        console.log("Kafka brokers:", brokers);
+
         if (brokers.length === 0) {
-            return res.status(400).send({ message: 'Unable to resolve Kafka broker. Provide broker in query or configure server properties' });
+            return res.status(400).send({
+                message: 'Unable to resolve Kafka broker'
+            });
         }
 
-        // Connect to Kafka broker and list topics
-        const topics = await withKafkaAdmin<string[]>(brokers, async (admin) => {
-            const topicNames = await admin.listTopics();
-            return topicNames
-                .filter((name: string) => name && !name.startsWith('__'))
-                .sort((a: string, b: string) => a.localeCompare(b));
+        const topics = await withKafkaAdmin<string[]>(
+            brokers,
+            async (admin) => {
+                console.log("Connecting to Kafka...");
+
+                const topicNames = await admin.listTopics();
+
+                console.log("Topics found:", topicNames);
+
+                return topicNames
+                    .filter((name: string) =>
+                        name && !name.startsWith('__')
+                    )
+                    .sort((a: string, b: string) =>
+                        a.localeCompare(b)
+                    );
+            }
+        );
+
+        return res.status(200).send({
+            topics,
+            source: 'broker-admin'
         });
 
-        return res.status(200).send({ topics, source: 'broker-admin' });
     } catch (err: any) {
+
+        console.error("=== KAFKA TOPICS ERROR ===");
+        console.error(err);
+
         return res.status(500).send({
             message: 'Failed to fetch Kafka topics',
-            errorDetails: err?.message || err,
+            errorDetails: err?.stack || err?.message || err,
         });
     }
 };
