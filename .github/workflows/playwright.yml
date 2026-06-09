@@ -13,6 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Create external network
+        run: docker network create jasminenet || true
+
       - name: Run all containers with tests
         run: docker compose up --build --abort-on-container-exit
 
