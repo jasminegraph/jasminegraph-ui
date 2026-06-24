@@ -169,12 +169,18 @@ const acquireTelnetLock = (key: string): Promise<void> => {
 };
 
 const releaseTelnetLock = (key: string): void => {
-    const waiters = telnetWaiters.get(key) ?? [];
-    if (waiters.length > 0) {
-        waiters.shift()!();
-    } else {
-        telnetLocks.delete(key);
+    const waiters = telnetWaiters.get(key);
+
+    if (waiters && waiters.length > 0) {
+        const next = waiters.shift()!;
+        if (waiters.length === 0) {
+            telnetWaiters.delete(key);
+        }
+        next();
+        return;
     }
+    telnetWaiters.delete(key);
+    telnetLocks.delete(key);
 };
 
 const executeTelnetCommand = async (connection: IConnection, command: string, timeoutMs: number): Promise<string> => {

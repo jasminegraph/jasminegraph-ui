@@ -209,6 +209,7 @@ const LowLevelGraphVisualization = ({
                 maxCameraRatio: 5,
                 nodeProgramClasses: {},
                 edgeProgramClasses: {},
+                enableEdgeEvents: true,
             });
             rendererRef.current = renderer;
             // --- HOVER TOOLTIP EVENTS ---
@@ -274,12 +275,18 @@ const LowLevelGraphVisualization = ({
             // Click node: zoom camera to it
             renderer.on("clickNode", ({ node }) => {
                 setSelectedNodeId(node as any);
+
                 const camera = renderer.getCamera();
                 const pos = renderer.getNodeDisplayData(node);
+
                 if (pos) {
-                    camera.animate({ x: pos.x, y: pos.y, ratio: 0.15 }, { duration: 500, easing: "quadraticInOut" });
+                    camera.animate(
+                        { x: pos.x, y: pos.y, ratio: 0.15 },
+                        { duration: 500, easing: "quadraticInOut" }
+                    );
                 }
             });
+            
 
             // Click background: deselect
             renderer.on("clickStage", () => {
@@ -516,14 +523,11 @@ const LowLevelGraphVisualization = ({
                                 boxShadow: "0 4px 20px rgba(100,120,180,0.18)",
                             }}
                         >
-                            {Object.entries(hoveredEdge)
-                                .filter(([k]) => !["hidden","size","from","to","type"].includes(k))
-                                .map(([k, v]) => (
-                                    <div key={k} style={{ fontSize: 12, marginBottom: 2 }}>
-                                        <span style={{ fontWeight: 600 }}>{k}:</span> {String(v)}
-                                    </div>
-                                ))
-                            }
+                            {Object.entries(hoveredEdge?.properties ?? {}).map(([k, v]) => (
+                                <div key={k} style={{ fontSize: 12, marginBottom: 2 }}>
+                                    <span style={{ fontWeight: 600 }}>{k}:</span> {String(v)}
+                                </div>
+                            ))}
                         </Card>
                     </div>
                 )}

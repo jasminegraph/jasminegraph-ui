@@ -64,7 +64,7 @@ export default function GraphDistribution() {
   const [graphOptions, setGraphOptions] = useState<IOption[]>([]);
   const [selectedGraph, setSelectedGraph] = useState<string | undefined>(undefined);
   const [visualizationType, setVisualizationType] = useState<GraphVisualizationType | undefined>(undefined);
-  const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: () => true, reconnectInterval: 1000, reconnectAttempts: Infinity });  
+  const { sendJsonMessage, lastJsonMessage, readyState } = useWebSocket(WS_URL, { shouldReconnect: () => true, reconnectInterval: 1000, reconnectAttempts: Infinity });  
   const [clientId, setClientID] = useState<string>('')
   const [isVisualize, setIsVisualize] = useState<boolean>(false);
   const firstDataRowLogged = React.useRef(false);
@@ -152,26 +152,34 @@ export default function GraphDistribution() {
   }, [readyState]);
 
   useEffect(() => {
-    const message = lastJsonMessage as ISocketResponse;
-    if(!message) return;
-    const keys = Object.keys(message as object);
-    console.log('[WS] message received — type:', (message as any)?.type, '| keys:', keys);
-    if(message?.type == "CONNECTED"){
-      console.log('[WS] CONNECTED, clientId:', message?.clientId);
-      setClientID(message?.clientId || '')
-    }else if (Object.values(GRAPH_TYPES).includes(message.type as GraphType)) {
-      dispatch(add_degree_data({data: message, type: message?.type as GraphType}));
-    } else {
-      if ((message as any)?.done) {
-        console.log('[WS] done signal received');
-        firstDataRowLogged.current = false;
-      } else if (!firstDataRowLogged.current) {
-        firstDataRowLogged.current = true;
-        console.log('[WS] first data row sample:', JSON.stringify(message));
-      }
-      dispatch(add_visualize_data({ ...message}));
+  const wsMessage = lastJsonMessage as ISocketResponse;
+  if (!wsMessage) return;
+
+  const keys = Object.keys(wsMessage as object);
+  console.log('[WS] message received — type:', (wsMessage as any)?.type, '| keys:', keys);
+
+  if (wsMessage?.type === "CONNECTED") {
+    console.log('[WS] CONNECTED, clientId:', wsMessage?.clientId);
+    setClientID(wsMessage?.clientId || '');
+  } else if (Object.values(GRAPH_TYPES).includes(wsMessage.type as GraphType)) {
+    dispatch(
+      add_degree_data({
+        data: wsMessage,
+        type: wsMessage.type as GraphType,
+      })
+    );
+  } else {
+    if ((wsMessage as any)?.done) {
+      console.log('[WS] done signal received');
+      firstDataRowLogged.current = false;
+    } else if (!firstDataRowLogged.current) {
+      firstDataRowLogged.current = true;
+      console.log('[WS] first data row sample:', JSON.stringify(wsMessage));
     }
-  }, [lastJsonMessage]) 
+
+    dispatch(add_visualize_data({ ...wsMessage }));
+  }
+}, [lastJsonMessage]);
 
   const onDegreeQuerySubmit = async () => {
     if(!visualizationType){
