@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     image: jasminegraph-frontend:latest
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       - BACKEND=http://backend:8080 # Pointing to the backend service
       - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
@@ -32,6 +32,11 @@ services:
       - /var/tmp/jasminegraph-ui-backend:/app/caches
     environment:
       - POSTGRES_URL=postgresql://admin:admin_password@postgres:5432/jasminegraphdb
+    networks:
+      # default keeps backend reachable from frontend/postgres by service name;
+      # jasminenet lets it reach the cluster's Kafka broker (advertised as 172.28.5.x)
+      - default
+      - jasminenet
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health" ]
       interval: 5s
@@ -100,3 +105,7 @@ services:
 volumes:
   postgres-data:
     driver: local
+
+networks:
+  jasminenet:
+    external: true
