@@ -416,10 +416,12 @@ export default function GraphUpload() {
         }
     };
 
-    const showExtractUploadPanel = showUploadSection;
     const visibleKafkaStatuses = kafkaStatuses.filter(
         (status) => normalizeStreamStatus(status.streamStatus) !== 'terminated'
     );
+    // Show the upload panel by default when there is nothing else to display,
+    // or when the user explicitly opens it via "Extract New Graph".
+    const showExtractUploadPanel = showUploadSection || (!hasActiveUploads && visibleKafkaStatuses.length === 0);
 
     const onSearch = (value: string) => {
         const filteredClusters = graphs.filter((cluster) => cluster.name.toLowerCase().includes(value.toLowerCase()));
@@ -620,6 +622,7 @@ export default function GraphUpload() {
 
             {!showExtractUploadPanel && (
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "20px" }}>
+                    <Button size="large" onClick={() => setShowUploadSection(true)}>Extract New Graph</Button>
                 </div>
             )}
 
