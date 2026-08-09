@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    networks:
+      - default
 
   # Backend Service
   backend:
@@ -38,6 +40,9 @@ services:
       timeout: 3s
       retries: 5
       start_period: 15s
+    networks:
+      - default
+      - jasminenet
 
   # Postgres Service (shared by backend + keycloak)
   postgres:
@@ -57,6 +62,8 @@ services:
       start_period: 10s
     ports:
       - "5432:5432"
+    networks:
+      - default
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1.1
@@ -79,6 +86,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - default
 
   # Playwright Test Service
   playwright:
@@ -96,7 +105,13 @@ services:
       - KEYCLOAK_BASE_URL=http://keycloak:8080
       - KEYCLOAK_REALM=jasminegraph
       - BACKEND_URL=http://backend:8080
+    networks:
+      - default
 
 volumes:
   postgres-data:
     driver: local
+
+networks:
+  jasminenet:
+    external: true

@@ -152,7 +152,48 @@ export const telnetConnection = (connection: IConnection) => (callback: any) => 
     }
 };
 
-const executeTelnetCommand = (connection: IConnection, command: string, timeoutMs: number): Promise<string> => {
+// Per-host mutex: only one telnet command runs at a time per JasmineGraph instance.
+// This prevents "server is busy" errors caused by concurrent page-load requests.
+const telnetLocks = new Map<string, boolean>();
+const telnetWaiters = new Map<string, Array<() => void>>();
+
+const acquireTelnetLock = (key: string): Promise<void> => {
+    if (!telnetLocks.get(key)) {
+        telnetLocks.set(key, true);
+        return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+        if (!telnetWaiters.has(key)) telnetWaiters.set(key, []);
+        telnetWaiters.get(key)!.push(resolve);
+    });
+};
+
+const releaseTelnetLock = (key: string): void => {
+    const waiters = telnetWaiters.get(key);
+
+    if (waiters && waiters.length > 0) {
+        const next = waiters.shift()!;
+        if (waiters.length === 0) {
+            telnetWaiters.delete(key);
+        }
+        next();
+        return;
+    }
+    telnetWaiters.delete(key);
+    telnetLocks.delete(key);
+};
+
+const executeTelnetCommand = async (connection: IConnection, command: string, timeoutMs: number): Promise<string> => {
+    const key = `${connection.host}:${connection.port}`;
+    await acquireTelnetLock(key);
+    try {
+        return await executeTelnetCommandRaw(connection, command, timeoutMs);
+    } finally {
+        releaseTelnetLock(key);
+    }
+};
+
+const executeTelnetCommandRaw = (connection: IConnection, command: string, timeoutMs: number): Promise<string> => {
     return new Promise((resolve, reject) => {
         const localSocket = net.createConnection(connection.port, connection.host);
         const localTelnetSocket = new TelnetSocket(localSocket);
@@ -187,7 +228,18 @@ const executeTelnetCommand = (connection: IConnection, command: string, timeoutM
         };
 
         const onError = (error: Error) => {
-            finalize(error, commandOutput);
+            // ECONNRESET means JasmineGraph closed the connection after sending its response.
+            // Resolve with whatever data arrived rather than rejecting.
+            if ((error as NodeJS.ErrnoException).code === 'ECONNRESET' && commandOutput.trim()) {
+                finalize(null, commandOutput);
+            } else {
+                finalize(error, commandOutput);
+            }
+        };
+
+        const onClose = () => {
+            // Normal close after server finishes writing — resolve with accumulated data.
+            finalize(null, commandOutput);
         };
 
         const onConnect = () => {
@@ -201,6 +253,8 @@ const executeTelnetCommand = (connection: IConnection, command: string, timeoutM
 
             localTelnetSocket.on('data', onData);
             localTelnetSocket.on('error', onError);
+            localSocket.on('close', onClose);
+            localSocket.on('end', onClose);
 
             localTelnetSocket.write(command + '\n', UTF8_FORMAT);
         };
@@ -247,12 +301,10 @@ const parseLegacyGraphList = (rawResponse: string): LegacyGraphRow[] => {
             if (values.length < 4) {
                 return null;
             }
-
             const parsedId = Number(values[0]);
             if (Number.isNaN(parsedId)) {
                 return null;
             }
-
             return {
                 idgraph: parsedId,
                 name: values[1],
@@ -266,8 +318,6 @@ const parseLegacyGraphList = (rawResponse: string): LegacyGraphRow[] => {
         })
         .filter((row): row is LegacyGraphRow => row !== null);
 };
-
-
 
 const fetchKafkaTopicsFromServerCommand = async (connection: IConnection): Promise<string[]> => {
     const commandOutput = await executeTelnetCommand(connection, KAFKA_TOPICS_COMMAND, TIMEOUT.default);
@@ -289,7 +339,64 @@ const fetchKafkaTopicsFromServerCommand = async (connection: IConnection): Promi
         .sort((a, b) => a.localeCompare(b));
 };
 
+const resolveBrokerFromSavedKafkaConfigs = async (clusterId?: string): Promise<string> => {
+    if (!clusterId) {
+        return '';
+    }
 
+    try {
+        const configs = await getKafkaStreamConfigsByClusterRepo(clusterId);
+        const broker = configs
+            .map((config) => String(config.kafka_broker ?? '').trim())
+            .find((value) => value.length > 0);
+
+        return broker ?? '';
+    } catch (err) {
+        console.error('Failed to resolve broker from saved Kafka configs:', err);
+        return '';
+    }
+};
+
+const resolveClusterProperties = async (connection: IConnection, clusterId?: string): Promise<ClusterPropertiesPayload> => {
+    try {
+        const commandOutput = await executeTelnetCommand(connection, PROPERTIES_COMMAND, TIMEOUT.default);
+        if (!commandOutput.trim()) {
+            console.warn('Empty response from server for properties command');
+            const fallback = buildFallbackClusterProperties(connection);
+            fallback.broker = await resolveBrokerFromSavedKafkaConfigs(clusterId);
+            return fallback;
+        }
+
+        const jsonPayload = extractFirstJsonPayload(commandOutput);
+        if (!jsonPayload) {
+            // Non-JSON response (e.g. server busy message) — use fallback
+            const fallback = buildFallbackClusterProperties(connection);
+            fallback.broker = await resolveBrokerFromSavedKafkaConfigs(clusterId);
+            return fallback;
+        }
+        const parsed = JSON.parse(jsonPayload) as Record<string, unknown>;
+
+        const payload = {
+            partitionCount: Number(parsed.partitionCount ?? 0),
+            workersCount: Number(parsed.workersCount ?? 0),
+            version: String(parsed.version ?? 'unknown'),
+            broker: String(parsed.broker ?? '').trim(),
+            groupId: String(parsed.groupId ?? 'jasminegraph-consumer'),
+            offsetReset: String(parsed.offsetReset ?? 'earliest'),
+        };
+
+        if (!payload.broker) {
+            payload.broker = await resolveBrokerFromSavedKafkaConfigs(clusterId);
+        }
+
+        return payload;
+    } catch (err) {
+        console.error('Failed to fetch cluster properties:', err);
+        const fallback = buildFallbackClusterProperties(connection);
+        fallback.broker = await resolveBrokerFromSavedKafkaConfigs(clusterId);
+        return fallback;
+    }
+};
 
 const getGraphList = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
@@ -299,8 +406,13 @@ const getGraphList = async (req: Request, res: Response) => {
 
     try {
         const commandOutput = await executeTelnetCommand(connection, LIST_COMMAND, TIMEOUT.default);
-        if (!commandOutput.trim()) {
+        const normalizedOutput = commandOutput.trim();
+        if (!normalizedOutput) {
             return res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: '' });
+        }
+
+        if (normalizedOutput.toLowerCase() === 'empty') {
+            return res.status(HTTP[200]).send([]);
         }
 
         console.log(new Date().toLocaleString() + ' - ' + LIST_COMMAND + ' - ' + commandOutput);
@@ -321,7 +433,7 @@ const getGraphList = async (req: Request, res: Response) => {
         return res.status(HTTP[500]).send({
             code: ErrorCode.ServerError,
             message: ErrorMsg.ServerError,
-            errorDetails: 'Unable to parse graph list response from server',
+            errorDetails: `Unable to parse graph list response from server. Raw: ${JSON.stringify(commandOutput.slice(0, 300))}`,
         });
     } catch (err) {
         return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
@@ -334,31 +446,9 @@ const getClusterProperties = async (req: Request, res: Response) => {
         return res.status(404).send(connection);
     }
 
-    try {
-        const commandOutput = await executeTelnetCommand(connection, PROPERTIES_COMMAND, TIMEOUT.default);
-        
-        if (!commandOutput.trim()) {
-            console.warn('Empty response from server for properties command');
-            return res.status(HTTP[200]).send(buildFallbackClusterProperties(connection));
-        }
-
-        // Server returns clean JSON, parse it directly
-        const parsed = JSON.parse(commandOutput) as Record<string, unknown>;
-        const payload: ClusterPropertiesPayload = {
-            partitionCount: Number(parsed.partitionCount ?? 0),
-            workersCount: Number(parsed.workersCount ?? 0),
-            version: String(parsed.version ?? 'unknown'),
-            broker: String(parsed.broker ?? '').trim(),
-            groupId: String(parsed.groupId ?? 'jasminegraph-consumer'),
-            offsetReset: String(parsed.offsetReset ?? 'earliest'),
-        };
-
-        console.log(new Date().toLocaleString() + ' - ' + PROPERTIES_COMMAND + ' - Success');
-        return res.status(HTTP[200]).send(payload);
-    } catch (err) {
-        console.error('Failed to fetch cluster properties:', err);
-        return res.status(HTTP[200]).send(buildFallbackClusterProperties(connection));
-    }
+    const payload = await resolveClusterProperties(connection, req.header('Cluster-ID') ?? undefined);
+    console.log(new Date().toLocaleString() + ' - ' + PROPERTIES_COMMAND + ' - Success');
+    return res.status(HTTP[200]).send(payload);
 };
 
 const withKafkaAdmin = async <T>(brokers: string[], handler: (admin: any) => Promise<T>) => {
@@ -378,50 +468,84 @@ const withKafkaAdmin = async <T>(brokers: string[], handler: (admin: any) => Pro
 
 const getKafkaTopics = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
+
+    console.log("=== GET KAFKA TOPICS ===");
+    console.log("Connection:", connection);
+
     if (!(connection.host && connection.port)) {
         return res.status(404).send(connection);
     }
 
     try {
-        // Try server command first
         const commandTopics = await fetchKafkaTopicsFromServerCommand(connection);
+
+        console.log("Topics from server command:", commandTopics);
+
         if (commandTopics.length > 0) {
-            return res.status(200).send({ topics: commandTopics, source: 'server-command' });
+            return res.status(200).send({
+                topics: commandTopics,
+                source: 'server-command'
+            });
         }
 
-        // Fallback: get brokers from query param or cluster properties
         let brokers = String(req.query?.broker ?? '')
             .split(',')
             .map((value: string) => value.trim())
             .filter(Boolean);
 
         if (brokers.length === 0) {
-            // Get broker from cluster properties
-            await getClusterProperties(req, res as any);
-            // The response was already sent by getClusterProperties
-            const properties = buildFallbackClusterProperties(connection);
+            const properties = await resolveClusterProperties(
+                connection,
+                req.header('Cluster-ID') ?? undefined
+            );
+
+            console.log("Cluster properties:", properties);
+
             if (properties.broker) {
                 brokers = [properties.broker];
             }
         }
 
+        console.log("Kafka brokers:", brokers);
+
         if (brokers.length === 0) {
-            return res.status(400).send({ message: 'Unable to resolve Kafka broker. Provide broker in query or configure server properties' });
+            return res.status(400).send({
+                message: 'Unable to resolve Kafka broker'
+            });
         }
 
-        // Connect to Kafka broker and list topics
-        const topics = await withKafkaAdmin<string[]>(brokers, async (admin) => {
-            const topicNames = await admin.listTopics();
-            return topicNames
-                .filter((name: string) => name && !name.startsWith('__'))
-                .sort((a: string, b: string) => a.localeCompare(b));
+        const topics = await withKafkaAdmin<string[]>(
+            brokers,
+            async (admin) => {
+                console.log("Connecting to Kafka...");
+
+                const topicNames = await admin.listTopics();
+
+                console.log("Topics found:", topicNames);
+
+                return topicNames
+                    .filter((name: string) =>
+                        name && !name.startsWith('__')
+                    )
+                    .sort((a: string, b: string) =>
+                        a.localeCompare(b)
+                    );
+            }
+        );
+
+        return res.status(200).send({
+            topics,
+            source: 'broker-admin'
         });
 
-        return res.status(200).send({ topics, source: 'broker-admin' });
     } catch (err: any) {
+
+        console.error("=== KAFKA TOPICS ERROR ===");
+        console.error(err);
+
         return res.status(500).send({
             message: 'Failed to fetch Kafka topics',
-            errorDetails: err?.message || err,
+            errorDetails: err?.stack || err?.message || err,
         });
     }
 };
@@ -741,7 +865,7 @@ const stopKafkaStream = async (req: Request, res: Response) => {
     try {
         const topicName = String(req.body?.topicName ?? '').trim();
         const stopCommand = topicName
-            ? `${STOP_KAFKA_STREAM_COMMAND}|${topicName}`
+            ? `${STOP_KAFKA_STREAM_COMMAND} ${topicName}`
             : STOP_KAFKA_STREAM_COMMAND;
         const result = await executeTelnetCommand(connection, stopCommand, TIMEOUT.default * 2);
         const normalizedOutput = String(result ?? '').trim();
