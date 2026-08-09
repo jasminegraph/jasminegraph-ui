@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jasminegraph-ui-postgres-data
+  labels:
+    application: jasminegraph-ui
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: default
+    name: jasminegraph-ui-postgres-data-claim
+  hostPath:
+    path: "${postgres_data_path}"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jasminegraph-ui-postgres-data-claim
+  labels:
+    application: jasminegraph-ui
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: jasminegraph-ui-backend-cache
+  labels:
+    application: jasminegraph-ui
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  claimRef:
+    namespace: default
+    name: jasminegraph-ui-backend-cache-claim
+  hostPath:
+    path: "${backend_cache_path}"
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jasminegraph-ui-backend-cache-claim
+  labels:
+    application: jasminegraph-ui
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

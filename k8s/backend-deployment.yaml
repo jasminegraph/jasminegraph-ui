@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jasminegraph-ui-backend-deployment
+  labels:
+    application: jasminegraph-ui
+spec:
+  replicas: 1
+  # Recreate: backend-cache is ReadWriteOnce, same reasoning as postgres above.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      service: jasminegraph-ui
+      type: backend
+  template:
+    metadata:
+      labels:
+        service: jasminegraph-ui
+        type: backend
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - until nc -z postgres 5432; do echo waiting for postgres; sleep 2; done
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: jasminegraph-ui-backend-cache-claim
+      containers:
+        - name: backend
+          image: jasminegraph-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: jasminegraph-ui-postgres-secret
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: jasminegraph-ui-postgres-secret
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: jasminegraph-ui-postgres-secret
+                  key: POSTGRES_DB
+            - name: POSTGRES_URL
+              value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)
+            - name: HOST
+              value: http://backend
+            - name: PORT
+              value: "8080"
+          volumeMounts:
+            - name: cache
+              mountPath: /app/caches
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 750m
+              memory: 768Mi

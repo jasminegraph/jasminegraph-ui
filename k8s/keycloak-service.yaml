@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Must be named exactly "keycloak" — Backend controllers/middleware call
+  # http://keycloak:8080 literally (see Backend/src/middleware/keycloak.middleware.ts,
+  # Backend/src/utils/keycloak-admin-token.ts, Backend/src/controllers/auth.controller.ts).
+  name: keycloak
+  labels:
+    application: jasminegraph-ui
+spec:
+  selector:
+    service: jasminegraph-ui
+    type: keycloak
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
