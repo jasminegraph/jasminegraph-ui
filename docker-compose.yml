@@ -45,9 +45,7 @@ services:
       timeout: 3s
       retries: 5
       start_period: 15s
-    networks:
-      - default
-      - jasminenet
+
 
   # Postgres Service (shared by backend + keycloak)
   postgres:
