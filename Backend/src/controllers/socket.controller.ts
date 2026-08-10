@@ -120,8 +120,18 @@ const streamGraphVisualization = async (clientId: string, filePath: string) => {
 };
 
 const streamQueryResult = async (clientId: string, clusterId:string, graphId:string, query: string) => {
-    const cluster = await getClusterByIdRepo(Number(clusterId));
+  console.log("========== QUERY START ==========");
+  console.log({
+    clientId,
+    clusterId,
+    graphId,
+    query
+  });
+
+  const cluster = await getClusterByIdRepo(Number(clusterId));
+  console.log("Cluster found:", cluster);
   if (!(cluster?.host || cluster?.port)) {
+    console.log("Cluster not found");
     sendToClient(clientId, { Error: "cluster not found"})
     return
   }
@@ -131,6 +141,8 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
     port: cluster.port
   }
 
+  console.log("Connecting to:", connection);
+
   let sharedBuffer: string[] = [];
 
   const producer = async () => {
@@ -138,42 +150,62 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
 
     while(true){
       if(sharedBuffer.length > 0){
+
+        console.log("sharedBuffer size:", sharedBuffer.length);
+
         remaining += sharedBuffer.shift()!
+
+        console.log("remaining buffer:");
+        console.log(remaining);
 
         let splitIndex;
 
         if(remaining.trim() == '-1'){
             sendToClient(clientId, {"done":"true"})
-          console.log("Termination signal received. Closing Telnet connection.");
-          return
+            console.log("Termination signal received.");
+            return
         }
 
-        // Extract complete JSON objects from the buffer
         while ((splitIndex = remaining.indexOf('\n')) !== -1) {
-          const jsonString = remaining.slice(0, splitIndex).trim(); // Extract a complete object
-          remaining = remaining.slice(splitIndex + 1); // Remove processed part
+
+          const jsonString = remaining.slice(0, splitIndex).trim();
+          remaining = remaining.slice(splitIndex + 1);
+
+          console.log("JSON STRING:");
+          console.log(jsonString);
 
           if (jsonString) {
-            if (jsonString == "-1") {
-              console.log("Termination signal received. Closing Telnet connection.");
-                sendToClient(clientId, {"done":"true"})
-              return; // Exit the producer loop
+            if (jsonString === "-1" || jsonString === "done") {
+              console.log("Query completed");
+              sendToClient(clientId, { done: "true" });
+              return;
             }
-
             try {
-              const parsed = JSON.parse(jsonString); // Parse the JSON
+              const parsed = JSON.parse(jsonString);
+
+              console.log("PARSED JSON:");
+              console.log(parsed);
+
               sendToClient(clientId, parsed)
+
             } catch (error) {
-              console.error('Error parsing JSON:', error, 'Data:', jsonString);
+              console.error("JSON PARSE ERROR");
+              console.error(error);
+              console.error("RAW DATA:");
+              console.error(jsonString);
             }
           }
-
-
-          if(remaining.trim() == '-1' || jsonString == '-1'){
-            console.log("Termination signal received. Closing Telnet connection.");
-              sendToClient(clientId, {"done":"true"})
-            return
-          }
+          if (
+            remaining.trim() === '-1' ||
+            remaining.trim() === 'done' ||
+            jsonString === '-1' ||
+            jsonString === 'done'
+        ){
+            console.log("Query completed");
+            sendToClient(clientId, { done: "true" });
+            console.log("SENDING DONE TO FRONTEND");
+            return;
+        }
         }
       }
 
@@ -183,23 +215,49 @@ const streamQueryResult = async (clientId: string, clusterId:string, graphId:str
 
   try {
     telnetConnection({host: connection.host, port: connection.port})((tSocket: any) => {
+      console.log("Telnet callback entered");
       producer();
-
+      let stage = 0;
       tSocket.on('data', (buffer) => {
-        sharedBuffer.push(buffer.toString(UTF8_FORMAT))
-      });
+        const msg = buffer.toString(UTF8_FORMAT);
+        console.log("========== TELNET DATA ==========");
+        console.log(msg);
+        console.log("=================================");
 
+        // Handle interactive Cypher protocol
+        if (msg.includes("Graph ID:") && stage === 0) {
+          stage = 1;
+          console.log("Sending Graph ID:", graphId);
+          tSocket.write(graphId + '\n', UTF8_FORMAT);
+          return;
+        }
+        if (msg.includes("Input query") && stage === 1) {
+          stage = 2;
+          console.log("Sending Query:");
+          console.log(query);
+          tSocket.write(query + '\n', UTF8_FORMAT);
+          return;
+        }
+        sharedBuffer.push(msg);
+      });
       tSocket.on('end', () => {
         console.log('Telnet connection ended');
       });
-
-      // Write the command to the Telnet server
-      tSocket.write(CYPHER_COMMAND + '|' + graphId + '|' + query + '\n', UTF8_FORMAT);
+      console.log("Starting Cypher session");
+      tSocket.write(CYPHER_COMMAND + '\n', UTF8_FORMAT);
     });
   } catch (err) {
-    return console.log({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+    console.error("QUERY ERROR");
+    console.error(err);
+
+    return console.log({
+      code: ErrorCode.ServerError,
+      message: ErrorMsg.ServerError,
+      errorDetails: err
+    });
   }
 }
+
 const semanticBeamSearch = async (clientId: string, clusterId:string, graphId:string, query: string) => {
     const cluster = await getClusterByIdRepo(Number(clusterId));
     if (!(cluster?.host || cluster?.port)) {
