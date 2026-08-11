@@ -116,8 +116,9 @@ Deploy the same stack (frontend, backend, postgres, keycloak) to a local Kuberne
 
 - Docker
 - `kubectl`
+- `envsubst` (GNU gettext; used to template `k8s/volumes.yaml`)
 - One of: [minikube](https://minikube.sigs.k8s.io/docs/start/), [k3s](https://docs.k3s.io/quick-start), or [k3d](https://k3d.io/)
-- Your cluster running, e.g. `minikube start` (or `k3s` installed as a service / `k3d cluster create`)
+- Your cluster running, e.g., `minikube start` (or `k3s` installed as a service / `k3d cluster create`)
 
 ## Deploy
 
@@ -149,7 +150,7 @@ Optional flags (all have defaults):
 - The Postgres init SQL and Keycloak realm import are loaded into ConfigMaps at deploy time straight from `Backend/src/db-init/` and `Keycloak/jasminegraph-realm.json` — the same files `docker-compose.yml` uses — so there's nothing to keep in sync by hand.
 - Credentials in `k8s/secrets.yaml` are dev-only defaults matching `docker-compose.yml`; replace them before using this anywhere beyond a local cluster.
 - The Playwright test service isn't included — it's test-only tooling, not part of the running app.
-- This deploys into the `default` namespace, same as the JasmineGraph server repo — so both can run on the same local cluster side by side without conflicting (resource names differ). See that repo's `K3S_CLUSTER_SETUP_GUIDE.md` for running the graph server itself; the UI's backend connects to it by registering its `jasminegraph-master-service` host/port as a "cluster" in the UI, not through any shared config.
+- This deploys into the `default` namespace, same as the JasmineGraph server repo — so both can run on the same local cluster side-by-side without conflicting (resource names differ). The UI's backend connects to the graph server by registering its `jasminegraph-master-service` host/port as a "cluster" in the UI, not through any shared config.
 
 ## Deployment Instructions
 
@@ -182,3 +183,4 @@ Contributions are welcome! Please follow these steps to contribute:
 ## Contact
 
 For any questions or issues, please open an issue on the GitHub repository or contact the maintainers.
+
