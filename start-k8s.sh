@@ -36,12 +36,24 @@ BACKEND_CACHE_PATH=${BACKEND_CACHE_PATH}
 IMAGE_TAG=${IMAGE_TAG:-latest}
 
 while [ $# -gt 0 ]; do
-    if [[ $1 == *"--"* ]]; then
-        param="${1/--/}"
-        declare "$param"="$2"
-        echo "$1" "=" "$2"
-    fi
-    shift
+    case "$1" in
+        --CLUSTER_TYPE)
+            CLUSTER_TYPE="$2"
+            shift 2
+            ;;
+        --POSTGRES_DATA_PATH)
+            POSTGRES_DATA_PATH="$2"
+            shift 2
+            ;;
+        --BACKEND_CACHE_PATH)
+            BACKEND_CACHE_PATH="$2"
+            shift 2
+            ;;
+        *)
+            echo "Unknown flag: $1" >&2
+            exit 1
+            ;;
+    esac
 done
 
 detect_cluster() {
@@ -106,7 +118,7 @@ case "$CLUSTER_TYPE" in
         k3d image import "$FRONTEND_IMAGE" "$BACKEND_IMAGE"
         ;;
     k3s)
-        if sudo systemctl cat k3s 2>/dev/null | grep -q -- '--docker'; then
+        if sudo -n systemctl cat k3s 2>/dev/null | grep -q -- '--docker'; then
             # k3s is configured to use the host Docker daemon as its
             # container runtime (--docker flag), so images built with
             # `docker build` are already visible to it — nothing to import.
@@ -143,6 +155,7 @@ kubectl rollout status deployment/jasminegraph-ui-postgres-deployment --timeout=
 
 echo "Applying backend..."
 kubectl apply -f "$SCRIPT_DIR/k8s/backend-deployment.yaml" -f "$SCRIPT_DIR/k8s/backend-service.yaml"
+kubectl set image deployment/jasminegraph-ui-backend-deployment backend="$BACKEND_IMAGE"
 kubectl rollout status deployment/jasminegraph-ui-backend-deployment --timeout="${TIMEOUT_SECONDS}s"
 
 echo "Applying keycloak..."
@@ -151,6 +164,7 @@ kubectl rollout status deployment/jasminegraph-ui-keycloak-deployment --timeout=
 
 echo "Applying frontend..."
 kubectl apply -f "$SCRIPT_DIR/k8s/frontend-deployment.yaml" -f "$SCRIPT_DIR/k8s/frontend-service.yaml"
+kubectl set image deployment/jasminegraph-ui-frontend-deployment frontend="$FRONTEND_IMAGE"
 kubectl rollout status deployment/jasminegraph-ui-frontend-deployment --timeout="${TIMEOUT_SECONDS}s"
 
 echo ""
@@ -164,3 +178,4 @@ case "$CLUSTER_TYPE" in
         echo "Connect to JasmineGraph UI at http://$NODE_IP:30080"
         ;;
 esac
+
