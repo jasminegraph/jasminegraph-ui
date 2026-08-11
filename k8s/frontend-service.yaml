@@ -13,3 +13,4 @@ spec:
     service: jasminegraph-ui
     type: frontend
   type: NodePort
+
