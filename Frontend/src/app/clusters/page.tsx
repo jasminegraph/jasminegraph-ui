@@ -42,7 +42,7 @@ export default function Clusters() {
   const { userData } = useAppSelector((state) => state.authData);
   const [clusters, setClusters] = useState<IClusterDetails[]>([]);
   const [filteredClusters, setFilteredClusters] = useState<IClusterDetails[]>([]);
-
+  const [hasFetched, setHasFetched] = useState<boolean>(false);
   const { selectedCluster } = useAppSelector((state) => state.clusterData);
 
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -57,6 +57,11 @@ export default function Clusters() {
       if (!clusterRes.data) return;
 
       const clusters = clusterRes.data;
+
+      if (!clusters || clusters.length === 0) {
+        setClusters([]);
+        return;
+      }
 
       const clusterIds = clusters.map((c: any) => c.id);
       const statusRes = await getClustersStatusByIds(token, clusterIds);
@@ -76,6 +81,8 @@ export default function Clusters() {
         "Failed to fetch JasmineGraph clusters."
       );
       console.error(err);
+    } finally {
+      setHasFetched(true);
     }
   }, [getSrvAccessToken, reportErrorFromException]);
 
@@ -97,10 +104,10 @@ export default function Clusters() {
   }, [clusters, setSelectedCluster]);
 
   useEffect(() => {
-    if (userData.email && clusters.length === 0) {
+    if (userData.email && !hasFetched) {
       getAllCluster();
     }
-  }, [getAllCluster, userData.email, clusters.length]);
+  }, [getAllCluster, userData.email, hasFetched]);
 
   const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
     const filteredClusters = clusters.filter((cluster) => {

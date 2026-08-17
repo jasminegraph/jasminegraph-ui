@@ -80,6 +80,13 @@ jest.mock('antd', () => {
   };
 }, { virtual: true });
 
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
 describe('ClusterSetup', () => {
   const mockOnSuccess = jest.fn();
   const mockGetSrvAccessToken = jest.fn();
@@ -100,6 +107,17 @@ describe('ClusterSetup', () => {
     expect(screen.getByLabelText(/host/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/port/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /add default cluster/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /go to dashboard/i })).toBeInTheDocument();
+  });
+
+  it('navigates to /clusters when Go to Dashboard is clicked', () => {
+    render(<ClusterSetup onSuccess={mockOnSuccess} />);
+
+    const dashboardButton = screen.getByRole('button', { name: /go to dashboard/i });
+    expect(dashboardButton).toBeInTheDocument();
+
+    fireEvent.click(dashboardButton);
+    expect(mockPush).toHaveBeenCalledWith('/clusters');
   });
 
   it('submits valid data and calls onSuccess', async () => {

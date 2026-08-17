@@ -169,4 +169,14 @@ describe("Clusters Page", () => {
       expect(screen.getByText("Cluster Registration Form")).toBeInTheDocument();
     });
   });
+
+  it("fetches clusters only once when user has no clusters and does not query status for empty list", async () => {
+    render(<ClustersPage />);
+
+    await waitFor(() => {
+      expect(mockedGetAllClusters).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockedGetClustersStatusByIds).not.toHaveBeenCalled();
+  });
 });
