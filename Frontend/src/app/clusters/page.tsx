@@ -43,6 +43,7 @@ export default function Clusters() {
   const [clusters, setClusters] = useState<IClusterDetails[]>([]);
   const [filteredClusters, setFilteredClusters] = useState<IClusterDetails[]>([]);
   const [hasFetched, setHasFetched] = useState<boolean>(false);
+  const [connectingId, setConnectingId] = useState<number | null>(null);
   const { selectedCluster } = useAppSelector((state) => state.clusterData);
 
   const [openModal, setOpenModal] = useState<boolean>(false);
@@ -125,6 +126,34 @@ export default function Clusters() {
     router.push(`/clusters/${cluster.id}`);
   }
 
+  const handleConnectToggle = async (cluster: IClusterDetails, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConnectingId(cluster.id);
+    try {
+      const token = getSrvAccessToken() || null;
+      const statusRes = await getClustersStatusByIds(token, [cluster.id]);
+      const isConnected = statusRes.clusters?.[0]?.connected ?? false;
+
+      setClusters((prevClusters) =>
+        prevClusters.map((c) => (c.id === cluster.id ? { ...c, status: isConnected } : c))
+      );
+
+      if (selectedCluster && selectedCluster.id === cluster.id) {
+        dispatch(set_Selected_Cluster({ ...selectedCluster, status: isConnected }));
+      }
+
+      if (isConnected) {
+        message.success(`Successfully connected to cluster "${cluster.name}".`);
+      } else {
+        message.error(`Unable to connect to cluster "${cluster.name}" at ${cluster.host}:${cluster.port}.`);
+      }
+    } catch (err) {
+      message.error(`Failed to check connection for cluster "${cluster.name}".`);
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const showModal = () => {
     form.resetFields();
     setOpenModal(true);
@@ -185,16 +214,23 @@ export default function Clusters() {
                     <Typography>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <Title level={3} style={{ margin: 0 }}>{selectedCluster.name}</Title>
-                        <div>
-                          {(selectedCluster as any).status ? (
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {selectedCluster.status ? (
                             <Button
                               type="primary"
                               style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                              loading={connectingId === selectedCluster.id}
+                              onClick={(e) => handleConnectToggle(selectedCluster, e)}
                             >
                               Connected
                             </Button>
                           ) : (
-                            <Button type="default" danger>
+                            <Button
+                              type="default"
+                              danger
+                              loading={connectingId === selectedCluster.id}
+                              onClick={(e) => handleConnectToggle(selectedCluster, e)}
+                            >
                               Disconnected
                             </Button>
                           )}
@@ -223,7 +259,14 @@ export default function Clusters() {
                       <Typography>
                         <div style={{display: "flex", justifyContent: "space-between"}}>
                         <Title level={3} onClick={() => handleOnClusterClick(cluster)}>{cluster.name}</Title>
-                        <Button color="primary" type="default" onClick={() => handleOnClusterSelect(cluster)}>
+                        <Button
+                          color="primary"
+                          type="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOnClusterSelect(cluster);
+                          }}
+                        >
                           Select
                         </Button>
                         </div>
@@ -234,13 +277,23 @@ export default function Clusters() {
                               <Text type="secondary">Creation Date: {cluster.created_at}</Text>
                             </div>
                           </div>
-                          <div>
-                            { (cluster as any).status ? (
-                              <Button type="primary" style={{background: '#52c41a', borderColor: '#52c41a'}}>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            {cluster.status ? (
+                              <Button
+                                type="primary"
+                                style={{background: '#52c41a', borderColor: '#52c41a'}}
+                                loading={connectingId === cluster.id}
+                                onClick={(e) => handleConnectToggle(cluster, e)}
+                              >
                                 Connected
                               </Button>
                             ) : (
-                              <Button type="default" danger>
+                              <Button
+                                type="default"
+                                danger
+                                loading={connectingId === cluster.id}
+                                onClick={(e) => handleConnectToggle(cluster, e)}
+                              >
                                 Disconnected
                               </Button>
                             )}

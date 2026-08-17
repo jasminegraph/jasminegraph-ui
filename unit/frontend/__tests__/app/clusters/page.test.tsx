@@ -179,4 +179,30 @@ describe("Clusters Page", () => {
 
     expect(mockedGetClustersStatusByIds).not.toHaveBeenCalled();
   });
+
+  it("attempts to connect/refresh status without navigating when status button is clicked", async () => {
+    const mockPush = jest.fn();
+    mockedUseRouter.mockReturnValue({ push: mockPush });
+    mockedGetAllClusters.mockResolvedValue({
+      data: [{ id: 10, name: "Cluster 10", host: "127.0.0.1", port: "7777", created_at: "2026-08-17" }],
+    } as any);
+    mockedGetClustersStatusByIds.mockResolvedValue({
+      clusters: [{ id: 10, connected: true }],
+    } as any);
+
+    render(<ClustersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Connected" })).toBeInTheDocument();
+    });
+
+    const statusBtn = screen.getByRole("button", { name: "Connected" });
+    fireEvent.click(statusBtn);
+
+    await waitFor(() => {
+      expect(mockedGetClustersStatusByIds).toHaveBeenCalledWith("token", [10]);
+    });
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
 });
