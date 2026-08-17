@@ -120,6 +120,7 @@ export default function Clusters() {
   const handleOnClusterSelect = (cluster: IClusterDetails) => {
     dispatch(set_Selected_Cluster(cluster));
     localStorage.setItem("selectedCluster", String(cluster.id));
+    message.success({ content: `Selected cluster "${cluster.name}"`, key: 'select-cluster-msg' });
   }
 
   const handleOnClusterClick = (cluster: IClusterDetails) => {

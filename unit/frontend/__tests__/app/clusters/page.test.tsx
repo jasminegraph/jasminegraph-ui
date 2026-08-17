@@ -205,4 +205,27 @@ describe("Clusters Page", () => {
 
     expect(mockPush).not.toHaveBeenCalled();
   });
+
+  it("displays success message when selecting a cluster", async () => {
+    mockedGetAllClusters.mockResolvedValue({
+      data: [{ id: 5, name: "Cluster Alpha", host: "127.0.0.1", port: "7777", created_at: "2026-08-17" }],
+    } as any);
+    mockedGetClustersStatusByIds.mockResolvedValue({
+      clusters: [{ id: 5, connected: true }],
+    } as any);
+
+    render(<ClustersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Select" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+
+    const { message } = require("antd");
+    expect(message.success).toHaveBeenCalledWith({
+      content: 'Selected cluster "Cluster Alpha"',
+      key: "select-cluster-msg",
+    });
+  });
 });
