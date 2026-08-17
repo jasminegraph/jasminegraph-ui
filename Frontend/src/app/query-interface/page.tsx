@@ -59,10 +59,14 @@ export default function Query() {
 
         setGraphs(filteredData);
     }
-    }catch(err){
+    }catch(err: any){
         setLoading(false);
 
-        message.error("Failed to fetch graphs: " + err);
+        if (!localStorage.getItem("selectedCluster") || err?.response?.status === 401 || err?.response?.data === 'Missing Cluster-ID') {
+          message.error({ content: "Please select a cluster to proceed", key: "select-cluster-error" });
+        } else {
+          message.error("Failed to fetch graphs: " + err);
+        }
         reportErrorFromException(
           "Query Interface",
           err,
