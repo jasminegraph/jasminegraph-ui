@@ -40,15 +40,17 @@ const LoginForm = () => {
       if (username && password) {
         setSubmitting(true);
         const response = await userLogin(username, password);
-        if ('data' in response) {
+        if (response && 'accessToken' in response && response.accessToken) {
           dispatch(set_Is_User_Authenticated(true));
+          setSrvAccessToken(response.accessToken);
+          setSrvRefreshToken(response.refreshToken);
+          router.push('/clusters');
+        } else if (response && 'message' in response) {
+          message.error(response.message || 'Login failed. Please check your credentials.');
         }
-        setSrvAccessToken(response.accessToken);
-        setSrvRefreshToken(response.refreshToken);
-        router.push('/clusters');
       }
     } catch (err: any) {
-      message.warning(err?.data?.message || 'Login failed. Please try again.');
+      message.warning(err?.data?.message || err?.message || 'Login failed. Please try again.');
     } finally {
       setSubmitting(false);
     }

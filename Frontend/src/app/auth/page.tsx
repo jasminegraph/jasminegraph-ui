@@ -19,7 +19,6 @@ import { checkBackendHealth } from '@/services/auth-service';
 import { getAllUsers } from '@/services/user-service';
 import { Alert, Button, message, Card } from 'antd';
 import { useRouter } from 'next/navigation';
-import { DeploymentUnitOutlined, SafetyCertificateOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
 const Auth = () => {
   const router = useRouter();

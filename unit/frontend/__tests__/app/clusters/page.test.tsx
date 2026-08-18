@@ -183,9 +183,14 @@ describe("Clusters Page", () => {
   it("attempts to connect/refresh status without navigating when status button is clicked", async () => {
     const mockPush = jest.fn();
     mockedUseRouter.mockReturnValue({ push: mockPush });
-    mockedGetAllClusters.mockResolvedValue({
-      data: [{ id: 10, name: "Cluster 10", host: "127.0.0.1", port: "7777", created_at: "2026-08-17" }],
-    } as any);
+    const cluster = { id: 10, name: "Cluster 10", host: "127.0.0.1", port: "7777", created_at: "2026-08-17" };
+    mockedUseAppSelector.mockImplementation((selector: any) =>
+      selector({
+        authData: { userData: { email: "admin@test.com", role: "admin" } },
+        clusterData: { selectedCluster: { ...cluster, status: true } },
+      })
+    );
+    mockedGetAllClusters.mockResolvedValue({ data: [cluster] } as any);
     mockedGetClustersStatusByIds.mockResolvedValue({
       clusters: [{ id: 10, connected: true }],
     } as any);
@@ -196,11 +201,12 @@ describe("Clusters Page", () => {
       expect(screen.getByRole("button", { name: "Connected" })).toBeInTheDocument();
     });
 
-    const statusBtn = screen.getByRole("button", { name: "Connected" });
-    fireEvent.click(statusBtn);
+    const initialCalls = mockedGetClustersStatusByIds.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Connected" }));
 
     await waitFor(() => {
       expect(mockedGetClustersStatusByIds).toHaveBeenCalledWith("token", [10]);
+      expect(mockedGetClustersStatusByIds).toHaveBeenCalledTimes(initialCalls + 1);
     });
 
     expect(mockPush).not.toHaveBeenCalled();
