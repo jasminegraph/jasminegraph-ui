@@ -447,34 +447,6 @@ const getGraphList = async (req: Request, res: Response) => {
     }
 };
 
-const resolveClusterProperties = async (connection: IConnection): Promise<ClusterPropertiesPayload> => {
-    try {
-        const commandOutput = await executeTelnetCommand(connection, PROPERTIES_COMMAND, TIMEOUT.default);
-
-        if (!commandOutput.trim()) {
-            console.warn('Empty response from server for properties command');
-            return buildFallbackClusterProperties(connection);
-        }
-
-        // Server returns clean JSON, parse it directly
-        const parsed = JSON.parse(commandOutput) as Record<string, unknown>;
-        const payload: ClusterPropertiesPayload = {
-            partitionCount: Number(parsed.partitionCount ?? 0),
-            workersCount: Number(parsed.workersCount ?? 0),
-            version: String(parsed.version ?? 'unknown'),
-            broker: String(parsed.broker ?? '').trim(),
-            groupId: String(parsed.groupId ?? 'jasminegraph-consumer'),
-            offsetReset: String(parsed.offsetReset ?? 'earliest'),
-        };
-
-        console.log(new Date().toLocaleString() + ' - ' + PROPERTIES_COMMAND + ' - Success');
-        return payload;
-    } catch (err) {
-        console.error('Failed to fetch cluster properties:', err);
-        return buildFallbackClusterProperties(connection);
-    }
-};
-
 const getClusterProperties = async (req: Request, res: Response) => {
     const connection = await getClusterDetails(req);
     if (!(connection.host && connection.port)) {
