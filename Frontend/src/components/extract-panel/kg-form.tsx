@@ -175,9 +175,13 @@ const KgForm = ({
             try {
                 await axios.post('/backend/graph/construct-kg-local', formData, { headers: { 'Content-Type': 'multipart/form-data', 'Cluster-ID': localStorage.getItem('selectedCluster') } });
             } catch (error) {
-                message.error("Failed to upload file");
+                const backendError = axios.isAxiosError(error)
+                    ? error.response?.data?.error || error.response?.data?.message
+                    : undefined;
+                message.error(backendError ? `Upload failed: ${backendError}` : "Failed to upload file");
+                setFormError(backendError || "Failed to upload file");
+                return;
             }
-
 
             message.success("Knowledge Graph construction started");
             onSuccess();
@@ -211,7 +215,14 @@ const KgForm = ({
                         <Form.Item
                             name="graphName"
                             label="Graph Name"
-
+                            rules={[
+                                { required: true, message: "Enter a graph name" },
+                                {
+                                    // Must match backend validation in constructKGTXT (no spaces or special chars)
+                                    pattern: /^[A-Za-z0-9_.-]+$/,
+                                    message: "Only letters, numbers, dots, hyphens and underscores are allowed (no spaces)",
+                                },
+                            ]}
                         >
                             <Input />
                         </Form.Item>

@@ -13,7 +13,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Create external network
+      # The backend attaches to jasminenet to reach the cluster's Kafka broker.
+      # That network is created by the JasmineGraph stack, which is not present
+      # here, so create an empty one for the external declaration to resolve
+      # against. No e2e spec talks to Kafka.
+      - name: Create jasminenet network
         run: docker network create jasminenet || true
 
       - name: Run all containers with tests

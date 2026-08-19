@@ -82,7 +82,8 @@ type ClusterPropertiesPayload = {
 };
 
 const buildFallbackClusterProperties = (connection: IConnection): ClusterPropertiesPayload => {
-    // Fallback when prp command fails. These values should ideally come from the server's prp response.
+    // Fallback when the prp (properties) command fails. These values should ideally come from the
+    // server's prp (properties) response.
     return {
         partitionCount: 0,
         workersCount: 0,
@@ -274,16 +275,22 @@ const extractFirstJsonPayload = (rawResponse: string): string | null => {
         return null;
     }
 
+    // Use whichever JSON container starts first, so an array of objects is not
+    // truncated to its inner object content (which would be invalid JSON).
     const jsonObjectStart = trimmed.indexOf('{');
+    const jsonArrayStart = trimmed.indexOf('[');
+    const arrayFirst = jsonArrayStart !== -1 && (jsonObjectStart === -1 || jsonArrayStart < jsonObjectStart);
+
+    if (arrayFirst) {
+        const jsonArrayEnd = trimmed.lastIndexOf(']');
+        if (jsonArrayEnd > jsonArrayStart) {
+            return trimmed.substring(jsonArrayStart, jsonArrayEnd + 1);
+        }
+    }
+
     const jsonObjectEnd = trimmed.lastIndexOf('}');
     if (jsonObjectStart !== -1 && jsonObjectEnd > jsonObjectStart) {
         return trimmed.substring(jsonObjectStart, jsonObjectEnd + 1);
-    }
-
-    const jsonArrayStart = trimmed.indexOf('[');
-    const jsonArrayEnd = trimmed.lastIndexOf(']');
-    if (jsonArrayStart !== -1 && jsonArrayEnd > jsonArrayStart) {
-        return trimmed.substring(jsonArrayStart, jsonArrayEnd + 1);
     }
 
     return null;
@@ -446,8 +453,7 @@ const getClusterProperties = async (req: Request, res: Response) => {
         return res.status(404).send(connection);
     }
 
-    const payload = await resolveClusterProperties(connection, req.header('Cluster-ID') ?? undefined);
-    console.log(new Date().toLocaleString() + ' - ' + PROPERTIES_COMMAND + ' - Success');
+    const payload = await resolveClusterProperties(connection);
     return res.status(HTTP[200]).send(payload);
 };
 
@@ -494,19 +500,18 @@ const getKafkaTopics = async (req: Request, res: Response) => {
             .filter(Boolean);
 
         if (brokers.length === 0) {
-            const properties = await resolveClusterProperties(
-                connection,
-                req.header('Cluster-ID') ?? undefined
-            );
-
-            console.log("Cluster properties:", properties);
-
+            // Get broker from cluster properties
+            const properties = await resolveClusterProperties(connection);
             if (properties.broker) {
                 brokers = [properties.broker];
             }
         }
 
-        console.log("Kafka brokers:", brokers);
+        // Some master builds do not report a broker in the prp (properties) response;
+        // fall back to the configured default.
+        if (brokers.length === 0 && process.env.KAFKA_BROKER) {
+            brokers = [process.env.KAFKA_BROKER];
+        }
 
         if (brokers.length === 0) {
             return res.status(400).send({
@@ -564,31 +569,63 @@ const uploadGraph = async (req: Request, res: Response) => {
     try {
         telnetConnection({host: connection.host, port: connection.port})(() => {
             let commandOutput = "";
+            let connectionIssue = "";
+            let responded = false;
 
-            tSocket.on("data", (buffer) => {
-                commandOutput += buffer.toString(UTF8_FORMAT);
-            });
+            const finish = (status: number, body: unknown) => {
+                if (responded) return;
+                responded = true;
+                clearTimeout(timer);
+                // TelnetSocket only proxies on(); 'data' listeners live on its internal input stream.
+                (tSocket as any)?._in?.removeListener?.("data", onData);
+                socket?.removeListener?.("error", onSocketError);
+                socket?.removeListener?.("close", onSocketClose);
+                res.status(status).send(body);
+            };
 
+            // The master replies with plain text: "send" on accepting the command,
+            // then "done" once the graph is downloaded, partitioned and distributed.
+            const onData = (buffer: Buffer) => {
+                const chunk = buffer.toString(UTF8_FORMAT);
+                commandOutput += chunk;
+                console.log("Master (upload):", chunk.trim());
 
-            tSocket.write(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n', UTF8_FORMAT, () => {
-                setTimeout(() => {
-                    if (commandOutput) {
-                        try {
-                           let output =  JSON.parse(commandOutput)
-                            res.status(HTTP[200]).send(output);
+                if (commandOutput.includes("done")) {
+                    finish(HTTP[200], { message: "Graph uploaded and partitioned successfully" });
+                } else if (commandOutput.includes("error") || commandOutput.includes("Message format not recognized")) {
+                    finish(HTTP[500], { code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: commandOutput.trim() });
+                }
+            };
 
-                        } catch (err) {
-                            return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
-                        }
-                    } else {
-                        res.status(HTTP[400]).send({ code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
-                    }
-                }, TIMEOUT.default); // Adjust timeout to wait for the server response if needed
-            });
+            // The module-level socket handlers only log; capture the failure here so the
+            // timeout branch below can report why the master never responded.
+            const onSocketError = (err: Error) => {
+                connectionIssue = `Telnet connection error: ${err.message}`;
+            };
+            const onSocketClose = () => {
+                if (!responded) {
+                    connectionIssue ||= "Telnet connection to the master closed before any response was received.";
+                }
+            };
+            socket?.on("error", onSocketError);
+            socket?.on("close", onSocketClose);
 
+            // Partitioning large graphs takes well over the default 5s, allow 2 minutes.
+            const timer = setTimeout(() => {
+                if (commandOutput.trim()) {
+                    finish(HTTP[200], { message: "Upload accepted; the master is still partitioning the graph. Refresh the graph list to see the result." });
+                } else {
+                    const errorDetails = connectionIssue ||
+                        `No response from ${connection.host}:${connection.port} within ${TIMEOUT.default * 24}ms for graph "${graphName}".`;
+                    finish(HTTP[400], { code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails });
+                }
+            }, TIMEOUT.default * 24);
+
+            tSocket.on("data", onData);
+            tSocket.write(GRAPH_UPLOAD_COMMAND + '|' + graphName + '|' + filePath + '\n', UTF8_FORMAT);
         });
     } catch (err) {
-        return res.status(HTTP[200]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
+        return res.status(HTTP[500]).send({ code: ErrorCode.ServerError, message: ErrorMsg.ServerError, errorDetails: err });
     }
 };
 

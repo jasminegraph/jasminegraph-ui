@@ -34,15 +34,18 @@ services:
       - /var/tmp/jasminegraph-ui-backend:/app/caches
     environment:
       - POSTGRES_URL=postgresql://admin:admin_password@postgres:5432/jasminegraphdb
+    networks:
+      # default keeps backend reachable from frontend/postgres by service name;
+      # jasminenet lets it reach the cluster's Kafka broker (advertised as 172.28.5.x)
+      - default
+      - jasminenet
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health" ]
       interval: 5s
       timeout: 3s
       retries: 5
       start_period: 15s
-    networks:
-      - default
-      - jasminenet
+
 
   # Postgres Service (shared by backend + keycloak)
   postgres:
