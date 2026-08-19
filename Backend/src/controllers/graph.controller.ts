@@ -82,7 +82,8 @@ type ClusterPropertiesPayload = {
 };
 
 const buildFallbackClusterProperties = (connection: IConnection): ClusterPropertiesPayload => {
-    // Fallback when prp command fails. These values should ideally come from the server's prp response.
+    // Fallback when the prp (properties) command fails. These values should ideally come from the
+    // server's prp (properties) response.
     return {
         partitionCount: 0,
         workersCount: 0,
@@ -534,7 +535,8 @@ const getKafkaTopics = async (req: Request, res: Response) => {
             }
         }
 
-        // Some master builds do not report a broker in prp; fall back to the configured default.
+        // Some master builds do not report a broker in the prp (properties) response;
+        // fall back to the configured default.
         if (brokers.length === 0 && process.env.KAFKA_BROKER) {
             brokers = [process.env.KAFKA_BROKER];
         }
@@ -595,6 +597,7 @@ const uploadGraph = async (req: Request, res: Response) => {
     try {
         telnetConnection({host: connection.host, port: connection.port})(() => {
             let commandOutput = "";
+            let connectionIssue = "";
             let responded = false;
 
             const finish = (status: number, body: unknown) => {
@@ -603,6 +606,8 @@ const uploadGraph = async (req: Request, res: Response) => {
                 clearTimeout(timer);
                 // TelnetSocket only proxies on(); 'data' listeners live on its internal input stream.
                 (tSocket as any)?._in?.removeListener?.("data", onData);
+                socket?.removeListener?.("error", onSocketError);
+                socket?.removeListener?.("close", onSocketClose);
                 res.status(status).send(body);
             };
 
@@ -620,12 +625,27 @@ const uploadGraph = async (req: Request, res: Response) => {
                 }
             };
 
+            // The module-level socket handlers only log; capture the failure here so the
+            // timeout branch below can report why the master never responded.
+            const onSocketError = (err: Error) => {
+                connectionIssue = `Telnet connection error: ${err.message}`;
+            };
+            const onSocketClose = () => {
+                if (!responded) {
+                    connectionIssue ||= "Telnet connection to the master closed before any response was received.";
+                }
+            };
+            socket?.on("error", onSocketError);
+            socket?.on("close", onSocketClose);
+
             // Partitioning large graphs takes well over the default 5s, allow 2 minutes.
             const timer = setTimeout(() => {
                 if (commandOutput.trim()) {
                     finish(HTTP[200], { message: "Upload accepted; the master is still partitioning the graph. Refresh the graph list to see the result." });
                 } else {
-                    finish(HTTP[400], { code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails: "" });
+                    const errorDetails = connectionIssue ||
+                        `No response from ${connection.host}:${connection.port} within ${TIMEOUT.default * 24}ms for graph "${graphName}".`;
+                    finish(HTTP[400], { code: ErrorCode.NoResponseFromServer, message: ErrorMsg.NoResponseFromServer, errorDetails });
                 }
             }, TIMEOUT.default * 24);
 
