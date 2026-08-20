@@ -109,7 +109,7 @@ const LoginForm = () => {
               boxShadow: '0 2px 4px rgba(22, 119, 255, 0.2)',
             }}
           >
-            Log In
+            Login
           </Button>
         </Form.Item>
       </Form>
