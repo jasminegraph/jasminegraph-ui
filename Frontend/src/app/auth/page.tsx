@@ -17,7 +17,7 @@ import LoginForm from '@/components/auth/login-form';
 import Loading from '@/components/auth/Loading';
 import { checkBackendHealth } from '@/services/auth-service';
 import { getAllUsers } from '@/services/user-service';
-import { Alert, Button, message } from 'antd';
+import { Alert, Button, message, Card } from 'antd';
 import { useRouter } from 'next/navigation';
 
 const Auth = () => {
@@ -40,17 +40,17 @@ const Auth = () => {
       }
     };
     interval = setInterval(pollHealth, 4000);
-    pollHealth(); 
+    pollHealth();
     return () => clearInterval(interval);
   }, []);
 
   const getUsers = async () => {
-    try{
+    try {
       const users = await getAllUsers();
-      if (users && users.data.length == 0){
+      if (users && users.data.length === 0) {
         setShowSetupBackendAlert(true);
       }
-    }catch(err){
+    } catch (err) {
       message.error("Failed to ping backend");
     }
   };
@@ -66,32 +66,94 @@ const Auth = () => {
   }
 
   return (
-      <div style={{height: "100vh", display: "flex", alignItems: "center"}}>
-        <div style={{display: "flex", width: "60%", justifyContent: "center", alignItems: "center", flexDirection: "column"}}>
-          <p style={{fontSize: "80px", fontWeight: "500"}}>JasmineGraph</p>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#f8fafc',
+        backgroundImage: 'radial-gradient(#e2e8f0 1px, transparent 1px)',
+        backgroundSize: '24px 24px',
+        padding: '24px',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          width: '100%',
+          maxWidth: '1100px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '48px',
+          flexWrap: 'wrap-reverse',
+        }}
+      >
+        <div style={{ flex: '1 1 450px', padding: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <h1
+              style={{
+                fontSize: '42px',
+                fontWeight: 700,
+                color: '#0f172a',
+                margin: 0,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              JasmineGraph
+            </h1>
+          </div>
+
           {showSetupBackendAlert && (
-          <Alert  
-            message="Admin User Not Found" 
-            type="warning" 
-            showIcon 
-            closable 
-            onClose={() => setShowSetupBackendAlert(false)} 
-            style={{width: showSetupBackendAlert ? "60%" : "0%"}}
-            action={
-              <Button size="small" type="primary" onClick={() => {
-                router.push("/setup");
-              }}>
-                Go to Setup
-              </Button>
-            }
+            <Alert
+              message="No Admin Account Found"
+              description="It looks like this is a new installation. Click below to set up your administrator profile."
+              type="warning"
+              showIcon
+              closable
+              onClose={() => setShowSetupBackendAlert(false)}
+              style={{ borderRadius: '12px', marginTop: '16px' }}
+              action={
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => {
+                    router.push('/setup');
+                  }}
+                  style={{ borderRadius: '6px' }}
+                >
+                  Go to Setup
+                </Button>
+              }
             />
           )}
         </div>
-        <div style={{display: "flex", width: "40%", justifyContent: "flex-start"}}>
-          <LoginForm />
+
+        <div style={{ flex: '1 1 380px', maxWidth: '440px', width: '100%' }}>
+          <Card
+            bordered={false}
+            style={{
+              borderRadius: '16px',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+              border: '1px solid #e2e8f0',
+              padding: '12px 8px',
+            }}
+          >
+            <div style={{ marginBottom: '28px', textAlign: 'center' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>
+                Welcome back
+              </h2>
+              <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+                Please sign in to access your account
+              </p>
+            </div>
+            <LoginForm />
+          </Card>
         </div>
       </div>
-  )
-}
+    </div>
+  );
+};
 
 export default Auth;
+

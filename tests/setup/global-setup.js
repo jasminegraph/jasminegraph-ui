@@ -28,9 +28,9 @@ module.exports = async () => {
   // Log in and save storage state for reuse in all tests
   const browser = await chromium.launch();
   const page = await browser.newPage();
-  const { username, password } = getTestUser();
+  const { username, email, password } = getTestUser();
   await page.goto(process.env.BASE_URL ? `${process.env.BASE_URL}/auth` : 'http://localhost:3000/auth');
-  await page.getByLabel('Email').fill(username);
+  await page.getByLabel('Email').fill(email || username);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: /login/i }).click();
   await page.waitForURL('**/clusters');

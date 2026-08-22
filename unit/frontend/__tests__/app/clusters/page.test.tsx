@@ -169,4 +169,69 @@ describe("Clusters Page", () => {
       expect(screen.getByText("Cluster Registration Form")).toBeInTheDocument();
     });
   });
+
+  it("fetches clusters only once when user has no clusters and does not query status for empty list", async () => {
+    render(<ClustersPage />);
+
+    await waitFor(() => {
+      expect(mockedGetAllClusters).toHaveBeenCalledTimes(1);
+    });
+
+    expect(mockedGetClustersStatusByIds).not.toHaveBeenCalled();
+  });
+
+  it("attempts to connect/refresh status without navigating when status button is clicked", async () => {
+    const mockPush = jest.fn();
+    mockedUseRouter.mockReturnValue({ push: mockPush });
+    const cluster = { id: 10, name: "Cluster 10", host: "127.0.0.1", port: "7777", created_at: "2026-08-17" };
+    mockedUseAppSelector.mockImplementation((selector: any) =>
+      selector({
+        authData: { userData: { email: "admin@test.com", role: "admin" } },
+        clusterData: { selectedCluster: { ...cluster, status: true } },
+      })
+    );
+    mockedGetAllClusters.mockResolvedValue({ data: [cluster] } as any);
+    mockedGetClustersStatusByIds.mockResolvedValue({
+      clusters: [{ id: 10, connected: true }],
+    } as any);
+
+    render(<ClustersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Connected" })).toBeInTheDocument();
+    });
+
+    const initialCalls = mockedGetClustersStatusByIds.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Connected" }));
+
+    await waitFor(() => {
+      expect(mockedGetClustersStatusByIds).toHaveBeenCalledWith("token", [10]);
+      expect(mockedGetClustersStatusByIds).toHaveBeenCalledTimes(initialCalls + 1);
+    });
+
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("displays success message when selecting a cluster", async () => {
+    mockedGetAllClusters.mockResolvedValue({
+      data: [{ id: 5, name: "Cluster Alpha", host: "127.0.0.1", port: "7777", created_at: "2026-08-17" }],
+    } as any);
+    mockedGetClustersStatusByIds.mockResolvedValue({
+      clusters: [{ id: 5, connected: true }],
+    } as any);
+
+    render(<ClustersPage />);
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Select" })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+
+    const { message } = require("antd");
+    expect(message.success).toHaveBeenCalledWith({
+      content: 'Selected cluster "Cluster Alpha"',
+      key: "select-cluster-msg",
+    });
+  });
 });

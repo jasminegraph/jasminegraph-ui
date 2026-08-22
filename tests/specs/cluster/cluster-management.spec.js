@@ -17,9 +17,9 @@ const { getTestUser } = require('../../utils/test-user-util');
 
 // Utility: login and go to clusters page
 async function loginAndGoToClusters(page) {
-  const { username, password } = getTestUser();
+  const { username, email, password } = getTestUser();
   await page.goto('/auth');
-  await page.getByLabel('Email').fill(username);
+  await page.getByLabel('Email').fill(email || username);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: /login/i }).click();
   await expect(page).toHaveURL(/\/clusters/);
@@ -45,12 +45,12 @@ test.describe('Cluster Management Integration', () => {
 
   // Select the cluster
   await cardLocator.getByRole('button', { name: /select/i }).click();
-  await expect(page.getByText('Selected Cluster')).toBeVisible();
-  await expect(clusterHeading).toBeVisible();
+  await expect(page.getByText('Selected Cluster', { exact: true })).toBeVisible();
+  await expect(clusterHeading.first()).toBeVisible();
 
   // View cluster details (click cluster name)
-  await clusterHeading.click();
+  await clusterHeading.first().click();
   await expect(page).toHaveURL(/\/clusters\//);
-  await expect(page.getByText(clusterName)).toBeVisible();
+  await expect(page.getByText(clusterName).first()).toBeVisible();
   });
 });

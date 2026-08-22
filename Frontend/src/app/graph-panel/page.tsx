@@ -74,38 +74,50 @@ export default function GraphUpload() {
           getKafkaTopics(),
         ]);
 
-        if (graphResult.status === 'fulfilled') {
-          setGraphs(graphResult.value.data);
-        } else {
-          console.error('Failed to load graph list:', graphResult.reason);
-          message.error('Failed to load graph list');
-        }
+        const hasNoClusterError = [graphResult, defaultsResult, topicsResult].some(
+          (result) =>
+            result.status === 'rejected' &&
+            (!localStorage.getItem('selectedCluster') ||
+              (result.reason as any)?.response?.status === 401 ||
+              (result.reason as any)?.response?.data === 'Missing Cluster-ID')
+        );
 
-        if (defaultsResult.status === 'fulfilled') {
-          const properties = (defaultsResult.value?.data ?? {}) as Record<string, unknown>;
-          const broker = typeof properties.broker === 'string' ? properties.broker.trim() : '';
-          const groupId = typeof properties.groupId === 'string' ? properties.groupId.trim() : '';
-          const offsetReset = typeof properties.offsetReset === 'string' ? properties.offsetReset.trim() : 'earliest';
-
-          setKafkaDefaults({
-            broker: broker || '',
-            groupId: groupId || '',
-            offsetReset,
-          });
+        if (hasNoClusterError) {
+          message.error({ content: 'Please select a cluster to proceed', key: 'select-cluster-error' });
         } else {
-          console.error('Failed to load Kafka defaults:', defaultsResult.reason);
-        }
+          if (graphResult.status === 'fulfilled') {
+            setGraphs(graphResult.value.data);
+          } else {
+            console.error('Failed to load graph list:', graphResult.reason);
+            message.error('Failed to load graph list');
+          }
 
-        if (topicsResult.status === 'fulfilled') {
-          const topics = Array.isArray(topicsResult.value?.data?.topics)
-            ? topicsResult.value.data.topics
-            : [];
-          const uniqueSortedTopics = Array.from(new Set(topics.map((topic: string) => String(topic).trim()).filter(Boolean)))
-            .sort((a, b) => a.localeCompare(b));
-          setKafkaTopics(uniqueSortedTopics);
-        } else {
-          console.error('Failed to load Kafka topics:', topicsResult.reason);
-          message.error('Failed to load Kafka topics');
+          if (defaultsResult.status === 'fulfilled') {
+            const properties = (defaultsResult.value?.data ?? {}) as Record<string, unknown>;
+            const broker = typeof properties.broker === 'string' ? properties.broker.trim() : '';
+            const groupId = typeof properties.groupId === 'string' ? properties.groupId.trim() : '';
+            const offsetReset = typeof properties.offsetReset === 'string' ? properties.offsetReset.trim() : 'earliest';
+
+            setKafkaDefaults({
+              broker: broker || '',
+              groupId: groupId || '',
+              offsetReset,
+            });
+          } else {
+            console.error('Failed to load Kafka defaults:', defaultsResult.reason);
+          }
+
+          if (topicsResult.status === 'fulfilled') {
+            const topics = Array.isArray(topicsResult.value?.data?.topics)
+              ? topicsResult.value.data.topics
+              : [];
+            const uniqueSortedTopics = Array.from(new Set(topics.map((topic: string) => String(topic).trim()).filter(Boolean)))
+              .sort((a, b) => a.localeCompare(b));
+            setKafkaTopics(uniqueSortedTopics);
+          } else {
+            console.error('Failed to load Kafka topics:', topicsResult.reason);
+            message.error('Failed to load Kafka topics');
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);

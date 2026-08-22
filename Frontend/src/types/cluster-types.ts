@@ -21,6 +21,7 @@ export interface IClusterDetails {
   cluster_owner: string;
   created_at: string;
   updated_at: string;
+  status?: boolean;
 }
 
 export interface IClusterProperties {

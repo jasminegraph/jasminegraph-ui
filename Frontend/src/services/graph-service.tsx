@@ -32,7 +32,7 @@ export async function getGraphList(): Promise<{data: IGraphDetails[]}> {
       data: result,
     };
   } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }
 
@@ -51,7 +51,7 @@ export async function getKGConstructionMetaData(graphId: string): Promise<{data:
             data: result,
         };
     } catch (err) {
-        return Promise.reject();
+        return Promise.reject(err);
     }
 }
 export async function getOnProgressKGConstructionMetaData(): Promise<{data: IKnowledgeGraph[]}> {
@@ -69,7 +69,7 @@ export async function getOnProgressKGConstructionMetaData(): Promise<{data: IKno
             data: result,
         };
     } catch (err) {
-        return Promise.reject();
+        return Promise.reject(err);
     }
 }
 
@@ -163,7 +163,7 @@ export async function deleteGraph(id: string) {
       data: result,
     };
   } catch (err) {
-    return Promise.reject();
+    return Promise.reject(err);
   }
 }
 

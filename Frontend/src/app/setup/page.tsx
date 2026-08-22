@@ -54,17 +54,22 @@ const steps = [
   const items = steps.map((item) => ({ key: item.title, title: item.title }));
 
   const contentStyle: React.CSSProperties = {
-    textAlign: 'center',
-    color: token.colorTextTertiary,
-    backgroundColor: token.colorFillAlter,
+    color: token.colorText,
+    backgroundColor: token.colorBgContainer,
     borderRadius: token.borderRadiusLG,
-    border: `1px dashed ${token.colorBorder}`,
-    marginTop: 16,
-    height: "75vh"
+    border: `1px solid ${token.colorBorderSecondary}`,
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01)',
+    marginTop: 24,
+    padding: '40px 24px',
+    minHeight: '480px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
   };
 
   return (
-    <div style={{margin: "30px"}}>
+    <div style={{ maxWidth: '1000px', margin: '40px auto', padding: '0 24px' }}>
       <Steps current={current} items={items} />
       <div style={contentStyle}>{steps[current].content}</div>
     </div>

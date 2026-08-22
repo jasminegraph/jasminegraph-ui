@@ -15,9 +15,9 @@ const { test, expect } = require('@playwright/test');
 const { getTestUser } = require('../../utils/test-user-util');
 
 async function loginAndGoToClusters(page) {
-  const { username, password } = getTestUser();
+  const { username, email, password } = getTestUser();
   await page.goto('/auth');
-  await page.getByLabel('Email').fill(username);
+  await page.getByLabel('Email').fill(email || username);
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: /login/i }).click();
   await expect(page).toHaveURL(/\/clusters/);

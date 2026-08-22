@@ -25,6 +25,17 @@ import { useDispatch } from 'react-redux';
 import { IUserAccessData } from '@/types/user-types';
 import { set_User_Data } from '@/redux/features/authData';
 
+const formItemLayout = {
+  labelCol: {
+    xs: { span: 24 },
+    sm: { span: 8 },
+  },
+  wrapperCol: {
+    xs: { span: 24 },
+    sm: { span: 16 },
+  },
+};
+
 const tailFormItemLayout = {
   wrapperCol: {
     xs: {
@@ -85,103 +96,112 @@ const AdminProfile = ({onSuccess}:props) => {
   }
   
   return (
-    <div style={{display: "flex", justifyContent: "center", alignItems: "center", height: "100%", flexDirection: "column"}}>
-      <Form
-      // {...formItemLayout}
-      form={form}
-      name="register"
-      onFinish={onFinish}
-      initialValues={{ residence: ['zhejiang', 'hangzhou', 'xihu'], prefix: '86' }}
-      style={{ maxWidth: 600 }}
-        scrollToFirstError
-        size='large'
-      >
-        <Form.Item
-          name="firstName"
-          label="First Name"
-          rules={[
-            {
-              required: true,
-              message: 'Please input your first name!',
-            },
-          ]}
-          >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          name="lastName"
-          label="Last Name"
-          rules={[
-            {
-              required: true,
-              message: 'Please input your last name!',
-            },
-          ]}
-          >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          name="email"
-          label="E-mail"
-          rules={[
-            {
-              type: 'email',
-              message: 'The input is not valid E-mail!',
-            },
-            {
-              required: true,
-              message: 'Please input your E-mail!',
-            },
-          ]}
-          >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          name="password"
-          label="Password"
-          rules={[
-            {
-              required: true,
-              message: 'Please input your password!',
-            },
-          ]}
-          hasFeedback
+    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", width: "100%", flexDirection: "column" }}>
+      <div style={{ width: '100%', maxWidth: 540, margin: '0 auto' }}>
+        <div style={{ marginBottom: 28, textAlign: 'center' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', margin: '0 0 6px 0' }}>
+            Admin Profile
+          </h2>
+          <p style={{ fontSize: '14px', color: '#64748b', margin: 0 }}>
+            Set up your administrator profile to manage JasmineGraph
+          </p>
+        </div>
+        <Form
+          {...formItemLayout}
+          form={form}
+          name="register"
+          onFinish={onFinish}
+          style={{ width: '100%' }}
+          scrollToFirstError
+          size='large'
         >
-          <Input.Password />
-        </Form.Item>
-
-        <Form.Item
-          name="confirm"
-          label="Confirm Password"
-          dependencies={['password']}
-          hasFeedback
-          rules={[
-            {
-              required: true,
-              message: 'Please confirm your password!',
-            },
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!value || getFieldValue('password') === value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error('The new password that you entered do not match!'));
+          <Form.Item
+            name="firstName"
+            label="First Name"
+            rules={[
+              {
+                required: true,
+                message: 'Please input your first name!',
               },
-            }),
-          ]}
-        >
-          <Input.Password />
-        </Form.Item>
+            ]}
+          >
+            <Input />
+          </Form.Item>
 
-        <Form.Item {...tailFormItemLayout}>
-          <Button type="primary" htmlType="submit" loading={loading}>
-            Create Profile
-          </Button>
-        </Form.Item>
-      </Form>
+          <Form.Item
+            name="lastName"
+            label="Last Name"
+            rules={[
+              {
+                required: true,
+                message: 'Please input your last name!',
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="email"
+            label="E-mail"
+            rules={[
+              {
+                type: 'email',
+                message: 'The input is not valid E-mail!',
+              },
+              {
+                required: true,
+                message: 'Please input your E-mail!',
+              },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[
+              {
+                required: true,
+                message: 'Please input your password!',
+              },
+            ]}
+            hasFeedback
+          >
+            <Input.Password />
+          </Form.Item>
+
+          <Form.Item
+            name="confirm"
+            label="Confirm Password"
+            dependencies={['password']}
+            hasFeedback
+            rules={[
+              {
+                required: true,
+                message: 'Please confirm your password!',
+              },
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('The new password that you entered do not match!'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password />
+          </Form.Item>
+
+          <Form.Item {...tailFormItemLayout}>
+            <Button type="primary" htmlType="submit" loading={loading}>
+              Create Profile
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
     </div>
   );
 };

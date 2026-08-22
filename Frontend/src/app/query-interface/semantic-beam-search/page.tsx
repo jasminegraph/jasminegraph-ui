@@ -58,8 +58,12 @@ export default function SemanticBeamSearchPage() {
       })
       setGraphs(filteredData);
     }
-    }catch(err){
-      message.error("Failed to fetch graphs: " + err);
+    }catch(err: any){
+      if (!localStorage.getItem("selectedCluster") || err?.response?.status === 401 || err?.response?.data === 'Missing Cluster-ID') {
+        message.error({ content: "Please select a cluster to proceed", key: "select-cluster-error" });
+      } else {
+        message.error("Failed to fetch graphs: " + err);
+      }
       reportErrorFromException(
         "Query Interface",
         err,

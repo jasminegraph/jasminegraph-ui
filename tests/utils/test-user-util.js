@@ -17,7 +17,11 @@ const path = require('path');
 function getTestUser() {
   const file = path.join(__dirname, 'test-user.json');
   if (!fs.existsSync(file)) throw new Error('test-user.json not found. Run global setup first.');
-  return JSON.parse(fs.readFileSync(file, 'utf-8'));
+  const user = JSON.parse(fs.readFileSync(file, 'utf-8'));
+  if (!user.email && user.username) {
+    user.email = user.username.includes('@') ? user.username : `${user.username}@example.com`;
+  }
+  return user;
 }
 
 function getTestCluster() {
