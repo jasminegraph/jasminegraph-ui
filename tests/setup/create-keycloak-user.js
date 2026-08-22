@@ -112,6 +112,7 @@ async function main() {
     // Save credentials for Playwright
     fs.writeFileSync(__dirname + '/../utils/test-user.json', JSON.stringify({
       username: TEST_USER.username,
+      email: TEST_USER.email,
       password: TEST_USER.credentials[0].value
     }, null, 2));
     console.log('Test user ready:', TEST_USER.username);
@@ -151,7 +152,7 @@ async function main() {
     });
     if (!createRes.ok) {
       const text = await createRes.text();
-      if (text.includes('duplicate key value')) {
+      if (text.includes('duplicate key value') || text.includes('DUPLICATE_HOST_PORT')) {
         console.log('Cluster already exists — skipping creation.');
       } else {
         throw new Error('Failed to create cluster: ' + text);
@@ -178,7 +179,7 @@ async function main() {
     } else {
       throw new Error('Unexpected clusters response format: ' + JSON.stringify(clusters));
     }
-    const testClusters = clusters.filter(c => c.name === 'TestCluster');
+    const testClusters = clusters.filter(c => c.name === 'TestCluster' || (c.host === 'localhost' && Number(c.port) === 1234));
     if (testClusters.length === 0) throw new Error('No TestCluster found after creation');
     testClusters.sort((a, b) => (b.id || 0) - (a.id || 0));
     const clusterData = testClusters[0];
