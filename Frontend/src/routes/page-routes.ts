@@ -17,6 +17,7 @@ export const SIDE_MENU_ROUTES = {
   graphPanel: "/graph-panel",
   queryInterface: "/query-interface",
   performance: "/performance",
+  logs: "/logs",
   queryExecution: "/query-execution",
   querySubmission: "/query-submission",
   notebook: "/notebook",
@@ -36,12 +37,14 @@ export const CLUSTER_PAGE_ROUTES = {
 
 export const GRAPH_PANEL_ROUTES = {
   upload: "/",
+    extract: "/extract",
   graph: "/graph",
   distribution: "/distribution",
 };
 
 export const QUERY_PANEL_ROUTES = {
   query: "/",
+    semantic_beam_search: "/semantic-beam-search",
   properties: "/properties",
   console: "/console"
 };

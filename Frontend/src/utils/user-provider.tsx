@@ -28,21 +28,46 @@ const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathName = usePathname();
   const dispatch = useDispatch();
-  const { getSrvAccessToken } = useAccessToken();
+  const { getSrvAccessToken, isTokenExpired, refreshAccessToken } = useAccessToken();
   const { isUserDataFetched } = useAppSelector((state) => state.authData);
   const [isLoading, setIsLoading] = useState(true);
 
   const getUser = async () => {
     try {
       setIsLoading(true);
-      const token = getSrvAccessToken();
-      const res = await getUserDataByToken(token!).then((res) => res.data);
+      let token = getSrvAccessToken();
+
+      if (!token) {
+        console.log(
+          "[USER_PROVIDER] No access token found, redirecting to login"
+        );
+        router.replace("/auth");
+        return;
+      }
+      if (isTokenExpired(token)) {
+        try {
+          token = await refreshAccessToken();
+          console.log("[USER_PROVIDER] Token refreshed successfully");
+          
+          if (!token) {
+            throw new Error("Token refresh returned null");
+          }
+        } catch (refreshError) {
+          console.log(
+            "[USER_PROVIDER] Token refresh failed, redirecting to login"
+          );
+          router.replace("/auth");
+          return;
+        }
+      }
+      const res = await getUserDataByToken(token).then((res) => res.data);
       const userData: IUserAccessData = {
         email: res.data.email,
-        fullName: res.data.fullName,
+        firstName: res.data.firstName,
+        lastName: res.data.lastName,
         role: res.data.role,
         enabled: res.data.enabled,
-        _id: res.data._id,
+        id: res.data.id,
       }
       dispatch(set_User_Data(userData));
     } catch (error) {

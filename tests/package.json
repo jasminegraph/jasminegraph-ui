@@ -1,0 +1,14 @@
+{
+    "name": "jasminegraph-tests",
+    "version": "1.0.0",
+    "scripts": {
+        "test": "npx playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.44.0"
+    },
+    "dependencies": {
+        "nanoid": "^5.1.6",
+        "node-fetch": "^2.6.7"
+    }
+}

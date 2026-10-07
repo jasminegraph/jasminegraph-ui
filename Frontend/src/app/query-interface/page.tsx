@@ -20,10 +20,10 @@ import { useAppDispatch, useAppSelector } from "@/redux/hook";
 import { add_query_result, clear_result } from "@/redux/features/queryData";
 import { Select, Space } from 'antd';
 import { getGraphList } from "@/services/graph-service";
-import { DataType } from "../graph-panel/graph/page";
 import QueryVisualization from "@/components/visualization/query-visualization";
 import useWebSocket, { ReadyState } from "react-use-websocket";
-
+import { IOption } from "@/types/options-types";
+import { useActivity } from "@/hooks/useActivity";
 type TabItem = Required<TabsProps>['items'][number];
 
 const { TextArea } = Input;
@@ -32,6 +32,7 @@ const WS_URL = "ws://localhost:8080";
 
 export default function Query() {
   const dispatch = useAppDispatch();
+  const { reportErrorFromException } = useActivity();
   const [loading, setLoading] = useState<boolean>(false);
   const [query, setQuery] = useState<string>('');
   const { sendJsonMessage, lastJsonMessage, readyState, getWebSocket } = useWebSocket(WS_URL, { shouldReconnect: (closeEvent) => true });  
@@ -44,18 +45,33 @@ export default function Query() {
 
   const getGraphsData = async () => {
     try{
+        setLoading(true);
     const res = await getGraphList();
     if(res.data){
-      const filteredData: DataType[] = res.data.map((graph: any) => {
+
+      const filteredData: IOption[] = res.data.map((graph: any) => {
         return {
           value: graph.idgraph,
           label: graph.name,
         }
       })
-      setGraphs(filteredData);
+        setLoading(false);
+
+        setGraphs(filteredData);
     }
-    }catch(err){
-      message.error("Failed to fetch graphs: " + err);
+    }catch(err: any){
+        setLoading(false);
+
+        if (!localStorage.getItem("selectedCluster") || err?.response?.status === 401 || err?.response?.data === 'Missing Cluster-ID') {
+          message.error({ content: "Please select a cluster to proceed", key: "select-cluster-error" });
+        } else {
+          message.error("Failed to fetch graphs: " + err);
+        }
+        reportErrorFromException(
+          "Query Interface",
+          err,
+          "Failed to fetch the list of graphs."
+        );
     }
   }
 

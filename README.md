@@ -13,13 +13,17 @@ jasminegraph-ui is a web-based user interface for interacting with the JasmineGr
 - Efficient querying and manipulation of graph data.
 - Integration with JasmineGraph backend services.
 
+# Running the Application Locally
+
 ## Prerequisites
 
 - Node.js (>= 12.x.x)
-- npm (>= 6.x.x) or yarn (>= 1.x.x)
-- Docker (optional, if you prefer to run using Docker)
+- npm (>= 6.x.x)
+- mongoDB (>=v7.0.14) (follow this [guide](https://www.mongodb.com/docs/manual/administration/install-community/))
 
-## Installation
+## Instructions
+
+To run the application locally, use the following command:
 
 Clone the repository:
 
@@ -30,36 +34,34 @@ cd jasminegraph-ui
 
 Install dependencies:
 
-Using npm:
-
 ```bash
+cd Frontend
 npm install
 ```
 
-Using yarn:
-
 ```bash
-yarn install
+cd ../Backend
+npm install
 ```
 
-### Running the Application Locally
-
-To run the application locally, use the following command:
-
-Using npm:
+Run Frontend Application:
 
 ```bash
+cd ../Frontend
 npm run dev
 ```
 
-Using yarn:
+Run Backend Application in a new terminal
 
 ```bash
-yarn dev
+cd Backend
+npm run nodemon
 ```
 
 Open your browser and navigate to http://localhost:3000 to access the application.
 
+info:
+To shutdown close both Frontend and Backend terminals
 
 # JasmineGraph Docker Deployment
 
@@ -70,6 +72,8 @@ This guide will help you set up and deploy JasmineGraph using Docker. We’ll bu
 Ensure you have the following installed:
 
 - [Docker](https://docs.docker.com/get-docker/)
+- Docker-compose (>= 2.36.0)
+- Start JasmineGraph Server in Docker mode
 
 ## Deployment Instructions
 
@@ -79,49 +83,78 @@ Ensure you have the following installed:
 
    ```bash
    git clone https://github.com/jasminegraph/jasminegraph-ui.git
-   cd jasminegraph
+   cd jasminegraph-ui
    ```
 
-2. **Build the Frontend Service**
-
-   Navigate to the `frontend` directory and build the Docker image:
-
-   ```bash
-   cd frontend
-   docker build -t jasminegraph-frontend .
-   ```
-
-3. **Build the Backend Service**
-
-   Navigate to the `backend` directory and build the Docker image:
-
-   ```bash
-   cd ../backend
-   docker build -t jasminegraph-backend .
-   ```
-
-4. **Start the Services with Docker Compose**
+2. **Start the Services with Docker Compose**
 
    From the root directory of the project, use Docker Compose to start both the frontend and backend services:
 
    ```bash
-   cd ..
    docker compose up
    ```
 
    This command will start all the services defined in your `docker-compose.yml` file.
 
-5. **Access the Application**
+3. **Access the Application**
 
-   Once the containers are running, you can access JasmineGraph through the specified frontend and backend endpoints.
+Open your browser and navigate to http://localhost:3000 to access the application.
 
 ## Stopping the Services
 
-To stop the services, press `Ctrl+C` in the terminal running `docker compose up`, or run:
+To stop the services, press `Ctrl+C` in the terminal which is occupied by `docker compose up`, or in a new terminal run:
 
 ```bash
 docker compose down
 ```
+
+# JasmineGraph UI Kubernetes Deployment
+
+Deploy the same stack (frontend, backend, postgres, keycloak) to a local Kubernetes cluster — works with either **minikube** or **k3s** (k3d too). Structured to match the deployment approach used by the [JasmineGraph server repo](https://github.com/miyurud/jasminegraph): plain `kubectl apply -f` manifests under `k8s/`, hostPath-backed volumes templated with `envsubst`, an `application: jasminegraph-ui` label for bulk cleanup, and a `start-k8s.sh clean` teardown command.
+
+## Prerequisites
+
+- Docker
+- `kubectl`
+- `envsubst` (GNU gettext; used to template `k8s/volumes.yaml`)
+- One of: [minikube](https://minikube.sigs.k8s.io/docs/start/), [k3s](https://docs.k3s.io/quick-start), or [k3d](https://k3d.io/)
+- Your cluster running, e.g., `minikube start` (or `k3s` installed as a service / `k3d cluster create`)
+
+## Deploy
+
+```bash
+./start-k8s.sh
+```
+
+The script auto-detects minikube vs. k3s/k3d, builds the frontend/backend images, loads them into the cluster (no external registry needed), applies the manifests in `k8s/`, waits for every deployment to become ready, and prints the URL to open.
+
+Optional flags (all have defaults):
+
+```bash
+./start-k8s.sh --CLUSTER_TYPE minikube \
+  --POSTGRES_DATA_PATH "$HOME/jasminegraph-ui-data/postgres" \
+  --BACKEND_CACHE_PATH "$HOME/jasminegraph-ui-data/backend-cache"
+```
+
+> **minikube note:** hostPath volumes resolve on the *node* (minikube's VM/container), not this machine — the script runs `minikube ssh` to create the data directories there automatically. On k3s/k3d the paths are created directly on the host.
+
+## Tear down
+
+```bash
+./start-k8s.sh clean
+```
+
+## Notes
+
+- Manifests live under `k8s/` — plain YAML, no kustomize, applied directly via `kubectl apply -f`.
+- The Postgres init SQL and Keycloak realm import are loaded into ConfigMaps at deploy time straight from `Backend/src/db-init/` and `Keycloak/jasminegraph-realm.json` — the same files `docker-compose.yml` uses — so there's nothing to keep in sync by hand.
+- Credentials in `k8s/secrets.yaml` are dev-only defaults matching `docker-compose.yml`; replace them before using this anywhere beyond a local cluster.
+- The Playwright test service isn't included — it's test-only tooling, not part of the running app.
+- This deploys into the `default` namespace, same as the JasmineGraph server repo — so both can run on the same local cluster side-by-side without conflicting (resource names differ). The UI's backend connects to the graph server by registering its `jasminegraph-master-service` host/port as a "cluster" in the UI, not through any shared config.
+
+## Deployment Instructions
+
+JasmineGraph UI documentation: [documentation](https://github.com/jasminegraph/jasminegraph-ui/blob/feature/graph_visualization2/JasmineGraph-UI-Documentation.pdf)
 
 ## Additional Notes
 
@@ -150,3 +183,4 @@ Contributions are welcome! Please follow these steps to contribute:
 ## Contact
 
 For any questions or issues, please open an issue on the GitHub repository or contact the maintainers.
+

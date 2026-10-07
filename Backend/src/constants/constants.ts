@@ -13,7 +13,7 @@ limitations under the License.
 
 export const HTTP = {
   "200": 200,
-  "201": 201,	
+  "201": 201,
   "400": 400,
   "401": 401,
   "404": 404,
@@ -24,4 +24,9 @@ export const HTTP = {
 export const TIMEOUT = {
   hundred: 100,
   default: 5000,
+  retryDelayMs: 3000,
 }
+
+export const TXT_EXTENSION = ".txt"
+export const PDF_EXTENSION = ".pdf"
+export const UTF8_FORMAT = "utf8"

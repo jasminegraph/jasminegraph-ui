@@ -1,5 +1,5 @@
 /**
-Copyright 2024 JasmineGraph Team
+Copyright 2026 JasmineGraph Team
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -12,8 +12,8 @@ limitations under the License.
  */
 
 "use client";
-import React, { useState, useEffect, use } from "react";
-import { Button, Divider, Layout, message, Modal, theme, Typography } from "antd";
+import React, { useState, useEffect, useCallback } from "react";
+import { Button, Divider, Layout, message, Modal, theme, Typography, Form } from "antd";
 import PageWrapper from "@/layouts/page-wrapper";
 import { Input } from "antd";
 import type { SearchProps } from "antd/es/input/Search";
@@ -22,9 +22,12 @@ import { useRouter } from "next/navigation";
 import { IClusterDetails } from "@/types/cluster-types";
 import { useDispatch } from "react-redux";
 import { set_Selected_Cluster } from "@/redux/features/clusterData";
-import { getAllClusters } from "@/services/cluster-service";
+import { getAllClusters, getClustersStatusByIds } from "@/services/cluster-service";
 import { useAppSelector } from "@/redux/hook";
 import ClusterRegistrationForm from "@/components/cluster-details/cluster-registration-form";
+import useAccessToken from "@/hooks/useAccessToken";
+import ActivityPanel from "@/components/common/ActivityPanel";
+import { useActivity } from "@/hooks/useActivity";
 
 const { Search } = Input;
 const { Content } = Layout;
@@ -34,44 +37,78 @@ export default function Clusters() {
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
+  const { reportErrorFromException } = useActivity();
   const dispatch = useDispatch();
   const { userData } = useAppSelector((state) => state.authData);
   const [clusters, setClusters] = useState<IClusterDetails[]>([]);
   const [filteredClusters, setFilteredClusters] = useState<IClusterDetails[]>([]);
-
+  const [hasFetched, setHasFetched] = useState<boolean>(false);
+  const [connectingId, setConnectingId] = useState<number | null>(null);
   const { selectedCluster } = useAppSelector((state) => state.clusterData);
 
   const [openModal, setOpenModal] = useState<boolean>(false);
+  const { getSrvAccessToken, refreshAccessToken, isTokenExpired } = useAccessToken();
+  const [form] = Form.useForm();
 
-  const getAllCluster = async () => {
-    try{
-    const res = await getAllClusters(userData._id);
-    if(res.data){
-      setClusters(res.data)
-    }
-    }catch(err){
+  const getAllCluster = useCallback(async () => {
+    try {
+      const token = getSrvAccessToken() || null;
+      // rely on axios interceptor to refresh/ retry on 401; avoid duplicate refresh logic
+      const clusterRes = await getAllClusters(token);
+      if (!clusterRes.data) return;
+
+      const clusters = clusterRes.data;
+
+      if (!clusters || clusters.length === 0) {
+        setClusters([]);
+        return;
+      }
+
+      const clusterIds = clusters.map((c: any) => c.id);
+      const statusRes = await getClustersStatusByIds(token, clusterIds);
+      const statuses = statusRes.clusters || [];
+
+      const clustersWithStatus = clusters.map((c: any) => {
+        const status = statuses.find((s: any) => s.id === c.id)?.connected ?? false;
+        return { ...c, status };
+      });
+
+      setClusters(clustersWithStatus);
+    } catch (err) {
       message.error("Failed to fetch JasmineGraph clusters");
+      reportErrorFromException(
+        "Clusters",
+        err,
+        "Failed to fetch JasmineGraph clusters."
+      );
+      console.error(err);
+    } finally {
+      setHasFetched(true);
     }
-  }
+  }, [getSrvAccessToken, reportErrorFromException]);
 
-  const setSelecterCluster = () => {
-    if(localStorage.getItem("selectedCluster")){
-      const selectedCluster = clusters.find((cluster) => cluster._id == localStorage.getItem("selectedCluster"));
-      if(selectedCluster)
-      dispatch(set_Selected_Cluster(selectedCluster));
+  const setSelectedCluster = useCallback(() => {
+    const selectedClusterId = localStorage.getItem("selectedCluster");
+    if (selectedClusterId) {
+      const foundCluster = clusters.find((cluster) => String(cluster.id) === selectedClusterId);
+      if (foundCluster && foundCluster.id === selectedCluster?.id) {
+        return;
+      }
+      if (foundCluster) {
+        dispatch(set_Selected_Cluster(foundCluster));
+      }
     }
-  }
+  }, [clusters, selectedCluster, dispatch]);
 
   useEffect(() => {
-    setSelecterCluster();
-  }, [clusters])
-
+    setSelectedCluster();
+  }, [clusters, setSelectedCluster]);
 
   useEffect(() => {
-    if(userData._id){
+    if (userData.email && !hasFetched) {
       getAllCluster();
     }
-  }, [])
+  }, [getAllCluster, userData.email, hasFetched]);
 
   const onSearch: SearchProps["onSearch"] = (value, _e, info) => {
     const filteredClusters = clusters.filter((cluster) => {
@@ -81,16 +118,45 @@ export default function Clusters() {
   }
 
   const handleOnClusterSelect = (cluster: IClusterDetails) => {
-    dispatch(set_Selected_Cluster(cluster))
-    localStorage.setItem("selectedCluster", cluster._id);
+    dispatch(set_Selected_Cluster(cluster));
+    localStorage.setItem("selectedCluster", String(cluster.id));
+    message.success({ content: `Selected cluster "${cluster.name}"`, key: 'select-cluster-msg' });
   }
 
   const handleOnClusterClick = (cluster: IClusterDetails) => {
-    handleOnClusterSelect(cluster);
-    router.push(`/clusters/${cluster._id}`)
+    router.push(`/clusters/${cluster.id}`);
   }
 
+  const handleConnectToggle = async (cluster: IClusterDetails, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConnectingId(cluster.id);
+    try {
+      const token = getSrvAccessToken() || null;
+      const statusRes = await getClustersStatusByIds(token, [cluster.id]);
+      const isConnected = statusRes.clusters?.[0]?.connected ?? false;
+
+      setClusters((prevClusters) =>
+        prevClusters.map((c) => (c.id === cluster.id ? { ...c, status: isConnected } : c))
+      );
+
+      if (selectedCluster && selectedCluster.id === cluster.id) {
+        dispatch(set_Selected_Cluster({ ...selectedCluster, status: isConnected }));
+      }
+
+      if (isConnected) {
+        message.success(`Successfully connected to cluster "${cluster.name}".`);
+      } else {
+        message.error(`Unable to connect to cluster "${cluster.name}" at ${cluster.host}:${cluster.port}.`);
+      }
+    } catch (err) {
+      message.error(`Failed to check connection for cluster "${cluster.name}".`);
+    } finally {
+      setConnectingId(null);
+    }
+  };
+
   const showModal = () => {
+    form.resetFields();
     setOpenModal(true);
   }
 
@@ -99,7 +165,6 @@ export default function Clusters() {
     getAllCluster();
   }
   
-
   return (
     <PageWrapper>
       <Layout style={{ padding: "24px 24px", height: "92vh" }}>
@@ -110,6 +175,8 @@ export default function Clusters() {
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
@@ -126,12 +193,12 @@ export default function Clusters() {
               />
               <Button size="large" onClick={showModal}>Add New Cluster</Button>
               <Modal
-                title="Connect New Cluster"
+                title="Add New Cluster"
                 open={openModal}
                 footer={<></>}
                 onCancel={() => setOpenModal(false)}
               >
-                <ClusterRegistrationForm onSuccess={afterClusterRegistration}/>
+                <ClusterRegistrationForm form={form} onSuccess={afterClusterRegistration} onCancel={() => setOpenModal(false)} />
               </Modal>
             </div>
           </div>
@@ -139,45 +206,99 @@ export default function Clusters() {
             <>
               <Divider>Selected Cluster</Divider>
               <Col>
-                  <Row key={selectedCluster._id}>
-                    <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
+                <Row key={selectedCluster.id}>
+                  <Card 
+                    hoverable 
+                    style={{ width: "100%", marginBottom: "20px", border: "1px solid gray" }}
                     onClick={() => handleOnClusterClick(selectedCluster)}
-                    >
-                      <Typography>
-                        <Title level={3}>{selectedCluster.name}</Title>
-                        <div style={{display: "flex", justifyContent: "space-between"}}>
-                          <Text>
-                            Cluster ID: {selectedCluster._id}
-                          </Text>
-                          <Text>Creation Date: {selectedCluster.createdAt}</Text> 
+                  >
+                    <Typography>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <Title level={3} style={{ margin: 0 }}>{selectedCluster.name}</Title>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          {selectedCluster.status ? (
+                            <Button
+                              type="primary"
+                              style={{ background: "#52c41a", borderColor: "#52c41a" }}
+                              loading={connectingId === selectedCluster.id}
+                              onClick={(e) => handleConnectToggle(selectedCluster, e)}
+                            >
+                              Connected
+                            </Button>
+                          ) : (
+                            <Button
+                              type="default"
+                              danger
+                              loading={connectingId === selectedCluster.id}
+                              onClick={(e) => handleConnectToggle(selectedCluster, e)}
+                            >
+                              Disconnected
+                            </Button>
+                          )}
                         </div>
-                      </Typography>
-                    </Card>
-                  </Row>
-              </Col>  
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                        <Text>Cluster ID: {selectedCluster.id}</Text>
+                        <Text>Creation Date: {selectedCluster.created_at}</Text>
+                      </div>
+                    </Typography>
+                  </Card>
+                </Row>
+              </Col>
             </>
           )}
-          {clusters.filter((item) => selectedCluster == null || (item._id !== selectedCluster?._id)).length > 0 && (
+          {clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).length > 0 && (
             <>
               <Divider>All Clusters</Divider>
               <Col>
                 {clusters.length > 0 ? 
-                clusters.filter((item) => selectedCluster == null || (item._id !== selectedCluster?._id)).map((cluster, index) => (
-                  <Row key={index}>
+                clusters.filter((item) => selectedCluster == null || (item.id !== selectedCluster?.id)).map((cluster) => (
+                  <Row key={cluster.id}>
                     <Card hoverable style={{width: "100%", marginBottom: "20px", border: "1px solid gray"}}
                     >
                       <Typography>
                         <div style={{display: "flex", justifyContent: "space-between"}}>
                         <Title level={3} onClick={() => handleOnClusterClick(cluster)}>{cluster.name}</Title>
-                        <Button color="primary" type="default" onClick={() => handleOnClusterSelect(cluster)}>
+                        <Button
+                          color="primary"
+                          type="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOnClusterSelect(cluster);
+                          }}
+                        >
                           Select
                         </Button>
                         </div>
-                        <div style={{display: "flex", justifyContent: "space-between"}}>
-                          <Text>
-                            Cluster ID: {cluster._id}
-                          </Text>
-                          <Text>Creation Date: {cluster.createdAt}</Text> 
+                        <div style={{display: "flex", justifyContent: "space-between", alignItems: 'center'}}>
+                          <div>
+                            <Text>Cluster ID: {cluster.id}</Text>
+                            <div style={{marginTop: 4}}>
+                              <Text type="secondary">Creation Date: {cluster.created_at}</Text>
+                            </div>
+                          </div>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            {cluster.status ? (
+                              <Button
+                                type="primary"
+                                style={{background: '#52c41a', borderColor: '#52c41a'}}
+                                loading={connectingId === cluster.id}
+                                onClick={(e) => handleConnectToggle(cluster, e)}
+                              >
+                                Connected
+                              </Button>
+                            ) : (
+                              <Button
+                                type="default"
+                                danger
+                                loading={connectingId === cluster.id}
+                                onClick={(e) => handleConnectToggle(cluster, e)}
+                              >
+                                Disconnected
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </Typography>
                     </Card>
@@ -190,6 +311,7 @@ export default function Clusters() {
               </Col>
             </>
           )}
+          <ActivityPanel featureName="Clusters" />
         </Content>
       </Layout>
     </PageWrapper>

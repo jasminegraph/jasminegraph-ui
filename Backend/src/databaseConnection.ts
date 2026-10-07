@@ -11,16 +11,41 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-import mongoose from 'mongoose';
+import { Pool } from 'pg';
 import dotenv from 'dotenv';
+import { TIMEOUT } from './constants/constants';
 
-mongoose.Promise = global.Promise;
 dotenv.config();
 
-const { MONGO_URL } = process.env;
+const { POSTGRES_URL } = process.env;
 
-const connectToDatabase = async (): Promise<void> => {
-  await mongoose.connect(MONGO_URL ? MONGO_URL : 'mongodb://localhost:27017/jasmine')
- };
+if (!POSTGRES_URL) {
+  throw new Error("POSTGRES_URL is not set in .env");
+}
 
-export { connectToDatabase };
+const pool = new Pool({
+  connectionString: POSTGRES_URL,
+});
+
+const connectToDatabase = async () => {
+  const maxRetries = 10;
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    try {
+      const client = await pool.connect();
+      await client.query('SELECT 1');
+      client.release();
+      console.log('Postgres connected');
+      return;
+    } catch (error) {
+      console.log(`Postgres connection failed (attempt ${retries + 1}). Retrying...`);
+      await new Promise(res => setTimeout(res, TIMEOUT.retryDelayMs)); // wait 3 sec
+      retries++;
+    }
+  }
+
+  throw new Error("Postgres connection failed after several retries");
+};
+
+export { connectToDatabase, pool };

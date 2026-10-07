@@ -12,6 +12,8 @@ Backend/.pnp
 Backend/.pnp.js
 Backend/.yarn/install-state.gz
 
+tests/node_modules
+
 mongodb-data/*
 
 # env

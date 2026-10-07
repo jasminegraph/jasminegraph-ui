@@ -1,49 +1,120 @@
-version: '3'
+version: '3.9'
 services:
-  
-  # # Frontend Service
+  # Frontend Service
   frontend:
-    image: jasminegraph-frontend:latest  # Replace with your frontend image
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    image: jasminegraph-frontend:latest
     ports:
       - "3000:3000"
-    networks:
-      - next-node
     environment:
       - BACKEND=http://backend:8080 # Pointing to the backend service
       - NEXT_PUBLIC_API_URL=http://backend:8080 # Pointing to the backend service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - default
 
   # Backend Service
   backend:
-    image: jasminegraph-backend:latest  # Replace with your backend image
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    image: jasminegraph-backend:latest
     ports:
       - "8080:8080"
-    networks:
-      - node-mongo
-      - next-node
     depends_on:
-      - mongoCont  # Ensure MongoDB starts before backend
+      postgres:
+        condition: service_healthy
     volumes:
-      - /var/tmp/jasminegraph-ui-backend:/app/caches 
+      - /var/tmp/jasminegraph-ui-backend:/app/caches
     environment:
-      - MONGO_URL=mongodb://mongoCont:27017/jasminegraph # MongoDB connection string pointing to the mongo service
-
-  # MongoDB Service
-  mongoCont:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
+      - POSTGRES_URL=postgresql://admin:admin_password@postgres:5432/jasminegraphdb
     networks:
-      - node-mongo
+      # default keeps backend reachable from frontend/postgres by service name;
+      # jasminenet lets it reach the cluster's Kafka broker (advertised as 172.28.5.x)
+      - default
+      - jasminenet
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+
+  # Postgres Service (shared by backend + keycloak)
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: jasminegraphdb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin_password
     volumes:
-      - ./mongodb-data:/data/db  # Persist MongoDB data locally
+      - postgres-data:/var/lib/postgresql/data
+      - ./Backend/src/db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d jasminegraphdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    ports:
+      - "5432:5432"
+    networks:
+      - default
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.1
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=postgres
+      - KC_DB_URL_DATABASE=jasminegraphdb
+      - KC_DB_USERNAME=admin
+      - KC_DB_PASSWORD=admin_password
+      - KC_HTTP_ENABLED=true
+      - KC_IMPORT=/opt/keycloak/data/import/jasminegraph-realm.json
+      - KC_IMPORT_STRATEGY=OVERWRITE_EXISTING
+    command: start-dev --import-realm
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./Keycloak/jasminegraph-realm.json:/opt/keycloak/data/import/jasminegraph-realm.json
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - default
+
+  # Playwright Test Service
+  playwright:
+    build:
+      context: ./tests
+      dockerfile: Dockerfile
+    working_dir: /app
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    environment:
+      - BASE_URL=http://frontend:3000
+      - KEYCLOAK_BASE_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=jasminegraph
+      - BACKEND_URL=http://backend:8080
+    networks:
+      - default
 
 volumes:
-  mongodb-data:
+  postgres-data:
     driver: local
-    
+
 networks:
-  node-mongo:
-    driver: bridge
-  next-node:
-    driver: bridge
-    
+  jasminenet:
+    external: true

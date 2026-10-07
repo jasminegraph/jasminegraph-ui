@@ -19,12 +19,13 @@ import {
   ContainerOutlined,
   ReadOutlined,
   RadarChartOutlined,
-  InfoCircleOutlined, 
+  InfoCircleOutlined,
   BookOutlined,
   SettingOutlined,
   CodeOutlined,
   UsergroupAddOutlined,
-  SlidersOutlined
+  SlidersOutlined,
+  AlignLeftOutlined,
 } from "@ant-design/icons";
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import * as Routes from "@/routes/page-routes";
@@ -78,7 +79,14 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
         onClick: () => {
           onMenuClick(Routes.SIDE_MENU_ROUTES.performance);
         },
-        disabled: true,
+      },
+      {
+        key: Routes.SIDE_MENU_ROUTES.logs,
+        icon: <AlignLeftOutlined />,
+        label: "Logs",
+        onClick: () => {
+          onMenuClick(Routes.SIDE_MENU_ROUTES.logs);
+        },
       },
       {
         key: Routes.SIDE_MENU_ROUTES.queryExecution,
@@ -152,6 +160,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.home);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.clusterPage,
@@ -178,12 +187,29 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       },
     },
     {
+      key: Routes.SIDE_MENU_ROUTES.performance,
+      icon: <SlidersOutlined />,
+      label: "Performance",
+      onClick: () => {
+        onMenuClick(Routes.SIDE_MENU_ROUTES.performance);
+      },
+    },
+    {
+      key: Routes.SIDE_MENU_ROUTES.logs,
+      icon: <AlignLeftOutlined />,
+      label: "Logs",
+      onClick: () => {
+        onMenuClick(Routes.SIDE_MENU_ROUTES.logs);
+      },
+    },
+    {
       key: Routes.SIDE_MENU_ROUTES.queryExecution,
       icon: <PartitionOutlined />,
       label: "Query Execution",
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.queryExecution);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.querySubmission,
@@ -192,6 +218,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.querySubmission);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.notebook,
@@ -199,6 +226,15 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       label: "Notebook",
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.notebook);
+      },
+      disabled: true,
+    },
+    {
+      key: Routes.SIDE_MENU_ROUTES.userManagemnt,
+      icon: <UsergroupAddOutlined />,
+      label: "User Management",
+      onClick: () => {
+        onMenuClick(Routes.SIDE_MENU_ROUTES.userManagemnt);
       },
     },
     {
@@ -216,6 +252,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.settings);
       },
+      disabled: true,
     },
     {
       key: Routes.SIDE_MENU_ROUTES.about,
@@ -224,6 +261,7 @@ export const getSideMenuData = (router: AppRouterInstance, role: string) => {
       onClick: () => {
         onMenuClick(Routes.SIDE_MENU_ROUTES.about);
       },
+      disabled: true,
     },
   ];
 };

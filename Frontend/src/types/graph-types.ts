@@ -20,6 +20,8 @@ export interface IGraphDetails {
   upload_path: string,
   status: string,
   partitions: IGraphPartitionDetails[],
+  id_algorithm?: number | string,
+  is_directed?: string | boolean | number,
 }
 
 export interface IGraphPartitionDetails {
@@ -30,3 +32,48 @@ export interface IGraphPartitionDetails {
   idpartition: number;
   vertexcount: number;
 }
+
+export interface IKnowledgeGraph {
+    _id: string,
+    graphId:string,
+    name: string,
+    status: string,
+    hdfsIp: string,
+    hdfsPort: string,
+    hdfsFilePath: string,
+    llmRunnerString: string,
+    inferenceEngine: string,
+    model: string,
+    chunkSize: number,
+    bytesPerSecond: number,
+    triplesPerSecond: number,
+    total: number;
+    percentage: number;
+    startTime: string;
+    uploadPath: string;
+    kgConstructionStatus:string;
+    uploaded:number;
+
+
+}
+
+  export interface IKafkaStreamStatus {
+    connected: boolean;
+    streamStatus: 'active' | 'paused' | 'terminated';
+    dbId?: number;
+    topicName: string;
+    graphId?: string;
+    graphName?: string;
+    isExistingGraph: boolean;
+    useDefaultGraphId?: boolean;
+    partitionAlgorithm?: string;
+    partitionAlgorithmLabel?: string;
+    isDirected?: boolean;
+    graphTypeLabel?: string;
+    useDefaultKafka: boolean;
+    kafkaConfigPath?: string;
+    kafkaBroker?: string;
+    groupId?: string;
+    offsetReset?: string;
+    updatedAt?: string;
+  }

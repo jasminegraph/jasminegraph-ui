@@ -12,13 +12,14 @@ limitations under the License.
  */
 
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import PageWrapper from "@/layouts/page-wrapper";
 import { Layout, Menu, theme } from "antd";
 import type { MenuProps } from "antd";
 import { GraphPanelMenu } from "@/data/menu-data";
 import * as Routes from "@/routes/page-routes";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import ActivityPanel from "@/components/common/ActivityPanel";
 
 const { Content } = Layout;
 export default function GraphPanelLayout({
@@ -31,11 +32,20 @@ export default function GraphPanelLayout({
   const {
     token: { colorBgContainer, borderRadiusLG },
   } = theme.useToken();
-  const [current, setCurrent] = useState(Routes.GRAPH_PANEL_ROUTES.upload);
   const router = useRouter();
+  const pathName = usePathname();
+
+  const current = (() => {
+    const basePath = Routes.SIDE_MENU_ROUTES.graphPanel;
+    if (!pathName || !pathName.startsWith(basePath)) {
+      return Routes.GRAPH_PANEL_ROUTES.upload;
+    }
+
+    const subPath = pathName.slice(basePath.length) || Routes.GRAPH_PANEL_ROUTES.upload;
+    return subPath === "" ? Routes.GRAPH_PANEL_ROUTES.upload : subPath;
+  })();
 
   const onClick: MenuProps["onClick"] = (e) => {
-    setCurrent(e.key);
     router.push(Routes.SIDE_MENU_ROUTES.graphPanel + e.key);
   };
 
@@ -54,7 +64,8 @@ export default function GraphPanelLayout({
             minHeight: 280,
             background: colorBgContainer,
             borderRadius: borderRadiusLG,
-            overflow: "auto"
+            position: "relative",
+            overflow: "hidden",
           }}
         >
           <Menu
@@ -64,6 +75,7 @@ export default function GraphPanelLayout({
             items={GraphPanelMenu}
           />
           {children}
+          <ActivityPanel featureName="Graph Panel" />
         </Content>
       </Layout>
     </PageWrapper>

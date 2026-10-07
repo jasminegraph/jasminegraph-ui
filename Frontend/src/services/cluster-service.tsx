@@ -14,22 +14,23 @@ limitations under the License.
 'use client';
 import { AxiosResponse } from "axios";
 import {authApi} from "./axios";
-
+import { IClusterProperties } from "@/types/cluster-types"
 interface ApiResponse<T> {
   data: T;
 }
 
 interface ApiErrorResponse {
+  errorCode: string;
   message: string;
 }
 
-export async function addNewCluster(name: string, description: string, host: string, port: string): Promise<ApiResponse<string> | ApiErrorResponse> {
+export async function addNewCluster(name: string, description: string, host: string, port: string, token: string): Promise<ApiResponse<string> | ApiErrorResponse> {
   try {
     const result: AxiosResponse<any> = await authApi({
       method: "post",
       url: "/backend/clusters",
       headers: {
-        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
       },
       data: {
         name,
@@ -44,20 +45,26 @@ export async function addNewCluster(name: string, description: string, host: str
     };
   } catch (err: any) {
     if (err.response) {
-      return {
-        message: err.response.data.message,
-      };
+      const errorCode = err.response.data.errorCode;
+      const errorMessage = err.response.data.message;
+      return { errorCode: errorCode, message: errorMessage };
     } else {
       return Promise.reject(err);
     }
   }
 }
 
-export async function getAllClusters(userID: string) {
+export async function getAllClusters(token: string | null) {
+  if (!token) {
+    return Promise.reject(new Error("Authentication token is required"));
+  }
   try {
     const result = await authApi({
       method: "get",
-      url: `/backend/clusters/myClusters/${userID}`,
+      url: `/backend/clusters/myClusters`,
+      headers: {
+      Authorization: `Bearer ${token}`,
+    },
     }).then((res) => res.data);
     return {
       data: result.data,
@@ -67,11 +74,14 @@ export async function getAllClusters(userID: string) {
   }
 }
 
-export async function getCluster(clusterID: string) {
+export async function getCluster(clusterID: string, token: string) {
   try {
     const result = await authApi({
       method: "get",
       url: `/backend/clusters/${clusterID}`,
+       headers: {
+        "Authorization": `Bearer ${token}`,
+      },
     }).then((res) => res.data);
     return {
       data: result.data,
@@ -81,11 +91,33 @@ export async function getCluster(clusterID: string) {
   }
 }
 
-export async function addUserToCluster(userID: string, clusterID: string){
+export async function getClustersStatusByIds(token: string | null, ids: number[]) {
+  if (!token) {
+    return Promise.reject(new Error("Authentication token is required"));
+  }
+  try {
+    const result = await authApi({
+      method: "post",
+      url: `/backend/clusters/status`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      data: { ids },
+    }).then(res => res.data);
+    return result;
+  } catch (err) {
+    return Promise.reject(err);
+  }
+}
+
+export async function addUserToCluster(userID: string, clusterID: string, token: string){
   try {
     const result = await authApi({
       method: "post",
       url: `/backend/clusters/addUser`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       data: {
         userID, 
         clusterID,
@@ -99,11 +131,14 @@ export async function addUserToCluster(userID: string, clusterID: string){
   }
 }
 
-export async function removeUserFromCluster(userID: string, clusterID: string){
+export async function removeUserFromCluster(userID: string, clusterID: string, token: string){
   try {
     const result = await authApi({
       method: "post",
       url: `/backend/clusters/removeUser`,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
       data: {
         userID, 
         clusterID,
@@ -114,5 +149,23 @@ export async function removeUserFromCluster(userID: string, clusterID: string){
     };
   } catch (err) {
     return Promise.reject(err);
+  }
+}
+
+export async function getClusterProperties(param: string): Promise<{data: IClusterProperties}> {
+  try {
+    const result = await authApi({
+      method: "get",
+      url: `/backend/graph/info`,
+      headers: {
+        "Cluster-ID": param,
+      },
+    }).then((res) => res.data);
+
+    return {
+      data: result,
+    };
+  } catch (err) {
+    return Promise.reject();
   }
 }

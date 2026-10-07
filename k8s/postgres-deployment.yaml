@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jasminegraph-ui-postgres-deployment
+  labels:
+    application: jasminegraph-ui
+spec:
+  replicas: 1
+  # Recreate (not RollingUpdate): the claim below is ReadWriteOnce, so a
+  # rolling update that tries to start a new pod before killing the old one
+  # would get stuck Pending forever waiting to attach the volume a second time.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      service: jasminegraph-ui
+      type: postgres
+  template:
+    metadata:
+      labels:
+        service: jasminegraph-ui
+        type: postgres
+    spec:
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: jasminegraph-ui-postgres-data-claim
+        - name: db-init
+          configMap:
+            name: jasminegraph-ui-db-init
+      containers:
+        - name: postgres
+          image: postgres:17
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - secretRef:
+                name: jasminegraph-ui-postgres-secret
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+              # subPath avoids Postgres refusing to start because the mount
+              # root already contains a lost+found directory, which hostPath
+              # volumes commonly do.
+              subPath: pgdata
+            - name: db-init
+              mountPath: /docker-entrypoint-initdb.d
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+
