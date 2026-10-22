@@ -1,0 +1,68 @@
+name: PR Labeler
+
+# Auto-labels PRs from title keywords so release notes can group them into
+# sections (New Features / Bug Fixes / Documentation / Maintenance /
+# Dependencies). See .github/workflows/scripts/generate-release-notes.sh.
+
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Apply category label from PR title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.pull_request.title.toLowerCase();
+
+            const categories = [
+              { label: "bug", color: "d73a4a", description: "Something isn't working", keywords: ["fix", "fixes", "fixed", "bugfix", "bug", "crash", "error"] },
+              { label: "enhancement", color: "a2eeef", description: "New feature or request", keywords: ["feat", "feature", "add", "adds", "added", "new"] },
+              { label: "documentation", color: "0075ca", description: "Documentation changes", keywords: ["doc", "docs", "documentation", "readme"] },
+              { label: "maintenance", color: "fef2c0", description: "Refactoring, cleanup, and other maintenance", keywords: ["refactor", "chore", "perf", "cleanup", "clean up", "style"] },
+              { label: "dependencies", color: "0366d6", description: "Dependency updates", keywords: ["dep", "deps", "dependency", "dependencies", "bump", "upgrade"] },
+            ];
+
+            // Match whole words only, so e.g. "docker" is not read as "doc" and
+            // "address" is not read as "add".
+            const hasKeyword = (keyword) =>
+              new RegExp(`(^|[^a-z0-9])${keyword}([^a-z0-9]|$)`).test(title);
+            const match = categories.find(c => c.keywords.some(hasKeyword));
+            if (!match) {
+              return;
+            }
+
+            const existing = context.payload.pull_request.labels.map(l => l.name);
+            if (categories.some(c => existing.includes(c.label))) {
+              return;
+            }
+
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: match.label,
+              });
+            } catch (err) {
+              core.error(`Failed to get label "${match.label}", creating it: ${err.message}`);
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: match.label,
+                color: match.color,
+                description: match.description,
+              });
+            }
+
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: [match.label],
+            });
