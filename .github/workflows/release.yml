@@ -13,6 +13,9 @@ on:
 
 env:
   TAG: ${{ inputs.tag || github.ref_name }}
+  # Repo whose latest release is added to the release notes. Override with the
+  # JASMINEGRAPH_REPO repository variable if the upstream repo moves.
+  JASMINEGRAPH_REPO: ${{ vars.JASMINEGRAPH_REPO || 'miyurud/jasminegraph' }}
   FRONTEND_IMAGE: "${{ secrets.DOCKER_USER }}/jasminegraph-ui-frontend:${{ inputs.tag || github.ref_name }}"
   BACKEND_IMAGE: "${{ secrets.DOCKER_USER }}/jasminegraph-ui-backend:${{ inputs.tag || github.ref_name }}"
 
@@ -43,6 +46,9 @@ jobs:
           ref: refs/tags/${{ env.TAG }}
           repository: ${{ github.repository }}
           fetch-depth: 0
+
+      - name: Validate release notes script
+        run: bash -n .github/workflows/scripts/generate-release-notes.sh
 
       - name: Determine release channel
         id: channel
@@ -138,7 +144,6 @@ jobs:
       - name: Generate release notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JASMINEGRAPH_REPO: miyurud/jasminegraph
         run: |
           chmod +x .github/workflows/scripts/generate-release-notes.sh
           .github/workflows/scripts/generate-release-notes.sh

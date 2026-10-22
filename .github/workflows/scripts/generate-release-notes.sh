@@ -52,15 +52,29 @@ print_pr() {
     echo
 }
 
-print_jasminegraph_release() {
-    # Latest published (non-draft) JasmineGraph release; stable preferred,
-    # newest pre-release as fallback. Never fails the notes generation.
-    local jg_repo jg_json
-    jg_repo="${JASMINEGRAPH_REPO:-miyurud/jasminegraph}"
-    jg_json=$(gh release view --repo "${jg_repo}"         --json tagName,name,url,publishedAt,body,isPrerelease 2>/dev/null || true)
-    if [[ -z ${jg_json} ]]; then
-        jg_json=$(gh release list --repo "${jg_repo}" --limit 1 --json tagName 2>/dev/null             | jq -r '.[0].tagName // empty'             | xargs -r -I{} gh release view {} --repo "${jg_repo}"                 --json tagName,name,url,publishedAt,body,isPrerelease 2>/dev/null || true)
+JG_RELEASE_FIELDS="tagName,name,url,publishedAt,body,isPrerelease"
+
+# Prints the JSON of the latest JasmineGraph release: the latest stable one if
+# it exists, otherwise the newest pre-release. Prints nothing on failure.
+fetch_jasminegraph_release() {
+    local jg_repo="$1"
+    local latest_tag
+
+    gh release view --repo "${jg_repo}" --json "${JG_RELEASE_FIELDS}" 2>/dev/null && return 0
+
+    latest_tag=$(gh release list --repo "${jg_repo}" --limit 1 --json tagName 2>/dev/null |
+        jq -r '.[0].tagName // empty') || true
+    if [[ -n ${latest_tag} ]]; then
+        gh release view "${latest_tag}" --repo "${jg_repo}" --json "${JG_RELEASE_FIELDS}" 2>/dev/null || true
     fi
+}
+
+print_jasminegraph_release() {
+    # Never fails the notes generation: falls back to a short notice.
+    local jg_repo jg_json tag name url published pre body
+    jg_repo="${JASMINEGRAPH_REPO:-miyurud/jasminegraph}"
+    jg_json=$(fetch_jasminegraph_release "${jg_repo}")
+
     echo "## 🧬 Latest JasmineGraph Release"
     echo
     if [[ -z ${jg_json} ]]; then
@@ -68,13 +82,14 @@ print_jasminegraph_release() {
         echo
         return
     fi
-    local tag name url published pre body
+
     tag=$(echo "${jg_json}" | jq -r '.tagName')
     name=$(echo "${jg_json}" | jq -r '.name // .tagName')
     url=$(echo "${jg_json}" | jq -r '.url')
     published=$(echo "${jg_json}" | jq -r '.publishedAt[:10]')
     pre=$(echo "${jg_json}" | jq -r 'if .isPrerelease then " (pre-release)" else "" end')
-    body=$(echo "${jg_json}" | jq -r '.body // ""' | tr -d '')
+    body=$(echo "${jg_json}" | jq -r '.body // ""' | tr -d '\r')
+
     echo "**[${name}](${url})** (\`${tag}\`)${pre} - published ${published}"
     echo
     if [[ -n "$(echo "${body}" | tr -d '[:space:]')" ]]; then

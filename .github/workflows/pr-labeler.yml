@@ -22,15 +22,24 @@ jobs:
             const title = context.payload.pull_request.title.toLowerCase();
 
             const categories = [
-              { label: "bug", color: "d73a4a", description: "Something isn't working", keywords: ["fix", "bug", "crash", "error"] },
-              { label: "enhancement", color: "a2eeef", description: "New feature or request", keywords: ["feat", "feature", "add", "new"] },
-              { label: "documentation", color: "0075ca", description: "Documentation changes", keywords: ["doc", "readme"] },
+              { label: "bug", color: "d73a4a", description: "Something isn't working", keywords: ["fix", "fixes", "fixed", "bugfix", "bug", "crash", "error"] },
+              { label: "enhancement", color: "a2eeef", description: "New feature or request", keywords: ["feat", "feature", "add", "adds", "added", "new"] },
+              { label: "documentation", color: "0075ca", description: "Documentation changes", keywords: ["doc", "docs", "documentation", "readme"] },
               { label: "maintenance", color: "fef2c0", description: "Refactoring, cleanup, and other maintenance", keywords: ["refactor", "chore", "perf", "cleanup", "clean up", "style"] },
-              { label: "dependencies", color: "0366d6", description: "Dependency updates", keywords: ["dep", "bump", "upgrade"] },
+              { label: "dependencies", color: "0366d6", description: "Dependency updates", keywords: ["dep", "deps", "dependency", "dependencies", "bump", "upgrade"] },
             ];
 
-            const match = categories.find(c => c.keywords.some(k => title.includes(k)));
+            // Match whole words only, so e.g. "docker" is not read as "doc" and
+            // "address" is not read as "add".
+            const hasKeyword = (keyword) =>
+              new RegExp(`(^|[^a-z0-9])${keyword}([^a-z0-9]|$)`).test(title);
+            const match = categories.find(c => c.keywords.some(hasKeyword));
             if (!match) {
+              return;
+            }
+
+            const existing = context.payload.pull_request.labels.map(l => l.name);
+            if (categories.some(c => existing.includes(c.label))) {
               return;
             }
 
