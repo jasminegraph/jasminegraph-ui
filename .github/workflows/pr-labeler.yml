@@ -29,7 +29,7 @@ jobs:
               { label: "dependencies", color: "0366d6", description: "Dependency updates", keywords: ["dep", "deps", "dependency", "dependencies", "bump", "upgrade"] },
             ];
 
-            // Match whole words only, so e.g. "docker" is not read as "doc" and
+            // Match whole words only, so e.g., "docker" is not read as "doc" and
             // "address" is not read as "add".
             const hasKeyword = (keyword) =>
               new RegExp(`(^|[^a-z0-9])${keyword}([^a-z0-9]|$)`).test(title);
